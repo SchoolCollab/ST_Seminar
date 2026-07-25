@@ -11,6 +11,27 @@ const SECRET_KEY = "super_secret_key_that_should_not_be_here";
 app.use(cors());
 app.use(bodyParser.json());
 
+// Provider-state hook for Pact — only mounted under NODE_ENV=test so it is
+// impossible to hit in production / dev runs.
+if (process.env.NODE_ENV === "test") {
+  const stateHandlers = require("./pact/states/stateHandlers");
+  app.post("/_pact/setup", async (req, res) => {
+    const { state, params } = req.body || {};
+    const handler = stateHandlers[state];
+    if (!handler) {
+      return res
+        .status(400)
+        .json({ error: `Unknown provider state: ${state}` });
+    }
+    try {
+      const result = (await handler(params)) || {};
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
+
 const userCarts = {};
 
 // ==========================================
@@ -567,6 +588,13 @@ app.put("/api/admin/orders/:id/status", authenticateToken, (req, res) => {
   );
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Only start the HTTP server when this file is executed directly.
+// When required from tests / Pact verifier, export the app so the caller
+// can call app.listen(0) on an ephemeral port.
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

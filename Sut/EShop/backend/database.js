@@ -1,11 +1,16 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const dbPath = path.resolve(__dirname, 'database.sqlite');
+// When NODE_ENV=test (Pact provider verification) use an in-memory DB so
+// state handlers can reset it cleanly between interactions without touching
+// the on-disk file used for normal development / demo runs.
+const dbPath = process.env.NODE_ENV === 'test'
+    ? ':memory:'
+    : path.resolve(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Could not connect to database', err);
-    } else {
+    } else if (process.env.NODE_ENV !== 'test') {
         console.log('Connected to database');
     }
 });
@@ -116,4 +121,16 @@ function initDatabase() {
 
 initDatabase();
 
+// Exposed for Pact provider state handlers: wipes and re-seeds the DB to
+// a known baseline. Only used from the test-only /_pact/setup route.
+function resetDatabase() {
+    return new Promise((resolve) => {
+        db.serialize(() => {
+            initDatabase();
+            db.run('SELECT 1', () => resolve());
+        });
+    });
+}
+
 module.exports = db;
+module.exports.resetDatabase = resetDatabase;
