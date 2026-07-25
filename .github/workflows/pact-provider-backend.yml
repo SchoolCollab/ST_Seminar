@@ -1,50 +1,50 @@
 name: Pact Provider (backend)
 
 on:
-  push:
-    paths:
-      - "Sut/EShop/backend/**"
-      - ".github/workflows/pact-provider-backend.yml"
-  pull_request:
-    paths:
-      - "Sut/EShop/backend/**"
-  # Triggered by a Pact Broker webhook when any consumer publishes a new pact.
-  repository_dispatch:
-    types: [contract_requiring_verification_published]
+    push:
+        paths:
+            - 'Sut/EShop/backend/**'
+            - '.github/workflows/pact-provider-backend.yml'
+    pull_request:
+        paths:
+            - 'Sut/EShop/backend/**'
+    # Triggered by a Pact Broker webhook when any consumer publishes a new pact.
+    repository_dispatch:
+        types: [contract_requiring_verification_published]
 
 jobs:
-  verify:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: Sut/EShop/backend
-    env:
-      PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
-      PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
-      GIT_SHA: ${{ github.sha }}
-      GIT_BRANCH: ${{ github.ref_name }}
-      CI: "true"
-    steps:
-      - uses: actions/checkout@v4
+    verify:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: Sut/EShop/backend
+        env:
+            PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+            PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
+            GIT_SHA: ${{ github.sha }}
+            GIT_BRANCH: ${{ github.ref_name }}
+            CI: 'true'
+        steps:
+            - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: Sut/EShop/backend/package-lock.json
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: npm
+                  cache-dependency-path: Sut/EShop/backend/package-lock.json
 
-      - run: npm ci
+            - run: npm ci
 
-      - name: Verify pacts
-        run: npm run pact:verify
+            - name: Verify pacts
+              run: npm run pact:verify
 
-      - name: can-i-deploy
-        if: env.PACT_BROKER_BASE_URL != ''
-        run: |
-          npx --yes @pact-foundation/pact-cli \
-            pact-broker can-i-deploy \
-            --pacticipant eshop-backend \
-            --version "$GIT_SHA" \
-            --to-environment production \
-            --broker-base-url="$PACT_BROKER_BASE_URL" \
-            --broker-token="$PACT_BROKER_TOKEN"
+            - name: can-i-deploy
+              if: env.PACT_BROKER_BASE_URL != ''
+              run: |
+                  npx --yes @pact-foundation/pact-cli \
+                    pact-broker can-i-deploy \
+                    --pacticipant eshop-backend \
+                    --version "$GIT_SHA" \
+                    --to-environment production \
+                    --broker-base-url="$PACT_BROKER_BASE_URL" \
+                    --broker-token="$PACT_BROKER_TOKEN"

@@ -21,7 +21,8 @@ Sut/EShop/
 └─ pact-broker/docker-compose.yml Local broker for dev; CI uses PactFlow
 ```
 
-Workflows: `.github/workflows/pact-consumer-web.yml` and `pact-provider-backend.yml`.
+Workflows: `.github/workflows/pact-consumer-web.yml` and
+`pact-provider-backend.yml`.
 
 ## First run (local, no broker)
 
@@ -69,21 +70,21 @@ npm run pact:verify
 
 1. Sign up for the free tier at <https://pactflow.io/>.
 2. Set two GitHub secrets on the repo:
-   - `PACT_BROKER_BASE_URL` — e.g. `https://<org>.pactflow.io`
-   - `PACT_BROKER_TOKEN`    — read/write API token
+    - `PACT_BROKER_BASE_URL` — e.g. `https://<org>.pactflow.io`
+    - `PACT_BROKER_TOKEN` — read/write API token
 3. Push to `main` or open a PR touching `Sut/EShop/frontend-web/` or
    `Sut/EShop/backend/` — the two workflows will run and populate the broker
    matrix.
 4. Register a webhook in the broker UI:
-   - Event: `contract_requiring_verification_published`
-   - URL:   `https://api.github.com/repos/<owner>/<repo>/dispatches`
-   - Body:  `{ "event_type": "contract_requiring_verification_published" }`
-   - This makes the provider re-verify whenever a consumer publishes.
+    - Event: `contract_requiring_verification_published`
+    - URL: `https://api.github.com/repos/<owner>/<repo>/dispatches`
+    - Body: `{ "event_type": "contract_requiring_verification_published" }`
+    - This makes the provider re-verify whenever a consumer publishes.
 
 ## Seminar demo (S6)
 
 Rename `price` → `unitPrice` in `GET /api/products` inside
 [Sut/EShop/backend/server.js](../backend/server.js), commit, and watch the
 **Pact Provider (backend)** workflow fail. Revert and it goes green again.
-Neither Apidog nor Apidog AI would have caught this — see the plan document
-for the full write-up.
+Neither Apidog nor Apidog AI would have caught this — see the plan document for
+the full write-up.
