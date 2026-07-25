@@ -1,0 +1,1582 @@
+openapi: 3.1.1
+info:
+    title: EShop Backend API
+    description: |
+        Backend REST API for the EShop system-under-test used in Software Testing
+        coursework. Provides authentication, product catalog, categories, cart,
+        checkout, orders, coupons and admin management.
+
+        All endpoints return `application/json` unless otherwise noted. Some
+        error branches in the current implementation return raw HTML (see the
+        `/api/products` search branch); those are documented under their
+        respective responses.
+    version: '1.0.0'
+    contact:
+        name: EShop SUT
+    license:
+        name: Educational Use
+
+servers:
+    - url: http://localhost:3000
+      description: Local development server
+
+tags:
+    - name: Authentication
+      description: Registration, login, and password recovery
+    - name: Users
+      description: Current-user profile management
+    - name: Products
+      description: Product catalog (public) and admin product CRUD
+    - name: Categories
+      description: Product categories
+    - name: Cart
+      description: Per-user in-memory shopping cart
+    - name: Orders
+      description: Checkout and order history
+    - name: Coupons
+      description: Discount coupon application and admin coupon CRUD
+    - name: Admin
+      description: Admin-only user and order management
+
+components:
+    securitySchemes:
+        bearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+            description: |
+                JWT token issued by `POST /api/login`. Send as
+                `Authorization: Bearer <token>`. The signed payload is
+                `{ "id": <number>, "role": "user" | "admin" }`.
+
+    schemas:
+        Error:
+            type: object
+            properties:
+                error:
+                    type: string
+                    description:
+                        Human-readable error message (may be in Vietnamese).
+            required: [error]
+            example:
+                error: 'Invalid email or password'
+
+        Message:
+            type: object
+            properties:
+                message:
+                    type: string
+            required: [message]
+
+        IdMessage:
+            type: object
+            properties:
+                message:
+                    type: string
+                id:
+                    type: integer
+                    description: Newly-created row id (SQLite `lastID`).
+            required: [message, id]
+
+        RegisterRequest:
+            type: object
+            required: [name, email, password]
+            properties:
+                name:
+                    type: string
+                    example: 'Test User'
+                email:
+                    type: string
+                    format: email
+                    example: 'tester.1@example.com'
+                password:
+                    type: string
+                    format: password
+                    example: 'TesterPass123!'
+
+        LoginRequest:
+            type: object
+            required: [email, password]
+            properties:
+                email:
+                    type: string
+                    format: email
+                    example: 'tester.1@example.com'
+                password:
+                    type: string
+                    format: password
+                    example: 'TesterPass123!'
+
+        LoginResponse:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Login successful'
+                token:
+                    type: string
+                    description: Signed JWT (HS256).
+                    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                user:
+                    $ref: '#/components/schemas/User'
+            required: [message, token, user]
+
+        ForgotPasswordRequest:
+            type: object
+            required: [email]
+            properties:
+                email:
+                    type: string
+                    format: email
+                    example: 'tester.1@example.com'
+
+        ForgotPasswordResponse:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Mã đặt lại mật khẩu đã được tạo'
+                resetToken:
+                    type: string
+                    description:
+                        OTP code (in the demo it is returned in the response
+                        body).
+                    example: '1234'
+            required: [message, resetToken]
+
+        ResetPasswordRequest:
+            type: object
+            required: [email, resetToken, newPassword]
+            properties:
+                email:
+                    type: string
+                    format: email
+                    example: 'tester.1@example.com'
+                resetToken:
+                    type: string
+                    example: '1234'
+                newPassword:
+                    type: string
+                    format: password
+                    example: 'TesterPass123New!'
+
+        User:
+            type: object
+            properties:
+                id:
+                    type: integer
+                name:
+                    type: string
+                email:
+                    type: string
+                    format: email
+                password:
+                    type: string
+                    description: |
+                        The current backend implementation returns the raw stored password
+                        for the currently-authenticated user (see `GET /api/users/me`).
+                        This is a known security defect of the SUT.
+                role:
+                    type: string
+                    enum: [user, admin]
+                login_attempts:
+                    type: integer
+                locked_until:
+                    type: [string, 'null']
+                    format: date-time
+                reset_token:
+                    type: [string, 'null']
+                shipping_address:
+                    type: [string, 'null']
+                phone:
+                    type: [string, 'null']
+
+        AdminUser:
+            type: object
+            description:
+                User row as returned by `GET /api/admin/users` (password
+                omitted).
+            properties:
+                id: { type: integer }
+                name: { type: string }
+                email: { type: string, format: email }
+                role: { type: string, enum: [user, admin] }
+                login_attempts: { type: integer }
+                locked_until: { type: [string, 'null'], format: date-time }
+                shipping_address: { type: [string, 'null'] }
+
+        UpdateProfileRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                    example: 'Test User Updated'
+                shipping_address:
+                    type: string
+                    example: '123 Test Street, District 1, HCMC'
+                phone:
+                    type: string
+                    example: '0912345678'
+                    description:
+                        'Should start with `0`, 10–11 digits (per spec FR-04).'
+                role:
+                    type: string
+                    enum: [user, admin]
+                    description: |
+                        Warning (SEC-06 defect): the current implementation lets a
+                        regular user update their own `role` if this field is present in
+                        the body. Kept in the schema for accurate documentation of the SUT.
+                        No example value is given deliberately — this field should never
+                        appear in a valid request body.
+
+        Product:
+            type: object
+            properties:
+                id: { type: integer }
+                name: { type: string }
+                price:
+                    type: [integer, string]
+                    description: |
+                        Price in VND. `GET /api/products/{id}` returns `price` as a
+                        string when the product id is even (implementation quirk);
+                        all other endpoints return it as an integer.
+                description: { type: [string, 'null'] }
+                imageUrl: { type: [string, 'null'] }
+                category_id: { type: [integer, 'null'] }
+
+        ProductInput:
+            type: object
+            required: [name, price, category_id]
+            properties:
+                name: { type: string, maxLength: 255 }
+                price: { type: integer, minimum: 1 }
+                description: { type: string }
+                imageUrl: { type: string }
+                category_id: { type: integer }
+
+        ImportProductsRequest:
+            type: object
+            required: [products]
+            properties:
+                products:
+                    type: array
+                    minItems: 1
+                    items: { $ref: '#/components/schemas/ProductInput' }
+
+        ImportProductsResponse:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Import hoàn tất: 3/4 sản phẩm được thêm'
+                inserted:
+                    type: integer
+                errors:
+                    type: array
+                    items: { type: string }
+            required: [message, inserted, errors]
+
+        Category:
+            type: object
+            properties:
+                id: { type: integer }
+                name: { type: string }
+
+        CategoryInput:
+            type: object
+            required: [name]
+            properties:
+                name: { type: string }
+
+        CartItem:
+            type: object
+            description: Arbitrary object pushed into the user's in-memory cart.
+            required: [id, name, price, quantity]
+            properties:
+                id: { type: integer }
+                name: { type: string }
+                price: { type: integer }
+                quantity: { type: integer, minimum: 1 }
+
+        Cart:
+            type: array
+            items: { $ref: '#/components/schemas/CartItem' }
+
+        CheckoutRequest:
+            type: object
+            required: [total_amount, shipping_address]
+            properties:
+                total_amount:
+                    type: integer
+                    example: 500000
+                    description: |
+                        Warning (spec FR-08 defect): the backend stores whatever
+                        `total_amount` the client sends instead of recomputing it.
+                shipping_address:
+                    type: string
+                    example: '123 Test Street, District 1, HCMC'
+
+        CheckoutResponse:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: 'Checkout successful'
+                orderId:
+                    type: integer
+            required: [message, orderId]
+
+        Order:
+            type: object
+            properties:
+                id: { type: integer }
+                user_id: { type: integer }
+                total_amount: { type: integer }
+                status:
+                    type: string
+                    enum: [pending, confirmed, shipping, delivered, canceled]
+                shipping_address: { type: [string, 'null'] }
+                created_at: { type: string, format: date-time }
+
+        AdminOrder:
+            allOf:
+                - $ref: '#/components/schemas/Order'
+                - type: object
+                  properties:
+                      user_name:
+                          type: [string, 'null']
+
+        UpdateOrderStatusRequest:
+            type: object
+            required: [status]
+            properties:
+                status:
+                    type: string
+                    enum: [pending, confirmed, shipping, delivered, canceled]
+
+        Coupon:
+            type: object
+            properties:
+                id: { type: integer }
+                code: { type: string }
+                type:
+                    type: string
+                    enum: [percent, fixed]
+                discount_value: { type: integer }
+                min_order_amount: { type: integer }
+                expired_at: { type: string, format: date-time }
+                is_active:
+                    type: integer
+                    enum: [0, 1]
+                max_uses_per_user: { type: integer }
+
+        CouponInput:
+            type: object
+            required: [code, type, discount_value, expired_at]
+            properties:
+                code: { type: string }
+                type:
+                    type: string
+                    enum: [percent, fixed]
+                discount_value: { type: integer, minimum: 1 }
+                min_order_amount: { type: integer, minimum: 0 }
+                expired_at:
+                    type: string
+                    format: date
+                    example: '2025-01-31'
+                max_uses_per_user:
+                    type: integer
+                    minimum: 1
+                    default: 1
+
+        ApplyCouponRequest:
+            type: object
+            required: [code, total_amount]
+            properties:
+                code: { type: string, example: 'SAVE10' }
+                total_amount: { type: integer, example: 500000 }
+                user_id:
+                    type: integer
+                    description: |
+                        When provided, the backend enforces the `max_uses_per_user`
+                        limit. When omitted, the limit is skipped.
+
+        ApplyCouponSuccess:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                    example: true
+                coupon_id: { type: integer }
+                discount_amount: { type: integer }
+                final_amount: { type: integer }
+                message: { type: string }
+            required:
+                [success, coupon_id, discount_amount, final_amount, message]
+
+        CouponUsageRequest:
+            type: object
+            required: [coupon_id]
+            properties:
+                coupon_id: { type: integer }
+
+    responses:
+        Unauthorized:
+            description: Missing bearer token.
+            content:
+                application/json:
+                    schema: { $ref: '#/components/schemas/Error' }
+                    example: { error: 'Unauthorized' }
+
+        Forbidden:
+            description: Invalid or malformed JWT token.
+            content:
+                application/json:
+                    schema: { $ref: '#/components/schemas/Error' }
+                    example: { error: 'Forbidden' }
+
+        ServerError:
+            description: Unhandled database or server error.
+            content:
+                application/json:
+                    schema: { $ref: '#/components/schemas/Error' }
+                    example: { error: 'SQLITE_ERROR: ...' }
+
+paths:
+    /api/register:
+        post:
+            tags: [Authentication]
+            x-apidog-status: designing
+            summary: Register a new user account
+            description: |
+                Creates a new user with role `user`. The current implementation does
+                not validate password strength, email format, or duplicate emails
+                (uniqueness is only enforced if the DB has a UNIQUE constraint —
+                it does not in this SUT).
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/RegisterRequest' }
+                        examples:
+                            regularUser:
+                                summary: Regular test account
+                                value:
+                                    {
+                                        name: 'Tester One',
+                                        email: 'tester.1@example.com',
+                                        password: 'TesterPass123!',
+                                    }
+                            adminUser:
+                                summary:
+                                    Admin test account (register, then promote
+                                    via PUT /api/users/me)
+                                value:
+                                    {
+                                        name: 'Admin Account',
+                                        email: 'admin@example.com',
+                                        password: 'AdminPass123!',
+                                    }
+            responses:
+                '200':
+                    description: User created.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/IdMessage' }
+                            example:
+                                {
+                                    message: 'User registered successfully',
+                                    id: 3,
+                                }
+                '500':
+                    $ref: '#/components/responses/ServerError'
+
+    /api/login:
+        post:
+            tags: [Authentication]
+            x-apidog-status: designing
+            summary: Authenticate user and issue JWT
+            description: |
+                Verifies credentials against stored (plaintext) password.
+                On success returns a signed JWT and the full user record.
+                On failure increments `login_attempts` by 2 (implementation bug —
+                spec FR-02 requires +1) and locks the account for 180 seconds once
+                the counter reaches 3.
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/LoginRequest' }
+                        examples:
+                            regularUser:
+                                summary: Regular test account
+                                value:
+                                    {
+                                        email: 'tester.1@example.com',
+                                        password: 'TesterPass123!',
+                                    }
+                            adminUser:
+                                summary: Admin test account
+                                value:
+                                    {
+                                        email: 'admin@example.com',
+                                        password: 'AdminPass123!',
+                                    }
+            responses:
+                '200':
+                    description: Login successful.
+                    content:
+                        application/json:
+                            schema:
+                                { $ref: '#/components/schemas/LoginResponse' }
+                '401':
+                    description: Email not found or password incorrect.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example: { error: 'Invalid email or password' }
+                '403':
+                    description: Account temporarily locked.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example:
+                                {
+                                    error:
+                                        'Tài khoản đã bị khóa. Vui lòng thử lại
+                                        sau.',
+                                }
+                '500':
+                    $ref: '#/components/responses/ServerError'
+
+    /api/forgot-password:
+        post:
+            tags: [Authentication]
+            x-apidog-status: designing
+            summary: Request a password-reset OTP
+            description: |
+                Generates a 4-digit numeric reset token (implementation) and stores it
+                on the user record. In this demo build the token is returned directly
+                in the response body.
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            {
+                                $ref: '#/components/schemas/ForgotPasswordRequest',
+                            }
+                        examples:
+                            registeredEmail:
+                                summary: Registered account (success path)
+                                value: { email: 'tester.1@example.com' }
+                            unregisteredEmail:
+                                summary: Unregistered email (404 path)
+                                value: { email: 'nobody@example.com' }
+            responses:
+                '200':
+                    description: Reset token generated.
+                    content:
+                        application/json:
+                            schema:
+                                {
+                                    $ref: '#/components/schemas/ForgotPasswordResponse',
+                                }
+                '404':
+                    description: Email not registered.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example: { error: 'User not found' }
+                '500':
+                    $ref: '#/components/responses/ServerError'
+
+    /api/reset-password:
+        post:
+            tags: [Authentication]
+            x-apidog-status: designing
+            summary: Reset a password using an OTP
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            {
+                                $ref: '#/components/schemas/ResetPasswordRequest',
+                            }
+                        examples:
+                            success:
+                                summary: Valid OTP (matches the one just issued)
+                                value:
+                                    {
+                                        email: 'tester.1@example.com',
+                                        resetToken: '1234',
+                                        newPassword: 'TesterPass123New!',
+                                    }
+                            invalidToken:
+                                summary:
+                                    Wrong/expired OTP (single field mutated)
+                                value:
+                                    {
+                                        email: 'tester.1@example.com',
+                                        resetToken: '0000',
+                                        newPassword: 'TesterPass123New!',
+                                    }
+            responses:
+                '200':
+                    description: Password reset.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Password reset successfully' }
+                '400':
+                    description: Email/token combination did not match any user.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example: { error: 'Invalid token or email' }
+
+    /api/users/me:
+        get:
+            tags: [Users]
+            x-apidog-status: designing
+            summary: Get the current user's profile
+            security: [{ bearerAuth: [] }]
+            responses:
+                '200':
+                    description: |
+                        Current user record. Warning: the raw `password` field is
+                        currently included in the response (SEC-01 defect). Also returns
+                        200 with an empty body when the token id no longer maps to a row.
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                    - $ref: '#/components/schemas/User'
+                                    - type: [object, 'null']
+                                      description:
+                                          Empty/null when the token id no longer
+                                          maps to a row.
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+
+        put:
+            tags: [Users]
+            x-apidog-status: designing
+            summary: Update the current user's profile
+            security: [{ bearerAuth: [] }]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            {
+                                $ref: '#/components/schemas/UpdateProfileRequest',
+                            }
+                        examples:
+                            success:
+                                summary: Valid profile update
+                                value:
+                                    {
+                                        name: 'Tester One Updated',
+                                        shipping_address:
+                                            '123 Test Street, District 1, HCMC',
+                                        phone: '0912345678',
+                                    }
+                            invalidPhone:
+                                summary:
+                                    Malformed phone (single field mutated, FR-04
+                                    boundary)
+                                value:
+                                    {
+                                        name: 'Tester One Updated',
+                                        shipping_address:
+                                            '123 Test Street, District 1, HCMC',
+                                        phone: '12345',
+                                    }
+            responses:
+                '200':
+                    description: Profile updated.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Profile updated' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '500': { $ref: '#/components/responses/ServerError' }
+
+    /api/products:
+        get:
+            tags: [Products]
+            x-apidog-status: designing
+            summary: List all products, optionally filtered by name
+            description: |
+                When `search` is provided the backend concatenates it directly into
+                the SQL query (SEC-05 defect / SQL injection). DB errors on this path
+                return HTML rather than JSON.
+            security: []
+            parameters:
+                - in: query
+                  name: search
+                  required: false
+                  schema: { type: string }
+                  description: Case-insensitive substring match against `name`.
+            responses:
+                '200':
+                    description: Array of products.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items: { $ref: '#/components/schemas/Product' }
+                '500':
+                    description: |
+                        When `search` is present and the resulting SQL fails, the server
+                        returns HTML (not JSON): `<h1>Database Error</h1><p>...</p>`.
+                    content:
+                        text/html:
+                            schema: { type: string }
+
+        post:
+            tags: [Products]
+            x-apidog-status: designing
+            summary: Create a new product
+            description: |
+                Per api_specification.md this endpoint is admin-only, but the current
+                backend does not call `authenticateToken`, so it is publicly reachable
+                in the SUT.
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/ProductInput' }
+                        examples:
+                            success:
+                                summary: Valid product
+                                value:
+                                    {
+                                        name: 'Test Product',
+                                        price: 100000,
+                                        category_id: 1,
+                                    }
+                            invalidPrice:
+                                summary:
+                                    Zero price (single field mutated, boundary)
+                                value:
+                                    {
+                                        name: 'Test Product',
+                                        price: 0,
+                                        category_id: 1,
+                                    }
+            responses:
+                '200':
+                    description: Product created.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/IdMessage' }
+                            example: { message: 'Product created', id: 6 }
+                '500': { $ref: '#/components/responses/ServerError' }
+
+    /api/products/{id}:
+        parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+        get:
+            tags: [Products]
+            x-apidog-status: designing
+            summary: Get a product by id
+            security: []
+            responses:
+                '200':
+                    description: |
+                        Product object. If no row is found the server returns an empty
+                        object `{}` with status 200 (implementation quirk). When the
+                        product id is even, `price` is returned as a string.
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                    - $ref: '#/components/schemas/Product'
+                                    - type: object
+                                      additionalProperties: false
+                                      description:
+                                          '`{}` when the product does not exist.'
+
+        put:
+            tags: [Products]
+            x-apidog-status: designing
+            summary: Update a product
+            description: 'Spec: admin only. Implementation: no auth check.'
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/ProductInput' }
+                        examples:
+                            success:
+                                summary: Valid update
+                                value:
+                                    {
+                                        name: 'Test Product Updated',
+                                        price: 120000,
+                                        category_id: 1,
+                                    }
+                            invalidPrice:
+                                summary:
+                                    Negative price (single field mutated,
+                                    invalid class)
+                                value:
+                                    {
+                                        name: 'Test Product Updated',
+                                        price: -1,
+                                        category_id: 1,
+                                    }
+            responses:
+                '200':
+                    description: Product updated.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Product updated' }
+                '500': { $ref: '#/components/responses/ServerError' }
+
+        delete:
+            tags: [Products]
+            x-apidog-status: designing
+            summary: Delete a product
+            description: 'Spec: admin only. Implementation: no auth check.'
+            security: []
+            responses:
+                '200':
+                    description:
+                        Product deleted (returned even when the id did not
+                        exist).
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Product deleted' }
+                '500': { $ref: '#/components/responses/ServerError' }
+
+    /api/admin/import-products:
+        post:
+            tags: [Products]
+            x-apidog-status: designing
+            summary: Bulk-import products (Admin)
+            description: |
+                Accepts a JSON array of product rows. Rows missing `name` are
+                collected in the `errors` array but do not roll back other inserts
+                (spec FR-16 requires all-or-nothing — implementation defect).
+                Additionally, `stmt.finalize()` runs before the row callbacks fire,
+                so `inserted` and `errors` counts are typically inaccurate.
+            security: [{ bearerAuth: [] }]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            {
+                                $ref: '#/components/schemas/ImportProductsRequest',
+                            }
+                        examples:
+                            allValid:
+                                summary: All rows valid
+                                value:
+                                    {
+                                        products:
+                                            [
+                                                {
+                                                    name: 'Bulk Product A',
+                                                    price: 50000,
+                                                    category_id: 1,
+                                                },
+                                                {
+                                                    name: 'Bulk Product B',
+                                                    price: 75000,
+                                                    category_id: 1,
+                                                },
+                                            ],
+                                    }
+                            partiallyInvalid:
+                                summary:
+                                    One row missing name (demonstrates FR-16
+                                    partial-import defect — other rows still
+                                    commit)
+                                value:
+                                    {
+                                        products:
+                                            [
+                                                {
+                                                    name: 'Bulk Product A',
+                                                    price: 50000,
+                                                    category_id: 1,
+                                                },
+                                                {
+                                                    price: 75000,
+                                                    category_id: 1,
+                                                },
+                                            ],
+                                    }
+            responses:
+                '200':
+                    description: Import completed (partial success possible).
+                    content:
+                        application/json:
+                            schema:
+                                {
+                                    $ref: '#/components/schemas/ImportProductsResponse',
+                                }
+                '400':
+                    description:
+                        '`products` is missing, not an array, or empty.'
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example: { error: 'Không có dữ liệu để import' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+
+    /api/categories:
+        get:
+            tags: [Categories]
+            x-apidog-status: designing
+            summary: List all categories
+            security: []
+            responses:
+                '200':
+                    description: Array of categories.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items: { $ref: '#/components/schemas/Category' }
+        post:
+            tags: [Categories]
+            x-apidog-status: designing
+            summary: Create a category
+            security: [{ bearerAuth: [] }]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/CategoryInput' }
+                        examples:
+                            success:
+                                summary: Valid category
+                                value: { name: 'Test Category' }
+                            invalidEmptyName:
+                                summary: Empty name (single field mutated)
+                                value: { name: '' }
+            responses:
+                '200':
+                    description: Category created.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/IdMessage' }
+                            example: { message: 'Category created', id: 4 }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '500': { $ref: '#/components/responses/ServerError' }
+
+    /api/categories/{id}:
+        parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+        put:
+            tags: [Categories]
+            x-apidog-status: designing
+            summary: Update a category
+            security: [{ bearerAuth: [] }]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/CategoryInput' }
+                        examples:
+                            success:
+                                summary: Valid rename
+                                value: { name: 'Test Category Renamed' }
+            responses:
+                '200':
+                    description: Category updated.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Category updated' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '500': { $ref: '#/components/responses/ServerError' }
+
+        delete:
+            tags: [Categories]
+            x-apidog-status: designing
+            summary: Delete a category
+            security: [{ bearerAuth: [] }]
+            responses:
+                '200':
+                    description: Category deleted.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Category deleted' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '500': { $ref: '#/components/responses/ServerError' }
+
+    /api/cart:
+        get:
+            tags: [Cart]
+            x-apidog-status: designing
+            summary: Get the current user's in-memory cart
+            description:
+                The cart is stored in a plain in-memory JS object and is lost on
+                server restart.
+            security: [{ bearerAuth: [] }]
+            responses:
+                '200':
+                    description: Cart items (may be an empty array).
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Cart' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+
+        post:
+            tags: [Cart]
+            x-apidog-status: designing
+            summary: Push an item onto the current user's cart
+            description: |
+                The backend appends `req.body` verbatim to the cart array; it does
+                not merge duplicate product ids (spec FR-07 requires merging —
+                implementation defect). No schema validation is performed on the
+                request body.
+            security: [{ bearerAuth: [] }]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/CartItem' }
+                        examples:
+                            success:
+                                summary: Valid item, quantity 1
+                                value:
+                                    {
+                                        id: 1,
+                                        name: 'Sample Product',
+                                        price: 100000,
+                                        quantity: 1,
+                                    }
+                            invalidZeroQuantity:
+                                summary:
+                                    Zero quantity (single field mutated,
+                                    boundary)
+                                value:
+                                    {
+                                        id: 1,
+                                        name: 'Sample Product',
+                                        price: 100000,
+                                        quantity: 0,
+                                    }
+                            invalidNegativeQuantity:
+                                summary:
+                                    Negative quantity (single field mutated,
+                                    invalid class)
+                                value:
+                                    {
+                                        id: 1,
+                                        name: 'Sample Product',
+                                        price: 100000,
+                                        quantity: -1,
+                                    }
+            responses:
+                '200':
+                    description: Item pushed.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Added to cart' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+
+    /api/checkout:
+        post:
+            tags: [Orders]
+            x-apidog-status: designing
+            summary: Place an order
+            description: |
+                Creates a new order with status `pending`. The server trusts the
+                `total_amount` sent by the client (spec FR-08 defect). The cart is
+                not cleared after checkout, and cart items are not linked to the
+                created order.
+            security: [{ bearerAuth: [] }]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/CheckoutRequest' }
+                        examples:
+                            success:
+                                summary: Valid checkout
+                                value:
+                                    {
+                                        total_amount: 100000,
+                                        shipping_address:
+                                            '123 Test Street, District 1, HCMC',
+                                    }
+            responses:
+                '200':
+                    description: Order created.
+                    content:
+                        application/json:
+                            schema:
+                                {
+                                    $ref: '#/components/schemas/CheckoutResponse',
+                                }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '500': { $ref: '#/components/responses/ServerError' }
+
+    /api/orders/my-orders:
+        get:
+            tags: [Orders]
+            x-apidog-status: designing
+            summary: List the current user's orders
+            security: [{ bearerAuth: [] }]
+            responses:
+                '200':
+                    description: Array of orders ordered by id DESC.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items: { $ref: '#/components/schemas/Order' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+
+    /api/orders/{id}/cancel:
+        parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+        put:
+            tags: [Orders]
+            x-apidog-status: designing
+            summary: Cancel an order (user-initiated)
+            description: |
+                Sets the order status to `canceled`. Implementation only refuses the
+                transition when the current status is `delivered` or `canceled`,
+                meaning a user can still cancel a `shipping` order (spec FR-10 defect).
+            security: [{ bearerAuth: [] }]
+            responses:
+                '200':
+                    description: Order canceled.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Order canceled successfully' }
+                '400':
+                    description: Order is already `delivered` or `canceled`.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example: { error: 'Cannot cancel this order.' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '404':
+                    description:
+                        Order not found or does not belong to the current user.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example: { error: 'Order not found' }
+
+    /api/orders/{id}:
+        parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+        get:
+            tags: [Orders]
+            x-apidog-status: designing
+            summary: Get an order by id
+            description: |
+                Spec: only the order owner or an admin should be able to read this.
+                Implementation: no auth check — any caller can read any order.
+            security: []
+            responses:
+                '200':
+                    description: Order details.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Order' }
+                '404':
+                    description: Order not found.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example: { error: 'Order not found' }
+
+    /api/coupons:
+        get:
+            tags: [Coupons]
+            x-apidog-status: designing
+            summary: List all coupons
+            description: |
+                Requires a valid JWT (but no role check — spec says admin only).
+            security: [{ bearerAuth: [] }]
+            responses:
+                '200':
+                    description: Array of coupons.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items: { $ref: '#/components/schemas/Coupon' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+
+    /api/apply-coupon:
+        post:
+            tags: [Coupons]
+            x-apidog-status: designing
+            summary: Apply a coupon code and preview the discount
+            description: |
+                Evaluates a coupon against the given `total_amount` and optional
+                `user_id`. Implementation quirks vs. spec FR-09:
+
+                - `total_amount > min_order_amount` is used instead of `>=`.
+                - For `percent` coupons the discount is computed as
+                  `floor(total * (1 - discount_value))`, inverting the intended
+                  formula: `discount_value = 10` produces a *negative* discount and
+                  a `final_amount` **larger than the original**.
+                - `user_id` is optional; when omitted the `max_uses_per_user`
+                  limit is not enforced.
+                - Expiry is checked after the minimum-threshold check, so an
+                  expired coupon on a small order returns "below minimum" rather
+                  than "expired."
+            security: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            { $ref: '#/components/schemas/ApplyCouponRequest' }
+                        examples:
+                            success:
+                                summary: Valid coupon on a qualifying order
+                                value:
+                                    {
+                                        code: 'SAVE10',
+                                        total_amount: 500000,
+                                        user_id: 1,
+                                    }
+                            missingCode:
+                                summary:
+                                    Empty code (matches the missingCode 400
+                                    response)
+                                value:
+                                    {
+                                        code: '',
+                                        total_amount: 500000,
+                                        user_id: 1,
+                                    }
+                            belowMinimum:
+                                summary:
+                                    Order under the coupon's minimum (matches
+                                    the belowMinimum 400 response)
+                                value:
+                                    {
+                                        code: 'SAVE10',
+                                        total_amount: 10000,
+                                        user_id: 1,
+                                    }
+                            omittedUserId:
+                                summary:
+                                    user_id omitted — silently bypasses the
+                                    max-uses-per-user check (FR-09 C5 defect)
+                                value: { code: 'SAVE10', total_amount: 500000 }
+            responses:
+                '200':
+                    description: Coupon applied successfully.
+                    content:
+                        application/json:
+                            schema:
+                                {
+                                    $ref: '#/components/schemas/ApplyCouponSuccess',
+                                }
+                '400':
+                    description: |
+                        Missing code, order under `min_order_amount`, coupon expired,
+                        or per-user usage limit reached.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            examples:
+                                missingCode:
+                                    value:
+                                        { error: 'Vui lòng nhập mã giảm giá' }
+                                belowMinimum:
+                                    value:
+                                        {
+                                            error:
+                                                'Đơn hàng chưa đủ giá trị tối
+                                                thiểu 300,000 ₫ để áp dụng mã
+                                                này',
+                                        }
+                                expired:
+                                    value: { error: 'Mã giảm giá đã hết hạn' }
+                                limitReached:
+                                    value:
+                                        {
+                                            error:
+                                                'Bạn đã sử dụng mã này 1 lần (đã
+                                                đạt giới hạn)',
+                                        }
+                '404':
+                    description: Coupon code does not exist or is disabled.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example:
+                                {
+                                    error:
+                                        'Mã giảm giá không tồn tại hoặc đã bị vô
+                                        hiệu hóa',
+                                }
+
+    /api/coupon-usage:
+        post:
+            tags: [Coupons]
+            x-apidog-status: designing
+            summary: Record a coupon usage (call after successful checkout)
+            description: |
+                Inserts into `coupon_usage` on demand with no cross-reference to any
+                real order. A client can bump their own counter arbitrarily or skip
+                this endpoint entirely for unlimited real uses.
+            security: [{ bearerAuth: [] }]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            { $ref: '#/components/schemas/CouponUsageRequest' }
+                        examples:
+                            success:
+                                summary: Record usage for a known coupon
+                                value: { coupon_id: 1 }
+            responses:
+                '200':
+                    description: Usage recorded.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Usage recorded' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '500': { $ref: '#/components/responses/ServerError' }
+
+    /api/admin/coupons:
+        post:
+            tags: [Coupons]
+            x-apidog-status: designing
+            summary: Create a coupon (Admin)
+            description:
+                Auth required; role is not verified in the implementation.
+            security: [{ bearerAuth: [] }]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/CouponInput' }
+                        examples:
+                            success:
+                                summary: Valid coupon definition
+                                value:
+                                    {
+                                        code: 'SAVE10',
+                                        type: 'percent',
+                                        discount_value: 10,
+                                        min_order_amount: 200000,
+                                        expired_at: '2027-01-31',
+                                        max_uses_per_user: 1,
+                                    }
+            responses:
+                '200':
+                    description: Coupon created.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/IdMessage' }
+                            example: { message: 'Coupon created', id: 5 }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '500':
+                    description: DB error (e.g. duplicate `code`).
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+
+    /api/admin/coupons/{id}:
+        parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+        delete:
+            tags: [Coupons]
+            x-apidog-status: designing
+            summary: Delete a coupon (Admin)
+            security: [{ bearerAuth: [] }]
+            responses:
+                '200':
+                    description: Coupon deleted.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Coupon deleted' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '500': { $ref: '#/components/responses/ServerError' }
+
+    /api/admin/users:
+        get:
+            tags: [Admin]
+            x-apidog-status: designing
+            summary: List all users (Admin)
+            description:
+                Auth required; role is not verified in the implementation.
+            security: [{ bearerAuth: [] }]
+            responses:
+                '200':
+                    description: Array of users (password omitted).
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    { $ref: '#/components/schemas/AdminUser' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+
+    /api/admin/users/{id}:
+        parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+        delete:
+            tags: [Admin]
+            x-apidog-status: designing
+            summary: Delete a user (Admin)
+            description: |
+                Implementation does not verify admin role and does not prevent an
+                admin from deleting their own account (spec FR-19 defect). Always
+                returns 200 even when the id did not exist.
+            security: [{ bearerAuth: [] }]
+            responses:
+                '200':
+                    description: User deleted.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'User deleted' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+
+    /api/admin/orders:
+        get:
+            tags: [Admin]
+            x-apidog-status: designing
+            summary: List all orders (Admin)
+            security: [{ bearerAuth: [] }]
+            responses:
+                '200':
+                    description: Array of orders joined with user name.
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    { $ref: '#/components/schemas/AdminOrder' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+
+    /api/admin/orders/{id}/status:
+        parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+        put:
+            tags: [Admin]
+            x-apidog-status: designing
+            summary: Update order status (Admin)
+            description: |
+                Allowed transitions in the current implementation:
+
+                - `pending` → `confirmed` | `canceled`
+                - `confirmed` → `shipping` | `canceled`
+                - `shipping` → `delivered`
+                - `canceled` → `delivered` (bug — spec FR-10 forbids this;
+                  `canceled` and `delivered` should be final states)
+
+                All other transitions return `400 Invalid state transition`.
+            security: [{ bearerAuth: [] }]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            {
+                                $ref: '#/components/schemas/UpdateOrderStatusRequest',
+                            }
+                        examples:
+                            validTransition:
+                                summary: pending → confirmed (legal)
+                                value: { status: 'confirmed' }
+                            illegalTransition:
+                                summary:
+                                    pending → delivered (correctly rejected,
+                                    400)
+                                value: { status: 'delivered' }
+                            bugTransition:
+                                summary:
+                                    canceled → delivered (incorrectly allowed —
+                                    FR-10 defect; send against a canceled order)
+                                value: { status: 'delivered' }
+            responses:
+                '200':
+                    description: Status updated.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Message' }
+                            example: { message: 'Order status updated' }
+                '400':
+                    description: Requested transition is not allowed.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example:
+                                {
+                                    error:
+                                        'Invalid state transition from pending
+                                        to shipping',
+                                }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '404':
+                    description: Order not found.
+                    content:
+                        application/json:
+                            schema: { $ref: '#/components/schemas/Error' }
+                            example: { error: 'Order not found' }

@@ -1,0 +1,5 @@
+EShop SUT — Project Repository (T06, Group 12)
+https://github.com/SchoolCollab/ST_Seminar
+
+Reference SUT (upstream course repo, for comparison):
+https://github.com/ttbhanh/eshop-sut
