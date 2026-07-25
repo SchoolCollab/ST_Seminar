@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import apiClient from "../api/apiClient";
 import { useAuth } from "../context/AuthContext";
 
 export default function Profile() {
@@ -14,8 +14,8 @@ export default function Profile() {
   const fetchOrders = () => {
     if (!token) return;
 
-    axios
-      .get("http://localhost:3000/api/orders/my-orders", {
+    apiClient
+      .get("/api/orders/my-orders", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -46,8 +46,8 @@ export default function Profile() {
     }
 
     try {
-      await axios.put(
-        "http://localhost:3000/api/users/me",
+      await apiClient.put(
+        "/api/users/me",
         {
           name,
           phone,
@@ -65,8 +65,8 @@ export default function Profile() {
 
   const cancelOrder = async (orderId) => {
     try {
-      await axios.put(
-        `http://localhost:3000/api/orders/${orderId}/cancel`,
+      await apiClient.put(
+        `/api/orders/${orderId}/cancel`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import apiClient from "../api/apiClient";
 import { useCart } from "../context/CartContext";
 
 export default function ProductDetail() {
@@ -12,8 +12,8 @@ export default function ProductDetail() {
   const [clickCount, setClickCount] = useState(0);
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:3000/api/products/${id}`)
+    apiClient
+      .get(`/api/products/${id}`)
       .then((res) => setProduct(res.data))
       .catch((err) => console.error(err));
   }, [id]);

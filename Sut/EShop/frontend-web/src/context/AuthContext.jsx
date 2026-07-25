@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-import axios from "axios";
+import apiClient from "../api/apiClient";
 
 const AuthContext = createContext(null);
 
@@ -9,9 +9,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      axios
-        .get("http://localhost:3000/api/users/me")
+      apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      apiClient
+        .get("/api/users/me")
         .then((res) => {
           setUser(res.data);
         })
@@ -19,12 +19,12 @@ export const AuthProvider = ({ children }) => {
           logout();
         });
     } else {
-      delete axios.defaults.headers.common["Authorization"];
+      delete apiClient.defaults.headers.common["Authorization"];
     }
   }, [token]);
 
   const login = async (email, password) => {
-    const res = await axios.post("http://localhost:3000/api/login", {
+    const res = await apiClient.post("/api/login", {
       email,
       password,
     });

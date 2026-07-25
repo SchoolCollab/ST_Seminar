@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import apiClient from "../api/apiClient";
 import { useCart } from "../context/CartContext";
 
 export default function Home() {
@@ -12,8 +12,8 @@ export default function Home() {
   const fetchProducts = async (query = "") => {
     try {
       setErrorHtml("");
-      const res = await axios.get(
-        `http://localhost:3000/api/products?search=${query}`,
+      const res = await apiClient.get(
+        `/api/products?search=${query}`,
       );
       if (typeof res.data === "string" && res.data.includes("<h1>")) {
         setErrorHtml(res.data);

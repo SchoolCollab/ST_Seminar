@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../api/apiClient';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -20,7 +20,7 @@ export default function Register() {
     }
 
     try {
-      await axios.post('http://localhost:3000/api/register', { name, email, password });
+      await apiClient.post('/api/register', { name, email, password });
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.error || 'Đăng ký thất bại.');
