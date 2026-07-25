@@ -4,7 +4,7 @@
 
 This document tracks ways the **testing tooling** (Apidog, its AI generation,
 the OpenAPI import pipeline) misled or produced incorrect results during this
-project — as opposed to `EShop_Defect.md`, which tracks bugs in **EShop
+project — as opposed to `EShop_SUT_Quirks.md`, which tracks bugs in **EShop
 itself**. The distinction matters: this file is the source for the User Guide's
 required Failure Modes section (≥3 real ways the tool can mislead you).
 
@@ -86,19 +86,45 @@ request_, not just the response, before assuming the SUT is at fault.
 
 ---
 
-### FM-02 —
+### FM-02 — PactV3's Rust FFI crashes on regex matchers applied to headers
 
-**What happened.**
+**What happened.** Using `MatchersV3.regex(...)` on a header value —
+specifically the `Content-Type` response header and the `Authorization` request
+header — crashed the underlying Rust FFI layer that `@pact-foundation/pact`'s
+`PactV3` wraps, rather than failing gracefully or rejecting the matcher with a
+clear error.
 
-**Where it showed up.**
+**Where it showed up.** Writing consumer contract tests for `eshop-web` against
+the backend. Any interaction that tried to assert a header via regex (rather
+than an exact string) triggered the crash during test setup, before the mock
+server even received a request.
 
-**Why it's misleading.**
+**Why it's misleading.** The crash surfaces from a native binary layer, not from
+JavaScript, so the error is opaque compared to a normal Jest assertion failure —
+it looks like an environment or installation problem rather than a specific,
+narrow incompatibility between `PactV3` and header-level regex matchers
+specifically (matchers on body fields work fine).
 
-**Root cause.**
+**Root cause.** Not fully diagnosed — appears to be a real limitation or bug in
+the current `PactV3` FFI bindings' handling of regex matchers when applied to
+headers specifically, rather than a usage mistake. Not something a
+workaround-free fix was found for in the time available.
 
-**Resolution.**
+**Resolution.** Dropped regex matchers on both affected headers and used plain
+string literals instead. For `Authorization`, this is low-risk: the literal in
+the contract is a placeholder, and the provider verifier's `requestFilter`
+injects the real JWT at verification time regardless of what's recorded in the
+contract. For `Content-Type`, a plain literal is more brittle — it will fail if
+the server ever appends a charset suffix (e.g.
+`application/json; charset=utf-8`) — so this trade accepted some fragility to
+work around the crash.
 
-**Lesson for the User Guide.**
+**Lesson for the User Guide.** A testing tool's coverage of "the same feature"
+(matchers) is not always uniform across surfaces (body vs. header) — a technique
+that's fully supported on one part of a request/response can be broken on
+another, and the failure mode may look like an environment problem rather than a
+documented tool limitation. Worth checking whether a header assertion is truly
+necessary before spending time debugging what looks like a setup issue.
 
 ---
 
