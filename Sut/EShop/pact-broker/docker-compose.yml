@@ -1,0 +1,31 @@
+# Local Pact Broker for development.
+#
+#   docker compose -f Sut/EShop/pact-broker/docker-compose.yml up -d
+#   open http://localhost:9292   (admin / admin)
+#
+# For CI, prefer the PactFlow free tier — set PACT_BROKER_BASE_URL and
+# PACT_BROKER_TOKEN as GitHub secrets and skip this file entirely.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: pact
+      POSTGRES_PASSWORD: pact
+      POSTGRES_DB: pact
+    volumes:
+      - pact-postgres:/var/lib/postgresql/data
+
+  broker:
+    image: pactfoundation/pact-broker:latest
+    ports:
+      - "9292:9292"
+    depends_on:
+      - postgres
+    environment:
+      PACT_BROKER_DATABASE_URL: postgres://pact:pact@postgres/pact
+      PACT_BROKER_ALLOW_PUBLIC_READ: "true"
+      PACT_BROKER_BASIC_AUTH_USERNAME: admin
+      PACT_BROKER_BASIC_AUTH_PASSWORD: admin
+
+volumes:
+  pact-postgres:

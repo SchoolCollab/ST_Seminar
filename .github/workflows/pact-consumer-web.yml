@@ -1,0 +1,57 @@
+name: Pact Consumer (web)
+
+on:
+  push:
+    paths:
+      - "Sut/EShop/frontend-web/**"
+      - ".github/workflows/pact-consumer-web.yml"
+  pull_request:
+    paths:
+      - "Sut/EShop/frontend-web/**"
+
+jobs:
+  consumer:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Sut/EShop/frontend-web
+    env:
+      PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+      PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
+      GIT_SHA: ${{ github.sha }}
+      GIT_BRANCH: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: Sut/EShop/frontend-web/package-lock.json
+
+      - run: npm ci
+
+      - name: Generate pact files
+        run: npm run test:pact
+
+      - name: Publish pact to broker
+        if: env.PACT_BROKER_BASE_URL != ''
+        run: |
+          npx --yes @pact-foundation/pact-cli \
+            pact-broker publish ./pacts \
+            --consumer-app-version="$GIT_SHA" \
+            --branch="$GIT_BRANCH" \
+            --broker-base-url="$PACT_BROKER_BASE_URL" \
+            --broker-token="$PACT_BROKER_TOKEN"
+
+      - name: can-i-deploy
+        if: env.PACT_BROKER_BASE_URL != ''
+        continue-on-error: true # promoted to blocking in Iteration 3
+        run: |
+          npx --yes @pact-foundation/pact-cli \
+            pact-broker can-i-deploy \
+            --pacticipant eshop-web \
+            --version "$GIT_SHA" \
+            --to-environment production \
+            --broker-base-url="$PACT_BROKER_BASE_URL" \
+            --broker-token="$PACT_BROKER_TOKEN"
