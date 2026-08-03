@@ -23,7 +23,6 @@ describe('Products & Categories contract', () => {
             .withRequest({ method: 'GET', path: '/api/products' })
             .willRespondWith({
                 status: 200,
-                headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: M.eachLike(productLike),
             })
 
@@ -43,7 +42,6 @@ describe('Products & Categories contract', () => {
             .withRequest({ method: 'GET', path: '/api/products/1' })
             .willRespondWith({
                 status: 200,
-                headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: productLike,
             })
 
@@ -61,7 +59,6 @@ describe('Products & Categories contract', () => {
             .withRequest({ method: 'GET', path: '/api/categories' })
             .willRespondWith({
                 status: 200,
-                headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: M.eachLike({
                     id: M.integer(1),
                     name: M.string('Điện thoại'),

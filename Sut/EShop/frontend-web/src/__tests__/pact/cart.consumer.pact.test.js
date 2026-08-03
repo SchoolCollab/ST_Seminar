@@ -18,9 +18,6 @@ describe('Cart & Checkout contract', () => {
             })
             .willRespondWith({
                 status: 200,
-                headers: {
-                    'Content-Type': 'application/json; charset=utf-8',
-                },
                 body: M.like({ cart: [] }),
             })
 
@@ -52,9 +49,6 @@ describe('Cart & Checkout contract', () => {
             })
             .willRespondWith({
                 status: 200,
-                headers: {
-                    'Content-Type': 'application/json; charset=utf-8',
-                },
                 body: M.like({ message: 'Item added to cart' }),
             })
 
@@ -91,9 +85,6 @@ describe('Cart & Checkout contract', () => {
             })
             .willRespondWith({
                 status: 200,
-                headers: {
-                    'Content-Type': 'application/json; charset=utf-8',
-                },
                 body: {
                     message: M.string('Order placed'),
                     order_id: M.integer(1),

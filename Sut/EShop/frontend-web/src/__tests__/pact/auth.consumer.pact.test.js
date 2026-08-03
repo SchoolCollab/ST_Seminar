@@ -25,9 +25,6 @@ describe('Auth & Users contract', () => {
             })
             .willRespondWith({
                 status: 200,
-                headers: {
-                    'Content-Type': 'application/json; charset=utf-8',
-                },
                 body: {
                     message: M.string('User registered successfully'),
                     id: M.integer(1),
@@ -60,9 +57,6 @@ describe('Auth & Users contract', () => {
             })
             .willRespondWith({
                 status: 200,
-                headers: {
-                    'Content-Type': 'application/json; charset=utf-8',
-                },
                 body: {
                     message: M.string('Login successful'),
                     token: M.regex(/^[\w-]+\.[\w-]+\.[\w-]+$/, 'aaa.bbb.ccc'),
@@ -96,9 +90,6 @@ describe('Auth & Users contract', () => {
             })
             .willRespondWith({
                 status: 200,
-                headers: {
-                    'Content-Type': 'application/json; charset=utf-8',
-                },
                 // NOTE: `password` intentionally excluded — provider currently leaks it
                 // (see EShop_Defect.md). Failing verification here is a valid M6 hit.
                 body: {
@@ -140,9 +131,6 @@ describe('Auth & Users contract', () => {
             })
             .willRespondWith({
                 status: 200,
-                headers: {
-                    'Content-Type': 'application/json; charset=utf-8',
-                },
                 body: { message: M.string('Profile updated') },
             })
 
