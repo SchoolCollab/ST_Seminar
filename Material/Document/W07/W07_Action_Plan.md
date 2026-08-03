@@ -70,7 +70,7 @@ only slack left and it sits _after_ the graded event.
 | **M3**       | Document three real failure modes of the tooling.                                                                             | Partial — FM-01 (Apidog), FM-02 (Pact) logged            |
 | **M4**       | Reproduce the same scenario with the AI variant — generate tests from the OpenAPI spec, then diff hand-built vs AI-generated. | Deferred to Week 08 (local AI)                           |
 | **M5**       | Capture metrics: setup time, full-scenario run time, flake rate across N runs.                                                | Outstanding                                              |
-| **M6 (T06)** | One Pact provider verification against the EShop backend plus documented contract violations.                                 | **Done** — 9/10 interactions verified, 1 violation found |
+| **M6 (T06)** | One Pact provider verification against the EShop backend plus documented contract violations.                                 | **Done** — 8/10 interactions verified, 2 violations found |
 
 ## S3 scope this week and next
 
@@ -113,9 +113,11 @@ complete; Baseline and Automation carry over into Sunday and Monday.
       local pact file when `PACT_BROKER_BASE_URL` is unset).
 - [x] CI workflows for consumer publish and provider verify, plus a local broker
       `docker-compose.yml`.
-- [x] Result: **9/10 interactions verified**; 1 failure traced to an EShop
-      naming-convention inconsistency (`orderId` vs the otherwise-uniform
-      snake_case), logged in `EShop_Defect.md`.
+- [x] Result: **8/10 interactions verified**; 2 failures — `POST /api/checkout`
+      (contract `order_id` vs server `orderId`, surfacing a real
+      naming-convention inconsistency logged in `EShop_Defect.md`) and
+      `GET /api/cart` (contract `{cart:[]}` vs server/spec bare `[]`, a
+      contract-authoring mistake with no underlying defect).
 - [x] Log FM-02 — `PactV3`'s Rust FFI crashes on `MatchersV3.regex` applied to
       headers.
 

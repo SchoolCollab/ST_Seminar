@@ -180,12 +180,14 @@ M6 hits. (This discipline was not followed for the `checkout` interaction's
 `orderId` field name — see §6, which is why that interaction failed for a reason
 unrelated to true contract drift.)
 
-## 6. Result — 9/10 interactions verified
+## 6. Result — 8/10 interactions verified
 
-Running the consumer suite then the provider verifier: **9 of 10 interactions
-verified green**; one failed.
+Running the consumer suite then the provider verifier: **8 of 10 interactions
+verified green**; two failed. Both failures are contract-authoring errors
+(consumer contracts asserting a shape that never matched the server or the
+OpenAPI spec), not contract-drift findings.
 
-**The failing interaction: `POST /api/checkout`.** The contract asserted a field
+**Failing interaction 1: `POST /api/checkout`.** The contract asserted a field
 named `order_id`; the server returns `orderId`. This is **not a contract-drift
 finding** — the OpenAPI spec (`EShop_OpenApi.yaml`) already documented `orderId`
 correctly before this contract was written, so nothing changed between spec and
@@ -197,9 +199,22 @@ and `POST /api/products` both return `id`; `POST /api/checkout` returns
 inconsistency is logged as a genuine defect in `EShop_Defect.md`, under
 **Response conventions**, correctly attributed to how it was found.
 
+**Failing interaction 2: `GET /api/cart`.** The contract asserted a body shape
+of `{ cart: [] }` (object with a `cart` key holding the items); the server
+returns a bare array `[]`, and the OpenAPI spec's `Cart` schema is
+`type: array` — so the server matches the spec, and the contract was authored
+against an imagined wrapper that never existed. Same category as the checkout
+failure: a contract-side mistake, not implementation drift. Unlike the checkout
+case, this one does not surface a hidden defect — the API is uniform about
+returning collections as bare arrays (`GET /api/products`, `GET /api/categories`
+do the same). Left as-is deliberately, so §6 documents a second real
+contract-vs-spec authoring hit and the seminar has two failure paths to walk
+through (naming inconsistency vs shape mismatch), rather than being silently
+"fixed" by rewriting the contract to `M.like([])`.
+
 **A limitation of the desired-shape contracts, stated honestly:** both
 `GET /api/users/me` (excluding `password`) and `PUT /api/users/me` (excluding
-`role`) are currently among the 9 green — meaning Pact's `eachLike` matcher only
+`role`) are currently among the 8 green — meaning Pact's `eachLike` matcher only
 checks that the _expected_ fields are present with the right shape; it does not
 fail on _extra_, unlisted fields being present in the response. So these two
 contracts document the intended shape correctly, but they are not actually
@@ -288,7 +303,8 @@ scheduled to a specific week yet).
 ## 12. Seminar activity script (S6, ~7 minutes)
 
 1. Open the broker (or the local pact file) showing `eshop-web ↔ eshop-backend`,
-   currently green on 9/10 — call out the 10th and what it taught.
+   currently green on 8/10 — call out the 2 failing interactions and what each
+   taught (checkout `orderId` naming inconsistency, cart shape mismatch).
 2. On a fresh branch, rename a response field in `backend/server.js` (e.g.
    `price` → `unitPrice` on `GET /api/products`). Commit and push.
 3. Watch the provider-verify workflow fail on the Products interaction — the
