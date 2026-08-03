@@ -142,7 +142,7 @@ describe('Products contract', () => {
             .withRequest({ method: 'GET', path: '/api/products' })
             .willRespondWith({
                 status: 200,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: M.eachLike({
                     id: M.integer(1),
                     name: M.string('Product A'),
@@ -152,8 +152,7 @@ describe('Products contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            apiClient.defaults.baseURL = mock.url
-            const res = await apiClient.get('/api/products')
+            const res = await axios.get(`${mock.url}/api/products`)
             expect(res.status).toBe(200)
             expect(res.data[0]).toHaveProperty('id')
         })
@@ -161,9 +160,18 @@ describe('Products contract', () => {
 })
 ```
 
+**The tests call `axios` directly against `${mock.url}`, not through
+`apiClient`.** The `apiClient` refactor is real and did consolidate production
+call sites onto one `axios.create()` instance — but the Pact consumer tests
+bypass it and hit the mock server with raw axios calls instead. This means the
+contract tests don't exercise the same code path production traffic actually
+uses. Worth fixing at some point (route the tests through `apiClient` with
+`baseURL` overridden to `mock.url`), but flagged here rather than silently
+corrected, since it wasn't in scope for this verification pass.
+
 **Header assertions use plain string literals, not matchers** — see §7 (FM-02).
-`Content-Type: 'application/json'` above is a literal because `MatchersV3.regex`
-on a header crashes the underlying FFI.
+`Content-Type: 'application/json; charset=utf-8'` above is a literal, charset
+included, because `MatchersV3.regex` on a header crashes the underlying FFI.
 
 **Matcher discipline** — always use `M.integer`, `M.string`, `M.eachLike` on
 **body** fields. Avoid fixed literal values in body assertions; fixed values
@@ -189,6 +197,19 @@ and `POST /api/products` both return `id`; `POST /api/checkout` returns
 inconsistency is logged as a genuine defect in `EShop_Defect.md`, under
 **Response conventions**, correctly attributed to how it was found.
 
+**A limitation of the desired-shape contracts, stated honestly:** both
+`GET /api/users/me` (excluding `password`) and `PUT /api/users/me` (excluding
+`role`) are currently among the 9 green — meaning Pact's `eachLike` matcher only
+checks that the _expected_ fields are present with the right shape; it does not
+fail on _extra_, unlisted fields being present in the response. So these two
+contracts document the intended shape correctly, but they are not actually
+catching SEC-01 or SEC-06 as regressions right now — a fix to either defect
+would make the interaction pass (as intended), but so would leaving the defect
+exactly as it is, since the contract never asserted the field's _absence_. If
+closed-shape enforcement matters for the seminar's narrative, that needs an
+explicit "field must not be present" assertion, which is a different mechanism
+than `eachLike` provides.
+
 **Desired-shape contracts, verified correct:**
 
 - `GET /api/users/me`'s contract excludes `password` — EShop leaks it (SEC-01);
@@ -201,28 +222,41 @@ inconsistency is logged as a genuine defect in `EShop_Defect.md`, under
 **FM-02** (`EShop_Failure_Modes.md`): `PactV3`'s Rust FFI crashes when
 `MatchersV3.regex` is applied to a header value (`Content-Type` on responses,
 `Authorization` on requests), rather than failing gracefully. Worked around by
-using plain string literals on both headers. For `Authorization`, low-risk — the
-literal in the contract is a placeholder, and the verifier's `requestFilter`
-injects the real JWT at verification time regardless of what's recorded. For
-`Content-Type`, a literal is more brittle than a regex would have been — it will
-fail if the server ever appends a charset suffix.
+using plain string literals on both headers. For `Authorization`, confirmed
+low-risk — the literal in the contract is `Bearer placeholder.token.value`,
+never a real token, and the verifier's `requestFilter` injects the real JWT at
+verification time regardless of what's recorded. For `Content-Type`, the literal
+(`'application/json; charset=utf-8'`, charset included) is brittle in the
+direction of the charset ever being _dropped or changed_ by the server — not
+appended, as an earlier version of this document stated before the discrepancy
+was caught during a read-only verification pass.
 
-## 8. Outstanding housekeeping (not yet resolved)
+## 8. Outstanding housekeeping — verified status (as of Claude Code's read-only pass)
 
-- [ ] **Confirm the `Authorization` value committed to
-      `pacts/eshop-web-eshop-backend.json` is a placeholder string, not a real
-      signed JWT.** The verifier's `requestFilter` means a real token isn't
-      needed in the contract; if one was accidentally captured and committed,
-      that is a credential leaked to version control (and to a broker, if
-      published).
-- [ ] **Reconsider the plain-literal `Content-Type` assertion** given the
-      brittleness noted in §7 — the safer fix is dropping the header assertion
-      and relying on status + body shape, rather than keeping a literal that can
-      fail for cosmetic reasons.
-- [ ] **`backend/database.sqlite` was committed** during the
-      provider-prerequisite work. Now that `:memory:` covers test mode, this
-      file should be added to `.gitignore` and removed from tracking — a binary
-      DB file churns on every run and may contain test-account data.
+- [x] **`Authorization` value — confirmed clean, no action needed.** Every
+      interaction in the local pact file uses `Bearer placeholder.token.value`,
+      one distinct literal across all interactions — not a real JWT. `pacts/` is
+      fully gitignored (`frontend-web/.gitignore:27`) and `git ls-files`
+      confirms the pact file was never tracked. This item is closed.
+- [ ] **The `Content-Type` literal is genuinely brittle, but in the opposite
+      direction from how this document originally described it.** The literal
+      already includes the charset (`'application/json; charset=utf-8'`), so it
+      does not break if a charset gets _appended_ — it breaks if the charset is
+      ever _dropped or changed_. The fix is the same either way: drop the header
+      assertion and rely on status + body shape rather than pin an
+      environment-dependent string.
+- [ ] **`backend/database.sqlite` is confirmed tracked** — 36 KB binary, and
+      there is no `.gitignore` at all inside `Sut/EShop/backend/` (only a
+      repo-root one, which doesn't cover this path). Needs a new `.gitignore`
+      entry there plus `git rm --cached`. Before removing it: confirm whether
+      `npm start` outside `NODE_ENV=test` expects this file to pre-exist —
+      verification runs on `:memory:` so Pact itself is unaffected, but normal
+      local development might not be.
+
+**A new finding, not originally in this list:** the Pact consumer tests call
+`axios` directly against the mock server URL rather than routing through
+`apiClient` (see §5). Not a housekeeping blocker, but worth deciding whether to
+fix — flagged for a decision, not yet actioned.
 
 ## 9. Local broker (development only)
 
