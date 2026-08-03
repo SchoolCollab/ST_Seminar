@@ -111,13 +111,17 @@ headers specifically, rather than a usage mistake. Not something a
 workaround-free fix was found for in the time available.
 
 **Resolution.** Dropped regex matchers on both affected headers and used plain
-string literals instead. For `Authorization`, this is low-risk: the literal in
-the contract is a placeholder, and the provider verifier's `requestFilter`
-injects the real JWT at verification time regardless of what's recorded in the
-contract. For `Content-Type`, a plain literal is more brittle — it will fail if
-the server ever appends a charset suffix (e.g.
-`application/json; charset=utf-8`) — so this trade accepted some fragility to
-work around the crash.
+string literals instead. For `Authorization`, this is confirmed low-risk: every
+interaction uses the literal `Bearer placeholder.token.value` (never a real
+token, verified via a read-only check of the generated pact file), and the
+provider verifier's `requestFilter` injects the real JWT at verification time
+regardless of what's recorded in the contract. For `Content-Type`, the literal
+already includes the charset (`'application/json; charset=utf-8'`) — the
+brittleness runs the opposite way from what was first assumed here: it fails if
+the server ever _drops or changes_ the charset, not if one gets appended. Still
+a real trade-off accepted to work around the crash; the fix under consideration
+is dropping the header assertion entirely and relying on status + body shape
+instead.
 
 **Lesson for the User Guide.** A testing tool's coverage of "the same feature"
 (matchers) is not always uniform across surfaces (body vs. header) — a technique
