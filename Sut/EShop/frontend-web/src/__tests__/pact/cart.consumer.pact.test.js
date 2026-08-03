@@ -4,7 +4,7 @@
  * Cross-ref: EShop_Defect.md (checkout trusts client total_amount, does not clear cart).
  */
 const { provider, M } = require('./pact-setup')
-const axios = require('axios')
+const apiClient = require('../../api/apiClient').default
 
 describe('Cart & Checkout contract', () => {
     it("GET /api/cart returns the user's cart", async () => {
@@ -22,7 +22,8 @@ describe('Cart & Checkout contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.get(`${mock.url}/api/cart`, {
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.get('/api/cart', {
                 headers: { Authorization: 'Bearer placeholder.token.value' },
             })
             expect(res.status).toBe(200)
@@ -53,8 +54,9 @@ describe('Cart & Checkout contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.post(
-                `${mock.url}/api/cart`,
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.post(
+                '/api/cart',
                 {
                     id: 1,
                     name: 'iPhone 15 Pro Max',
@@ -92,8 +94,9 @@ describe('Cart & Checkout contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.post(
-                `${mock.url}/api/checkout`,
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.post(
+                '/api/checkout',
                 {
                     total_amount: 30000000,
                     shipping_address: '123 Le Loi, Q1, HCMC',

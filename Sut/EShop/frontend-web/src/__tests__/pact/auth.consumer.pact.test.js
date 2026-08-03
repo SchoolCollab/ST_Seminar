@@ -6,7 +6,7 @@
  * so the desired shape drives verification, not the current buggy shape.
  */
 const { provider, M } = require('./pact-setup')
-const axios = require('axios')
+const apiClient = require('../../api/apiClient').default
 
 describe('Auth & Users contract', () => {
     it('POST /api/register creates a new user', async () => {
@@ -32,7 +32,8 @@ describe('Auth & Users contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.post(`${mock.url}/api/register`, {
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.post('/api/register', {
                 name: 'Tester One',
                 email: 'tester.1@example.com',
                 password: 'TesterPass123!',
@@ -70,7 +71,8 @@ describe('Auth & Users contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.post(`${mock.url}/api/login`, {
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.post('/api/login', {
                 email: 'tester.1@example.com',
                 password: 'TesterPass123!',
             })
@@ -101,7 +103,8 @@ describe('Auth & Users contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.get(`${mock.url}/api/users/me`, {
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.get('/api/users/me', {
                 headers: { Authorization: 'Bearer placeholder.token.value' },
             })
             expect(res.status).toBe(200)
@@ -135,8 +138,9 @@ describe('Auth & Users contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.put(
-                `${mock.url}/api/users/me`,
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.put(
+                '/api/users/me',
                 {
                     name: 'Tester One',
                     phone: '0912345678',

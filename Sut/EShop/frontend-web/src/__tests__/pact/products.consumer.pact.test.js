@@ -4,7 +4,7 @@
  * Cross-ref: EShop_Apidog_TestCases.md §3, EShop_Defect.md (missing product returns {}+200).
  */
 const { provider, M } = require('./pact-setup')
-const axios = require('axios')
+const apiClient = require('../../api/apiClient').default
 
 describe('Products & Categories contract', () => {
     const productLike = {
@@ -27,7 +27,8 @@ describe('Products & Categories contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.get(`${mock.url}/api/products`)
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.get('/api/products')
             expect(res.status).toBe(200)
             expect(Array.isArray(res.data)).toBe(true)
             expect(res.data[0]).toHaveProperty('id')
@@ -46,7 +47,8 @@ describe('Products & Categories contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.get(`${mock.url}/api/products/1`)
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.get('/api/products/1')
             expect(res.status).toBe(200)
             expect(res.data).toHaveProperty('name')
         })
@@ -66,7 +68,8 @@ describe('Products & Categories contract', () => {
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.get(`${mock.url}/api/categories`)
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.get('/api/categories')
             expect(res.status).toBe(200)
             expect(res.data[0]).toHaveProperty('name')
         })
