@@ -201,16 +201,16 @@ inconsistency is logged as a genuine defect in `EShop_Defect.md`, under
 
 **Failing interaction 2: `GET /api/cart`.** The contract asserted a body shape
 of `{ cart: [] }` (object with a `cart` key holding the items); the server
-returns a bare array `[]`, and the OpenAPI spec's `Cart` schema is
-`type: array` — so the server matches the spec, and the contract was authored
-against an imagined wrapper that never existed. Same category as the checkout
-failure: a contract-side mistake, not implementation drift. Unlike the checkout
-case, this one does not surface a hidden defect — the API is uniform about
-returning collections as bare arrays (`GET /api/products`, `GET /api/categories`
-do the same). Left as-is deliberately, so §6 documents a second real
-contract-vs-spec authoring hit and the seminar has two failure paths to walk
-through (naming inconsistency vs shape mismatch), rather than being silently
-"fixed" by rewriting the contract to `M.like([])`.
+returns a bare array `[]`, and the OpenAPI spec's `Cart` schema is `type: array`
+— so the server matches the spec, and the contract was authored against an
+imagined wrapper that never existed. Same category as the checkout failure: a
+contract-side mistake, not implementation drift. Unlike the checkout case, this
+one does not surface a hidden defect — the API is uniform about returning
+collections as bare arrays (`GET /api/products`, `GET /api/categories` do the
+same). Left as-is deliberately, so §6 documents a second real contract-vs-spec
+authoring hit and the seminar has two failure paths to walk through (naming
+inconsistency vs shape mismatch), rather than being silently "fixed" by
+rewriting the contract to `M.like([])`.
 
 **A limitation of the desired-shape contracts, stated honestly:** both
 `GET /api/users/me` (excluding `password`) and `PUT /api/users/me` (excluding

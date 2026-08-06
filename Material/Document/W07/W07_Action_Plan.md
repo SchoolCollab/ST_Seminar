@@ -63,13 +63,13 @@ only slack left and it sits _after_ the graded event.
 
 ## S3 milestones
 
-| Milestone    | What it delivers                                                                                                              | Status                                                   |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| **M1**       | Install the tool and pass its official "hello world" — first successful request against a running SUT.                        | Partial — spec imported, environment and auth configured |
-| **M2**       | Run one end-to-end scenario against EShop with human-authored assertions (login → products → cart → orders).                  | Outstanding                                              |
-| **M3**       | Document three real failure modes of the tooling.                                                                             | Partial — FM-01 (Apidog), FM-02 (Pact) logged            |
-| **M4**       | Reproduce the same scenario with the AI variant — generate tests from the OpenAPI spec, then diff hand-built vs AI-generated. | Deferred to Week 08 (local AI)                           |
-| **M5**       | Capture metrics: setup time, full-scenario run time, flake rate across N runs.                                                | Outstanding                                              |
+| Milestone    | What it delivers                                                                                                              | Status                                                    |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| **M1**       | Install the tool and pass its official "hello world" — first successful request against a running SUT.                        | Partial — spec imported, environment and auth configured  |
+| **M2**       | Run one end-to-end scenario against EShop with human-authored assertions (login → products → cart → orders).                  | Outstanding                                               |
+| **M3**       | Document three real failure modes of the tooling.                                                                             | Partial — FM-01 (Apidog), FM-02 (Pact) logged             |
+| **M4**       | Reproduce the same scenario with the AI variant — generate tests from the OpenAPI spec, then diff hand-built vs AI-generated. | Deferred to Week 08 (local AI)                            |
+| **M5**       | Capture metrics: setup time, full-scenario run time, flake rate across N runs.                                                | Outstanding                                               |
 | **M6 (T06)** | One Pact provider verification against the EShop backend plus documented contract violations.                                 | **Done** — 8/10 interactions verified, 2 violations found |
 
 ## S3 scope this week and next
