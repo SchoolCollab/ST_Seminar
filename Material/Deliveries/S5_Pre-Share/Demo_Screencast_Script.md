@@ -90,7 +90,7 @@ order #5 in `W09_Action_Plan.md`).
 
 ### Segment 6 — Pact provider verifier: 8/10 green (0:45)
 
-- **On screen:** terminal in `Sut/EShop/backend/`, `npm run test:pact:verify`,
+- **On screen:** terminal in `Sut/EShop/backend/`, `npm run pact:verify`,
   output showing 8/10 pass and the two documented failures.
 - **Narration:**
 

@@ -173,7 +173,7 @@ describe('Products contract', () => {
 
 Run: `cd frontend-web && npm run test:pact`. A `pacts/*.json` file is generated.
 To verify the provider honors that file:
-`cd Sut/EShop/backend && npm run test:pact:verify`.
+`cd Sut/EShop/backend && npm run pact:verify`.
 
 ## 4. Advanced Usage
 

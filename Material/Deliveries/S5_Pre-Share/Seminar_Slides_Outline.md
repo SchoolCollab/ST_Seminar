@@ -110,7 +110,7 @@ a slide bullet or a speaker note; no bullet is decorative. **Session budget:**
 ### Slide 9 — Demo anchor: Pact provider verifier
 
 - Two runs, back to back:
-    - Green run: `npm run test:pact:verify` — 8/10 pass, 2 documented failures
+    - Green run: `npm run pact:verify` — 8/10 pass, 2 documented failures
       visible (don't hide them, they're teaching material).
     - Broken run: rename `price → unitPrice` in `server.js` (a one-line edit
       prepared on a separate branch), re-run — Products interaction now fails.
