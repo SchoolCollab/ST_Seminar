@@ -132,17 +132,50 @@ necessary before spending time debugging what looks like a setup issue.
 
 ---
 
-### FM-03 —
+### FM-03 — A transient Pact FFI crash presented as a code regression, and the diagnostic trail led to the wrong suspect first
 
-**What happened.**
+**What happened.** A single invocation of `npm run test:pact` crashed with
+`PACT CRASHED` errors across every interaction, citing builder methods (`given`,
+`withRequest`, `withStatus`, `withResponseBody`) as "invoked out of order." The
+crash truncated the pact file mid-write. The next command,
+`npm run pact:verify`, then failed with "Failed to parse Pact JSON" — a
+downstream symptom of the truncated file, not a separate problem.
 
-**Where it showed up.**
+**Where it showed up.** Reported during a routine status-report pass,
+immediately after a recent code change (routing the Pact consumer tests through
+`apiClient` instead of raw `axios`). The timing looked incriminating: the change
+had landed a few hours earlier, and the next recorded verification result showed
+a new failure that hadn't been there before.
 
-**Why it's misleading.**
+**Why it's misleading.** Two things pointed at the wrong cause simultaneously.
+First, the provider verifier's error message ("Failed to parse Pact JSON") reads
+like a data-format bug, not a symptom of an upstream crash — nothing in the
+message hints that the real failure happened one command earlier. Second, an
+initial isolation attempt — temporarily reverting the `apiClient` routing change
+and re-running — came back green, which looked like confirmation that the
+routing change was the cause. It wasn't: restoring the original code and
+re-running _also_ came back green, meaning the first run's failure was a one-off
+flake clearing on its own, not something the revert fixed. Five consecutive
+clean runs on the untouched code, with and without the routing change, with and
+without `--runInBand`, confirmed nothing was actually broken.
 
-**Root cause.**
+**Root cause.** Most likely a transient failure in `pact-js-core`'s Rust FFI
+handle at initialization on that one invocation — not reproducible, not tied to
+any code or dependency version. Environment-level, not code-level.
 
-**Resolution.**
+**Resolution.** No code changed. No dependency pinned. The fix, when this
+recurs, is simply to delete the stale/truncated pact file
+(`rm frontend-web/pacts/*.json`) and re-run — treating the crash as a flake to
+retry, not a regression to debug.
+
+**Lesson for the User Guide.** A single failing run is not evidence of a
+regression on its own — especially when the tool's own error trail points
+somewhere plausible but wrong (a JSON parse error blaming the file, not the
+process that truncated it), and especially when an isolation test's
+"confirmation" might just be a flake clearing rather than the change actually
+mattering. Reproduce a failure at least twice, on both sides of a suspected
+cause, before trusting an isolation result — one green run after a revert proves
+nothing if the original failure was never reproducible in the first place.
 
 **Lesson for the User Guide.**
 

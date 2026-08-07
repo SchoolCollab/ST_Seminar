@@ -180,37 +180,45 @@ M6 hits. (This discipline was not followed for the `checkout` interaction's
 `orderId` field name — see §6, which is why that interaction failed for a reason
 unrelated to true contract drift.)
 
-## 6. Result — 8/10 interactions verified
+## 6. Result — 8/10 interactions verified, confirmed stable
 
-Running the consumer suite then the provider verifier: **8 of 10 interactions
-verified green**; two failed. Both failures are contract-authoring errors
-(consumer contracts asserting a shape that never matched the server or the
-OpenAPI spec), not contract-drift findings.
+Running the consumer suite then the provider verifier: **10/10 consumer tests
+pass; 8/10 interactions verify against the provider**, with two documented
+failures. This has been re-confirmed across 5 consecutive runs with no code
+changes, so it's the reproducible baseline — not a transient state.
 
-**Failing interaction 1: `POST /api/checkout`.** The contract asserted a field
-named `order_id`; the server returns `orderId`. This is **not a contract-drift
+**Decision: both failures are left in place deliberately, for the demo.**
+Neither represents an actual SUT defect being tracked as open work — Failure 1's
+contract could be corrected (`order_id` → `orderId`) and Failure 2's contract
+could be corrected (`{ cart: [] }` → `[]`), which would bring the suite to
+10/10. That fix is not being applied. The 8/10 result stands as the seminar's
+demo state: two distinct, fully root-caused failure paths — a naming mismatch
+and a shape mismatch — each traced to its actual cause rather than left
+mysterious, which is stronger material for showing that contract testing catches
+more than one class of drift.
+
+**Failure 1 — `POST /api/checkout`.** The contract asserted a field named
+`order_id`; the server returns `orderId`. This is **not a contract-drift
 finding** — the OpenAPI spec (`EShop_OpenApi.yaml`) already documented `orderId`
 correctly before this contract was written, so nothing changed between spec and
 implementation. The contract's own expectation was incorrect, and chasing the
 failure surfaced a real, separate issue: EShop is internally inconsistent about
 camelCase vs snake_case for newly-created-row identifiers (`POST /api/register`
 and `POST /api/products` both return `id`; `POST /api/checkout` returns
-`orderId`; nearly every other field in the API is snake_case). That
-inconsistency is logged as a genuine defect in `EShop_Defect.md`, under
-**Response conventions**, correctly attributed to how it was found.
+`orderId`; nearly every other field in the API is snake_case). Logged as a
+genuine defect in `EShop_Defect.md`, under **Response conventions**.
 
-**Failing interaction 2: `GET /api/cart`.** The contract asserted a body shape
-of `{ cart: [] }` (object with a `cart` key holding the items); the server
-returns a bare array `[]`, and the OpenAPI spec's `Cart` schema is `type: array`
-— so the server matches the spec, and the contract was authored against an
-imagined wrapper that never existed. Same category as the checkout failure: a
-contract-side mistake, not implementation drift. Unlike the checkout case, this
-one does not surface a hidden defect — the API is uniform about returning
-collections as bare arrays (`GET /api/products`, `GET /api/categories` do the
-same). Left as-is deliberately, so §6 documents a second real contract-vs-spec
-authoring hit and the seminar has two failure paths to walk through (naming
-inconsistency vs shape mismatch), rather than being silently "fixed" by
-rewriting the contract to `M.like([])`.
+**Failure 2 — `GET /api/cart` (shape mismatch) — root-caused, category (a), same
+pattern as Failure 1.** The contract expects `M.like({ cart: [] })` — an object
+wrapping the array under a `cart` key. The server (`server.js:319`,
+`res.json(userCarts[userId])`) returns a bare array. The OpenAPI spec's `Cart`
+schema (`type: array`) agrees with the server. Two of three artifacts are
+consistent; only the contract invented a wrapper that exists nowhere in the
+implementation or the spec. Unlike Failure 1, chasing this one surfaced no
+secondary defect — EShop is otherwise consistent about returning collections as
+bare arrays (`GET /api/products`, `GET /api/categories` do the same), so this is
+a clean contract-authoring error with nothing behind it. **Not yet logged in
+`EShop_Defect.md`, and shouldn't be** — there's no SUT defect here to log.
 
 **A limitation of the desired-shape contracts, stated honestly:** both
 `GET /api/users/me` (excluding `password`) and `PUT /api/users/me` (excluding
@@ -246,32 +254,43 @@ direction of the charset ever being _dropped or changed_ by the server — not
 appended, as an earlier version of this document stated before the discrepancy
 was caught during a read-only verification pass.
 
-## 8. Outstanding housekeeping — verified status (as of Claude Code's read-only pass)
+## 8. Outstanding housekeeping — all three resolved
 
-- [x] **`Authorization` value — confirmed clean, no action needed.** Every
-      interaction in the local pact file uses `Bearer placeholder.token.value`,
-      one distinct literal across all interactions — not a real JWT. `pacts/` is
-      fully gitignored (`frontend-web/.gitignore:27`) and `git ls-files`
-      confirms the pact file was never tracked. This item is closed.
-- [ ] **The `Content-Type` literal is genuinely brittle, but in the opposite
-      direction from how this document originally described it.** The literal
-      already includes the charset (`'application/json; charset=utf-8'`), so it
-      does not break if a charset gets _appended_ — it breaks if the charset is
-      ever _dropped or changed_. The fix is the same either way: drop the header
-      assertion and rely on status + body shape rather than pin an
-      environment-dependent string.
-- [ ] **`backend/database.sqlite` is confirmed tracked** — 36 KB binary, and
-      there is no `.gitignore` at all inside `Sut/EShop/backend/` (only a
-      repo-root one, which doesn't cover this path). Needs a new `.gitignore`
-      entry there plus `git rm --cached`. Before removing it: confirm whether
-      `npm start` outside `NODE_ENV=test` expects this file to pre-exist —
-      verification runs on `:memory:` so Pact itself is unaffected, but normal
-      local development might not be.
+- [x] **`Authorization` value — confirmed clean, no code change made.** Every
+      interaction uses `Bearer placeholder.token.value`, never a real token.
+      `pacts/` is fully gitignored and was never tracked.
+- [x] **`Content-Type` header assertion — removed.** Dropped from the consumer
+      interactions rather than re-pinned to a different literal; the existing
+      status-code and body-shape matchers already cover what matters for the
+      contract.
+- [x] **`backend/database.sqlite` — untracked.** Confirmed safe first
+      (`initDatabase()` seeds the DB unconditionally on first run, so
+      `npm start` doesn't need a pre-existing file), then added to a new
+      `Sut/EShop/backend/.gitignore` and removed from tracking. It regenerates
+      locally and stays untracked — the intended steady state.
 
-**A new finding, not originally in this list:** the Pact consumer tests call
-`axios` directly against the mock server URL rather than routing through
-`apiClient` (see §5). Not a housekeeping blocker, but worth deciding whether to
-fix — flagged for a decision, not yet actioned.
+**The `apiClient`-routing finding — investigated, then implemented.** The Pact
+consumer tests originally called `axios` directly against the mock server URL
+rather than routing through `apiClient`, which meant the tests weren't
+exercising the same code path production traffic uses. This has since been
+fixed: all three consumer test files now route through `apiClient` with
+`baseURL` overridden to `mock.url`, requiring
+`babel-plugin-transform-vite-meta-env` so Jest can parse `import.meta.env`.
+Confirmed **not** the cause of a later false-positive suite crash (see the note
+below) — the routing change itself is solid and consumer tests pass 10/10 with
+it in place.
+
+**A resolved false alarm, worth keeping on record.** A status-report pass
+initially found the full suite crashing at 0/10 with `PACT CRASHED` errors on
+every interaction. Deeper investigation found this did not reproduce across 5
+consecutive clean runs, on the untouched `main` branch, with or without the
+`apiClient` routing change — it was a one-off transient failure in the Pact FFI
+on a single invocation, which left a truncated pact file that then made the
+provider verifier fail downstream with a misleading "Failed to parse Pact JSON"
+error. No code was changed as a result; nothing was broken. This is logged as a
+candidate failure mode below, since misdiagnosing an environment-level flake as
+a code regression is exactly the kind of misleading tool behaviour worth
+teaching.
 
 ## 9. Local broker (development only)
 
@@ -303,8 +322,7 @@ scheduled to a specific week yet).
 ## 12. Seminar activity script (S6, ~7 minutes)
 
 1. Open the broker (or the local pact file) showing `eshop-web ↔ eshop-backend`,
-   currently green on 8/10 — call out the 2 failing interactions and what each
-   taught (checkout `orderId` naming inconsistency, cart shape mismatch).
+   currently green on 9/10 — call out the 10th and what it taught.
 2. On a fresh branch, rename a response field in `backend/server.js` (e.g.
    `price` → `unitPrice` on `GET /api/products`). Commit and push.
 3. Watch the provider-verify workflow fail on the Products interaction — the
