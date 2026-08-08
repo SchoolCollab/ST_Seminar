@@ -1,20 +1,20 @@
-name: Pact Consumer (web)
+name: Pact Consumer (mobile)
 
 on:
     push:
         paths:
-            - 'Sut/EShop/frontend-web/**'
-            - '.github/workflows/pact-consumer-web.yml'
+            - 'Sut/EShop/frontend-mobile/**'
+            - '.github/workflows/pact-consumer-mobile.yml'
     pull_request:
         paths:
-            - 'Sut/EShop/frontend-web/**'
+            - 'Sut/EShop/frontend-mobile/**'
 
 jobs:
     consumer:
         runs-on: ubuntu-latest
         defaults:
             run:
-                working-directory: Sut/EShop/frontend-web
+                working-directory: Sut/EShop/frontend-mobile
         env:
             PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
             PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
@@ -27,7 +27,7 @@ jobs:
               with:
                   node-version: '20'
                   cache: npm
-                  cache-dependency-path: Sut/EShop/frontend-web/package-lock.json
+                  cache-dependency-path: Sut/EShop/frontend-mobile/package-lock.json
 
             - run: npm ci
 
@@ -50,7 +50,7 @@ jobs:
               run: |
                   npx --yes @pact-foundation/pact-cli \
                     pact-broker can-i-deploy \
-                    --pacticipant eshop-web \
+                    --pacticipant eshop-mobile \
                     --version "$GIT_SHA" \
                     --to-environment production \
                     --broker-base-url="$PACT_BROKER_BASE_URL" \
