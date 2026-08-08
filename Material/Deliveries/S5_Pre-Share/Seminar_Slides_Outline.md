@@ -72,13 +72,16 @@ a slide bullet or a speaker note; no bullet is decorative. **Session budget:**
 
 ### Slide 6 — M6 teaser (the finding)
 
-- **8 of 10 Pact interactions verified.** Two failed.
-    - Interaction 1: `POST /api/checkout` — contract asserted `order_id`; server
-      returns `orderId`. Surfaced a real, separate defect: EShop is internally
+- **34 of 38 Pact interactions verified across two consumers.** Four failed.
+    - `POST /api/checkout` — contract asserted `order_id`; server returns
+      `orderId`. Surfaced a real, separate defect: EShop is internally
       inconsistent about identifier casing.
-    - Interaction 2: `GET /api/cart` — contract asserted `{ cart: [] }`; server
-      (correctly per spec) returns `[]`. Contract-side authoring error, kept as
-      a second real failure path.
+    - Checkout evidence probe — a real frontend-shaped checkout stores
+      `shipping_address` as null.
+    - `POST /api/apply-coupon` — percent discount formula returns the wrong
+      `discount_amount` and `final_amount`.
+    - Admin STT-A-24 — `canceled → delivered` is accepted even though both states
+      should be terminal.
 - **Speaker note:** land on _"chasing a Pact failure taught us more than either
   passing case."_
 - **Timing:** 2 min.
@@ -110,13 +113,15 @@ a slide bullet or a speaker note; no bullet is decorative. **Session budget:**
 ### Slide 9 — Demo anchor: Pact provider verifier
 
 - Two runs, back to back:
-    - Green run: `npm run pact:verify` — 8/10 pass, 2 documented failures
+    - Baseline run: `npm run pact:verify` — 34/38 pass, 4 documented failures
       visible (don't hide them, they're teaching material).
     - Broken run: rename `price → unitPrice` in `server.js` (a one-line edit
-      prepared on a separate branch), re-run — Products interaction now fails.
-      Revert, re-run, green.
-- **Speaker note:** land on _"neither Apidog nor Apidog AI would catch this,
-  because both read the spec — and the spec would move with the code."_
+      prepared on a separate branch), re-run — Products interactions fail for
+      both `eshop-web` and `eshop-admin`. Revert, re-run, baseline restored.
+- **Speaker note:** land on _"`price` is shared by two real consumers. One
+  backend rename breaks both contracts before either consumer ships against it;
+  spec-based checks would only stay honest if the spec did not move with the
+  code."_
 - **Timing:** 3 min.
 
 ---
@@ -170,7 +175,7 @@ a slide bullet or a speaker note; no bullet is decorative. **Session budget:**
 
 - Deliverables layout: `Material/Deliveries/S5_Pre-Share/` (User Guide, screencast,
   worksheet, this deck).
-- FM log: `Material/Document/General/EShop_Failure_Modes.md`.
+- FM log: `Material/Document/SUT-Reference/EShop_Failure_Modes.md`.
 - Repo path to the Apidog project export and the Pact tests.
 - Contact + timing buffer.
 

@@ -89,7 +89,7 @@ used as inputs to human decisions, not committed as text.
 
 Substantial Copilot involvement:
 
-- `frontend-web/src/__tests__/pact/pact-setup.js` — boilerplate for `PactV3`
+- `frontend-web/tests/pact/pact-setup.js` — boilerplate for `PactV3`
   construction, log-level config.
 - Each `*.consumer.pact.test.js` — the `provider.given().uponReceiving()` chain
   skeleton and matcher usage. Every matcher chosen was verified against
@@ -104,16 +104,18 @@ Substantial Copilot involvement:
   replaced with a plain string literal after diagnosis.
 - Copilot's initial `POST /api/checkout` contract asserted `order_id`
   (snake_case, matching the rest of the API). The server returns `orderId`. This
-  was one of the 2/10 failures in M6 — surfaced a real camelCase inconsistency
-  defect in the SUT, logged in `EShop_Defect.md` under "Response conventions."
+  remains one of the four stable failures in the current 34/38 two-consumer Pact
+  baseline — surfaced a real camelCase inconsistency defect in the SUT, logged
+  in `EShop_Defect.md` under "Response conventions."
 
 ### 3.4 Where AI output was rejected outright
 
 - Multiple Claude drafts of the User Guide's "Introduction" section used the
   phrase "in this comprehensive guide" and similar filler. Removed by hand.
-- Claude proposed writing FM-03 based on a candidate that had not yet been
-  confirmed. Rejected — FM entries require observed evidence, not extrapolation.
-  FM-03 remains a pending slot in `EShop_Failure_Modes.md`.
+- Claude proposed writing a failure-mode entry based on a candidate that had not
+  yet been confirmed. Rejected — FM entries require observed evidence, not
+  extrapolation. The FM log now includes confirmed FM-03, FM-04, and FM-05
+  entries.
 - Claude proposed adding a "Best Practices" section to the User Guide. Rejected
   — the S1 rubric does not ask for it, and pre-cutting scope for the sake of a
   section header is a bad habit.

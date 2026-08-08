@@ -23,10 +23,11 @@ imported spec and produces test cases automatically. Answers: _how much of the
 manual work can we skip when the spec is complete?_
 
 **Pact (`@pact-foundation/pact`).** A consumer-driven contract testing
-framework. The frontend declares — as executable tests — the request shapes and
-response fields it depends on; the backend must keep proving them. Answers:
-_does the backend still honor the assumptions a real client makes about it,
-across changes that don't touch the spec?_
+framework. Two frontend consumers (`eshop-web` and `eshop-admin`) declare — as
+executable tests — the request shapes and response fields they depend on; the
+backend must keep proving them. Answers: _does the backend still honor the
+assumptions real clients make about it, across changes that don't touch the
+spec?_
 
 Apidog verifies "server matches spec today." Apidog AI inherits every gap the
 spec has. Neither notices when the backend silently changes a field the frontend
@@ -80,10 +81,10 @@ an auth bug. See §6, FM-01.
 Landed on `main` already; listed here so you can recognize them when reading the
 repo:
 
-- `frontend-web/src/api/apiClient.js` — a single `axios.create({ baseURL })`
-  instance. Every direct `axios` call in `pages/*` and `AuthContext.jsx` now
-  routes through it, so consumer tests can redirect requests to the Pact mock
-  server via `VITE_API_BASE_URL`.
+- `frontend-web/src/api/apiClient.js` and `frontend-admin/src/api/apiClient.js`
+  — single `axios.create({ baseURL })` instances. Every Pact consumer request
+  routes through the app's own client, so tests can redirect requests to the
+  Pact mock server without raw `axios` calls in the test body.
 - `backend/server.js` exports `app` (`module.exports = app`) and only calls
   `app.listen()` when executed directly — the provider verifier starts its own
   instance on an arbitrary port.
@@ -145,34 +146,39 @@ The consumer test declares what the frontend needs from `GET /api/products`:
 
 ```js
 const { provider, M } = require('./pact-setup')
-const axios = require('axios')
+const apiClient = require('../../src/api/apiClient').default
 
 describe('Products contract', () => {
-    it('GET /api/products returns a list', async () => {
+    it('GET /api/products?search= returns products on initial load', async () => {
         provider
             .given('at least one product exists')
-            .uponReceiving('a request for the product list')
-            .withRequest({ method: 'GET', path: '/api/products' })
+            .uponReceiving('an initial product-list request with empty search')
+            .withRequest({
+                method: 'GET',
+                path: '/api/products',
+                query: { search: '' },
+            })
             .willRespondWith({
                 status: 200,
-                headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: M.eachLike({
                     id: M.integer(1),
-                    name: M.string('Product A'),
-                    price: M.integer(100000),
+                    name: M.string('iPhone 15 Pro Max'),
+                    price: M.integer(30000000),
                     category_id: M.integer(1),
                 }),
             })
         await provider.executeTest(async mock => {
-            const res = await axios.get(`${mock.url}/api/products`)
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.get('/api/products?search=')
             expect(res.status).toBe(200)
         })
     })
 })
 ```
 
-Run: `cd frontend-web && npm run test:pact`. A `pacts/*.json` file is generated.
-To verify the provider honors that file:
+Run: `cd frontend-web && npm run test:pact`. The test files live under
+`frontend-web/tests/pact/`, and a `pacts/*.json` file is generated. To verify
+the provider honors the web and admin pact files:
 `cd Sut/EShop/backend && npm run pact:verify`.
 
 ## 4. Advanced Usage
@@ -231,10 +237,19 @@ broker-optional (falls back to reading the local pact file when
 `PACT_BROKER_BASE_URL` is unset). Confirm the CI job publishes the pact file
 before the verify step consumes it.
 
-**Apidog scenario shows every step green even though a middle step failed.**
-Candidate for FM-03 — verify whether scenario chaining silently continues after
-a failed assertion, or whether the failure actually halts downstream steps.
-Flagged in `EShop_Failure_Modes.md`, "Candidates to watch."
+**Pact verifier reports a malformed pact file after a consumer crash.** Delete
+the truncated pact file and rerun before concluding a code regression happened;
+FM-03 documents a one-off FFI crash that looked like a real break until repeat
+runs cleared it.
+
+**Pact consumer tests pass but the generated pact has missing interactions.**
+Check the generated interaction count. FM-04 documents a Jest worker race on
+Pact file writes; Pact consumer suites in this repo run with `maxWorkers: 1`.
+
+**Pact provider verification times out on a request with an empty body.** Check
+whether the body assertion represents real consumer data. FM-05 documents an
+empty-body `PUT /api/orders/{id}/cancel` assertion that tested no meaningful UI
+dependency and produced a timeout instead of a clean mismatch.
 
 ## 6. Failure Modes
 
@@ -276,28 +291,62 @@ time. For `Content-Type`, brittle if the server ever drops or changes the
 charset — consider dropping the header assertion entirely and relying on
 status + body shape.
 
-### FM-03 — _(pending — one of two candidates below closes this slot on Wednesday)_
+### FM-03 — A transient Pact FFI crash presented as a code regression
 
-**Candidates.** (a) Does Apidog AI generate a "valid" case that includes `role`
-in the body of `PUT /api/users/me`, i.e., validate SEC-06 as a feature? (b) Does
-Apidog's schema auto-check pass on the `{}`-with-200 response from
-`GET /api/products/:id` for a missing product? A third fallback (scenario
-chaining continues silently after a failed step) is held in reserve if neither
-AI candidate lands.
+**What happened.** One `npm run test:pact` invocation crashed with `PACT
+CRASHED` errors and truncated the pact file mid-write. The following provider
+verification failed with "Failed to parse Pact JSON", which was only a downstream
+symptom of the truncated file.
+
+**Why it's misleading.** The failure appeared immediately after an `apiClient`
+routing change, so the timing pointed at the wrong suspect. Reverting and
+rerunning once came back green, but restoring the original code also came back
+green; repeat runs showed the crash was not reproducible.
+
+**Resolution.** No code changed. Delete the stale pact file and rerun before
+treating a single unexpected Pact failure as a regression.
+
+### FM-04 — Parallel Jest workers can race Pact file writes
+
+**What happened.** `frontend-admin`'s first 16-test consumer suite passed, but
+the generated pact file contained only 7 interactions. Parallel Jest workers had
+written/merged the same consumer/provider pact file concurrently.
+
+**Why it's misleading.** The consumer suite can still be green, and the verifier
+appears to check a smaller contract rather than reporting a worker race.
+
+**Resolution.** Set `maxWorkers: 1` in both `frontend-admin/jest.config.mjs` and
+`frontend-web/jest.config.mjs`, then regenerate the pact and confirm the
+interaction count before verification.
+
+### FM-05 — Empty-body PUT assertions can cause misleading verifier timeouts
+
+**What happened.** A `PUT /api/orders/1/cancel` interaction asserted an explicit
+empty request body even though the real web UI sends no meaningful payload for
+cancel. Provider verification timed out rather than failing with a clear
+contract mismatch.
+
+**Why it's misleading.** The timeout looked like a Pact/provider hang, but the
+contract was really over-specified around an incidental empty body.
+
+**Resolution.** Omit empty-body and content-type assertions for this endpoint.
+Assert the consumer-visible behavior: method, path, auth, expected status, and
+response shape.
 
 ## 7. References
 
-- `Material/Document/W07/EShop_Apidog_Setup.md` — full Apidog runtime
+- `Material/Document/Apidog/EShop_Apidog_Setup.md` — full Apidog runtime
   configuration.
-- `Material/Document/W07/EShop_Apidog_Steps.md` — 13-step build recipe.
-- `Material/Document/W07/EShop_Apidog_TestCases.md` — per-endpoint case matrices
+- `Material/Document/Apidog/EShop_Apidog_Steps.md` — 13-step build recipe.
+- `Material/Document/Apidog/EShop_Apidog_TestCases.md` — per-endpoint case matrices
   with the assertion shorthand.
-- `Material/Document/W07/EShop_Pact_Plan.md` — Pact build record, iteration
-  scope, and the 8/10 verification result.
-- `Material/Document/General/EShop_Failure_Modes.md` — canonical FM log.
-- `Material/Document/General/EShop_Defect.md` — SUT defect catalogue (SEC-01,
-  SEC-06, FR-07, FR-08, camelCase `orderId`, `{}`-on-404, even-id price-type
-  quirk).
+- `Material/Document/Pact/EShop_Pact_Plan.md` — Pact build record, iteration
+  scope, and the current 34/38 two-consumer verification baseline.
+- `Material/Document/SUT-Reference/EShop_Failure_Modes.md` — canonical FM log.
+- `Material/Document/SUT-Reference/EShop_Defect.md` — SUT defect catalogue
+  (SEC-01, SEC-06, FR-07, FR-08, camelCase `orderId`, checkout
+  `shipping_address`, apply-coupon formula, admin STT-A-24, `{}`-on-404,
+  even-id price-type quirk).
 - `Sut/EShop/EShop_OpenApi.yaml` — spec under test.
 - Apidog docs: <https://docs.apidog.com/>.
 - Pact docs: <https://docs.pact.io/>.

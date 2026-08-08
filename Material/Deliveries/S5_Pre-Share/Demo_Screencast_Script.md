@@ -15,7 +15,7 @@ single sit-down at the end of Week 09.
 | 3   | Four-scenario matrix on `POST /api/cart` | 1:00     | Track A execution (tomorrow)        |
 | 4   | Apidog AI generation + diff              | 1:30     | Track B execution (Wednesday)       |
 | 5   | Pact consumer test passing               | 0:30     | Existing state — record any time    |
-| 6   | Pact provider verifier: 8/10 green       | 0:45     | Existing state — record any time    |
+| 6   | Pact provider verifier: 34/38 baseline   | 0:45     | Existing state — record any time    |
 | 7   | Pact broken-provider demo                | 0:45     | Track F, deliberately-broken branch |
 | 8   | Close                                    | 0:30     | Straight-to-cam                     |
 
@@ -88,29 +88,31 @@ order #5 in `W09_Action_Plan.md`).
     > from the backend, as an executable test. The consumer suite passes; a pact
     > file is generated.
 
-### Segment 6 — Pact provider verifier: 8/10 green (0:45)
+### Segment 6 — Pact provider verifier: 34/38 baseline (0:45)
 
 - **On screen:** terminal in `Sut/EShop/backend/`, `npm run pact:verify`,
-  output showing 8/10 pass and the two documented failures.
+  output showing 34/38 pass across `eshop-web` and `eshop-admin`, with the four
+  documented failures visible.
 - **Narration:**
 
-    > Eight of ten interactions verified. Two failures — not surprises, teaching
-    > material. Checkout: contract asserted `order_id`, server returns
-    > `orderId`. That failure surfaced a real inconsistency in the SUT. Cart:
-    > contract asserted a wrapper object, server returns a bare array.
-    > Contract-authoring error, kept for the second failure path.
+    > Thirty-four of thirty-eight interactions verified across two consumers.
+    > Four failures are teaching material, not surprises: checkout still returns
+    > `orderId` where the web contract expects `order_id`; a real checkout stores
+    > a null `shipping_address`; the coupon percent formula returns the wrong
+    > discount; and the admin state machine still accepts canceled to delivered.
 
 ### Segment 7 — Pact broken-provider demo (0:45)
 
 - **On screen:** VS Code, edit `server.js` to rename `price → unitPrice` on
-  `GET /api/products`. Save. Re-run the verifier. Products interaction now
-  fails. Revert. Re-run. Green.
+  `GET /api/products`. Save. Re-run provider verification and show the Products
+  interactions failing under both `eshop-web` and `eshop-admin`. Revert. Re-run
+  to return to the documented 34/38 baseline.
 - **Narration:**
 
-    > This is the segment neither Apidog nor Apidog AI would catch. Rename a
-    > response field. The spec would move in the same commit, so a spec-based
-    > test would keep passing. Pact fails, because the frontend still expects
-    > the old field. Revert, verify green, we're back.
+    > This is the segment neither Apidog nor Apidog AI would catch. `price` is a
+    > real field that both frontend-web and frontend-admin depend on. One rename
+    > in the provider, two broken consumer contracts, caught before either
+    > consumer ships against it. Revert, verify back to the baseline.
 
 ### Segment 8 — Close (0:30)
 
@@ -125,7 +127,7 @@ order #5 in `W09_Action_Plan.md`).
 ## 3. Recording checklist (before hitting record)
 
 - [ ] Backend running on `http://localhost:3000` with a seeded product (see
-      `W09_TrackA_Execution_Brief.md` §M1).
+      `Material/Document/Apidog/W09_TrackA_Execution_Brief.md` §M1).
 - [ ] Apidog `Local` environment active, `bearerToken` blank (each segment
       starts clean).
 - [ ] Terminal font size ≥ 16pt, VS Code font size ≥ 16pt.

@@ -222,6 +222,45 @@ run serially unless each worker writes a distinct pact file.
 
 ---
 
+### FM-05 — Empty-body PUT assertions can turn a non-semantic request detail into a misleading provider-verification timeout
+
+**What happened.** During the frontend-web Pact rebuild, provider verification
+timed out on a `PUT /api/orders/1/cancel` interaction that asserted an explicit
+empty request body. The real frontend calls the cancel endpoint without
+meaningful body data; the body assertion was not protecting a real consumer
+dependency.
+
+**Where it showed up.** The first corrected `eshop-web` order-cancel contract for
+`PUT /api/orders/{id}/cancel`. The consumer test itself could be made to pass
+against the mock server, but provider verification hung instead of returning a
+clean body-mismatch failure.
+
+**Why it's misleading.** The signal looked like Pact or the provider had stalled,
+not like an over-specified contract. Because the request body was `{}` rather
+than a business field the UI reads or sends intentionally, the timeout pushed the
+debugging path toward transport/tooling behavior instead of the simpler question:
+"does this body assertion represent a real consumer dependency?"
+
+**Root cause.** The contract asserted a request-body detail for an endpoint where
+the real consumer sends no meaningful payload. That over-specified the
+interaction around an implementation-neutral empty body and made provider
+verification brittle in a way that did not correspond to user-visible behavior.
+
+**Resolution.** Removed the empty-body and content-type assertions from the
+cancel-order interactions and routed the real request as
+`apiClient.put('/api/orders/1/cancel', undefined, { headers })`. The contract now
+asserts the behavior that matters to the consumer: authenticated cancel requests
+for the relevant order states return the expected status/body, without pinning a
+meaningless body shape.
+
+**Lesson for the User Guide.** Pact should assert the request data a consumer
+actually depends on, not incidental placeholders. Empty bodies on methods like
+`PUT` are especially easy to over-specify: if the UI is not deliberately sending
+business data, omit the body assertion and let the contract focus on path,
+method, auth, status, and response shape.
+
+---
+
 ## Candidates to watch for (not yet confirmed)
 
 Things flagged during setup as _possible_ future failure modes, worth
