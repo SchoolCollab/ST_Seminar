@@ -12,8 +12,20 @@ import {
   View,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
-
-const API_URL = "http://192.168.10.13:3000/api"; // IP LAN để chạy được trên iOS/Android và thiết bị thật
+import {
+  applyCoupon,
+  cancelOrder as cancelOrderRequest,
+  checkout,
+  getMyOrders,
+  getProduct,
+  getProducts,
+  login,
+  recordCouponUsage,
+  registerUser,
+  requestPasswordReset,
+  resetPassword,
+  updateCurrentUser,
+} from "./src/api/apiClient";
 
 const formatMoney = (value) => `${Number(value).toLocaleString()} ₫`;
 
@@ -85,14 +97,7 @@ export default function App() {
     setLoadingProducts(true);
     try {
       setErrorHtml("");
-      const response = await fetch(`${API_URL}/products?search=${query}`);
-      const text = await response.text();
-      let data = text;
-      try {
-        data = JSON.parse(text);
-      } catch (_) {
-        // Giữ nguyên HTML/string lỗi từ backend nếu có.
-      }
+      const { data } = await getProducts(query);
 
       if (typeof data === "string" && data.includes("<h1>")) {
         setErrorHtml(data);
@@ -117,8 +122,7 @@ export default function App() {
     setClickCount(0);
     setView("productDetail");
     try {
-      const response = await fetch(`${API_URL}/products/${id}`);
-      const data = await response.json();
+      const { data } = await getProduct(id);
       setProduct(data);
     } catch (error) {
       console.error(error);
@@ -171,10 +175,7 @@ export default function App() {
   const fetchOrders = async (currentToken = token) => {
     if (!currentToken) return;
     try {
-      const response = await fetch(`${API_URL}/orders/my-orders`, {
-        headers: { Authorization: `Bearer ${currentToken}` },
-      });
-      const data = await response.json();
+      const { data } = await getMyOrders(currentToken);
       const parsedOrders = Array.isArray(data) ? data : data.orders || [];
       setOrders(parsedOrders);
     } catch (error) {
@@ -186,13 +187,8 @@ export default function App() {
   const handleLogin = async () => {
     setLoginError("");
     try {
-      const response = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Đăng nhập thất bại.");
+      const { ok, data } = await login(email, password);
+      if (!ok) throw new Error(data.error || "Đăng nhập thất bại.");
 
       setToken(data.token);
       setUser(data.user);
@@ -219,17 +215,12 @@ export default function App() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: registerName,
-          email: registerEmail,
-          password: registerPassword,
-        }),
+      const { ok, data } = await registerUser({
+        name: registerName,
+        email: registerEmail,
+        password: registerPassword,
       });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Đăng ký thất bại.");
+      if (!ok) throw new Error(data.error || "Đăng ký thất bại.");
       Alert.alert("Thành công", "Đăng ký tài khoản thành công.");
       setEmail(registerEmail);
       setPassword("");
@@ -241,13 +232,8 @@ export default function App() {
 
   const handleForgotPasswordRequest = async () => {
     try {
-      const response = await fetch(`${API_URL}/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Không lấy được OTP.");
+      const { ok, data } = await requestPasswordReset(forgotEmail);
+      if (!ok) throw new Error(data.error || "Không lấy được OTP.");
       setForgotMessage(
         "Nếu email tồn tại trong hệ thống, mã OTP đã được gửi đến email của bạn.",
       );
@@ -269,13 +255,12 @@ export default function App() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail, resetToken, newPassword }),
+      const { ok } = await resetPassword({
+        email: forgotEmail,
+        resetToken,
+        newPassword,
       });
-      if (!response.ok)
-        throw new Error("Mã OTP không đúng hoặc có lỗi xảy ra.");
+      if (!ok) throw new Error("Mã OTP không đúng hoặc có lỗi xảy ra.");
       Alert.alert("Thành công", "Đổi mật khẩu thành công!");
       setView("login");
     } catch (error) {
@@ -293,15 +278,12 @@ export default function App() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/users/me`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name, phone, shippingAddress }),
+      const { ok } = await updateCurrentUser(token, {
+        name,
+        phone,
+        shippingAddress,
       });
-      if (!response.ok) throw new Error("Lỗi cập nhật");
+      if (!ok) throw new Error("Lỗi cập nhật");
       Alert.alert("Thành công", "Cập nhật thành công!");
       setUser({ ...user, name, phone, shipping_address: shippingAddress });
     } catch (error) {
@@ -311,16 +293,8 @@ export default function App() {
 
   const cancelOrder = async (orderId) => {
     try {
-      const response = await fetch(`${API_URL}/orders/${orderId}/cancel`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({}),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Không thể hủy đơn.");
+      const { ok, data } = await cancelOrderRequest(token, orderId);
+      if (!ok) throw new Error(data.error || "Không thể hủy đơn.");
       Alert.alert("Thành công", "Hủy đơn thành công!");
       fetchOrders(token);
     } catch (error) {
@@ -359,17 +333,12 @@ export default function App() {
     setCouponResult(null);
     setApplyingCoupon(true);
     try {
-      const response = await fetch(`${API_URL}/apply-coupon`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: couponCode.trim().toUpperCase(),
-          total_amount: cartTotal,
-          user_id: user?.id || null,
-        }),
+      const { ok, data } = await applyCoupon({
+        code: couponCode,
+        totalAmount: cartTotal,
+        userId: user?.id || null,
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Không thể áp dụng mã");
+      if (!ok) throw new Error(data.error || "Không thể áp dụng mã");
       setCouponResult(data);
     } catch (error) {
       setCouponError(error.message || "Không thể áp dụng mã");
@@ -381,30 +350,15 @@ export default function App() {
     setCheckoutLoading(true);
     try {
       const finalAmount = couponResult ? couponResult.final_amount : cartTotal;
-      const response = await fetch(`${API_URL}/checkout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          items: cart.length > 1 ? cart.slice(0, -1) : cart,
-          total_amount: finalAmount,
-          coupon_id: couponResult?.coupon_id || null,
-        }),
+      const { ok, data } = await checkout(token, {
+        items: cart.length > 1 ? cart.slice(0, -1) : cart,
+        totalAmount: finalAmount,
+        couponId: couponResult?.coupon_id || null,
       });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Lỗi khi thanh toán.");
+      if (!ok) throw new Error(data.error || "Lỗi khi thanh toán.");
 
       if (couponResult?.coupon_id && token) {
-        await fetch(`${API_URL}/coupon-usage`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ coupon_id: couponResult.coupon_id }),
-        });
+        await recordCouponUsage(token, couponResult.coupon_id);
       }
 
       setCheckoutSuccess(true);

@@ -41,6 +41,23 @@ async function seedTester() {
     return jwt.sign({ id, role: 'user' }, SECRET_KEY)
 }
 
+async function seedMobileTester() {
+    await reset()
+    const result = await run(
+        'INSERT INTO users (name, email, password, role, phone, shipping_address) VALUES (?, ?, ?, ?, ?, ?)',
+        [
+            'Mobile Tester',
+            'tester.mobile@example.com',
+            'MobilePass123!',
+            'user',
+            '0912345678',
+            '123 Le Loi, Q1, HCMC',
+        ]
+    )
+    const id = result.lastID
+    return jwt.sign({ id, role: 'user' }, SECRET_KEY)
+}
+
 async function seedAdmin() {
     await reset()
     return jwt.sign({ id: 1, role: 'admin' }, SECRET_KEY)
@@ -81,6 +98,10 @@ module.exports = {
         await seedTester()
     },
 
+    'mobile user tester.mobile@example.com exists': async () => {
+        await seedMobileTester()
+    },
+
     'user test@eshop.com exists': async () => {
         await reset()
     },
@@ -113,6 +134,11 @@ module.exports = {
 
     'authenticated as tester.1': async () => {
         const token = await seedTester()
+        return { token }
+    },
+
+    'authenticated as mobile tester': async () => {
+        const token = await seedMobileTester()
         return { token }
     },
 

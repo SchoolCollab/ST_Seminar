@@ -16,12 +16,12 @@ EShop, whose implementation diverges from its SRS in dozens of catalogued ways
 (see `Material/Document/SUT-Reference/EShop_Defect.md`), that distinction is the point: contract tests pin the
 _lived_ contract, not the aspirational one.
 
-**Status as of this submission: Iterations 1 and 2 complete.** Two consumers
-(`eshop-web` and `eshop-admin`), 26 total interactions, local broker-optional
-provider verification, and consumer CI workflows for both web and admin. The
-confirmed provider baseline is `eshop-web` 8/10 and `eshop-admin` 15/16.
-Iteration 3 (`frontend-mobile`) and a hard deployment gate are **not yet
-executed** — they remain planned, deferred rather than cancelled.
+**Status as of this submission: Iterations 1, 2, and 3 complete.** Three
+consumers (`eshop-web`, `eshop-admin`, and `eshop-mobile`), 40 total
+interactions, local broker-optional provider verification, and consumer CI
+workflows for web and admin. The confirmed provider baseline is `eshop-web`
+14/17, `eshop-admin` 20/21, and `eshop-mobile` 2/2 — **36/40 total**, with four
+documented provider failures. A hard deployment gate remains deferred.
 
 ## 1. Positioning within T06
 
@@ -62,7 +62,7 @@ can point at Pact's mock server.
   Provider states needing an admin token mint one directly via `jsonwebtoken`,
   not by exercising SEC-06 — this keeps the defect visible and unrelied-on.
 
-## 3. Scope — Iterations 1–2 complete, Iteration 3 pending
+## 3. Scope — Iterations 1–3 complete, hard gate pending
 
 **What was built in Iteration 1 (complete):**
 
@@ -90,22 +90,28 @@ can point at Pact's mock server.
   path triggers, cache keys, broker publishing, and advisory `can-i-deploy`
   output easy to read separately.
 
-**What remains to be executed:** a third consumer (`frontend-mobile`) and
-promoting `can-i-deploy` from advisory to a hard CI gate with
-`record-deployment` against a simulated production environment. These are not
-cancelled — they're part of the original plan and still intended — but they are
-not yet built, and no specific week is currently allocated to them.
+**What was built in Iteration 3 (complete):**
 
-**Why Iteration 1 was prioritized first.** Iterations 2 and 3 would have
-collided with Weeks 08–09, which are needed for the User Guide (20% of the
-seminar grade) and the S5 pre-share (a hard deadline three working days before
-the Week 10 seminar). Given Weeks 05–06 were lost to midterm exams and an
-outside commitment, S4/S5 took priority over extending Pact further this cycle.
-One consumer with 10 verified interactions and a working CI pipeline is already
-sufficient to teach and demonstrate consumer-driven contract testing for the
-seminar itself; `frontend-admin` and `frontend-mobile` remain planned follow-on
-work, to be picked up as schedule allows — before the seminar if time permits,
-or afterward otherwise.
+- Consumer: `frontend-mobile` (`eshop-mobile`).
+- 2 interactions, deliberately scoped narrowly after investigation showed 10 of
+  12 mobile backend calls overlapped `frontend-web`'s existing contract coverage
+  without a meaningful request/response-shape difference.
+- Plain API-client extraction and Node/Jest Pact tests only. React Native
+  component rendering, `jest-expo`, and Metro-specific test setup stayed out of
+  scope.
+- Provider verification now runs all three consumers sequentially so web, admin,
+  and mobile baselines remain visible separately.
+
+**What remains to be executed:** promoting `can-i-deploy` from advisory to a
+hard CI gate with `record-deployment` against a simulated production
+environment. This is still deferred and was not part of Iteration 3.
+
+**Why Iteration 1 was prioritized first.** Iterations 2 and 3 originally risked
+colliding with Weeks 08–09, which were needed for the User Guide (20% of the
+seminar grade) and the S5 pre-share. The project therefore started with one
+consumer and a working CI pipeline, then extended to `frontend-admin` and
+`frontend-mobile` only after the core contract-testing narrative was already
+stable.
 
 ## 4. Prerequisite refactors — landed
 
@@ -285,6 +291,46 @@ then run advisory `can-i-deploy` with `continue-on-error: true`. This keeps the
 hard deployment gate deferred; no consumer or provider gate has been promoted to
 blocking in Iteration 2.
 
+## 6b. Iteration 3 result — `frontend-mobile`: 2/2 verified, confirmed clean
+
+`frontend-mobile` adds a third consumer named `eshop-mobile`. The app is an Expo
+/ React Native project, but the Pact work intentionally avoided component
+testing. Its direct `fetch` calls were extracted into a plain API module with an
+overridable base URL, then tested under Node/Jest against Pact's mock server.
+
+The interaction set is intentionally small:
+
+- `POST /api/login` — asserts the mobile-specific fields read from login:
+  `user.phone` and `user.shipping_address`, which `frontend-web`'s login
+  contract did not need to assert.
+- `PUT /api/users/me` — asserts the real mobile request shape, including the
+  camelCase `shippingAddress` field the mobile app sends.
+
+The mobile consumer suite passes **2/2**, and provider verification passes
+**2/2**. Combined with the existing baselines, the current full Pact result is:
+
+- `eshop-web`: **14/17** verified, with three documented expected failures.
+- `eshop-admin`: **20/21** verified, with one documented expected failure.
+- `eshop-mobile`: **2/2** verified, no provider failures.
+
+Iteration 3 also surfaced two defects now logged in
+`Material/Document/SUT-Reference/EShop_Defect.md`:
+
+- Mobile profile update sends `shippingAddress`, while `server.js` reads
+  `shipping_address`. This is the second independent shipping-address
+  field-name failure found today, after the frontend-web checkout
+  `shipping_address` defect.
+- Mobile checkout sends
+  `items: cart.length > 1 ? cart.slice(0, -1) : cart`, silently dropping the
+  final cart item whenever the cart has more than one entry.
+
+No readback Pact interaction was added for the profile-update defect. The real
+mobile app does not call `GET /api/users/me`, and adding such an interaction
+would be orphaned coverage — the same mistake removed earlier from the
+frontend-web contract set. The profile-update Pact interaction therefore
+documents the real mobile request shape; the persistence defect is documented
+from source reading in `EShop_Defect.md`.
+
 ## 7. Failure modes logged
 
 **FM-02** (`Material/Document/SUT-Reference/EShop_Failure_Modes.md`): `PactV3`'s Rust FFI crashes when
@@ -357,7 +403,7 @@ Two GitHub Actions workflows exist: `pact-consumer-web.yml` (generate → publis
 → advisory `can-i-deploy`) and `pact-provider-backend.yml` (verify → advisory
 `can-i-deploy`, triggered on push and by a broker webhook). Both `can-i-deploy`
 steps are advisory (`continue-on-error`) — promoting either to a hard gate is
-part of the still-pending Iteration 3 and has not been built yet.
+still deferred and has not been built yet.
 
 ## 11. Cross-references
 

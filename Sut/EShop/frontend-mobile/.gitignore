@@ -26,6 +26,10 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 
+# Pact
+pacts/
+coverage/
+
 # macOS
 .DS_Store
 *.pem

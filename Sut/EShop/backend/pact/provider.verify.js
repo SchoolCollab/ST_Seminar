@@ -47,6 +47,13 @@ const consumers = [
             '../../frontend-admin/pacts/eshop-admin-eshop-backend.json'
         ),
     },
+    {
+        name: 'eshop-mobile',
+        localPact: path.resolve(
+            __dirname,
+            '../../frontend-mobile/pacts/eshop-mobile-eshop-backend.json'
+        ),
+    },
 ]
 
 function countInteractions(pactPath) {

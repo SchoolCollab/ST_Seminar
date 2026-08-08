@@ -66,6 +66,17 @@ locked_until, shipping_address` from `users`, but not `phone`. The admin
 frontend renders `u.phone` in its user table, so that column is always empty
 even when user phone data exists.
 
+**Mobile profile update sends `shippingAddress`, but the backend reads
+`shipping_address`.** `frontend-mobile/App.js:281–285` submits the profile form
+through the mobile API client with a camelCase `shippingAddress` value, while
+`server.js:143–146` destructures `shipping_address` and writes that missing
+snake_case value into `users.shipping_address`. The request can still return
+`200`, so the mobile UI appears to save the address while the database silently
+stores `NULL`/`undefined`. This is the second independent consumer-facing
+shipping-address naming failure found today: `frontend-web` checkout and
+`frontend-mobile` profile update hit unrelated endpoints, but both expose the
+same class of backend/API field-name carelessness.
+
 **`DELETE /api/admin/users/:id` always returns `200`.** `server.js:505`:
 callback ignores `err` and `this.changes`. No signal of failure or missing id.
 
@@ -152,6 +163,13 @@ orders created by the real `frontend-web` checkout flow silently persist a
 null/undefined shipping address. Found by correcting the Pact checkout contract
 to match the real consumer request shape; the older inaccurate contract had
 included `shipping_address` and therefore masked this integration bug.
+
+**Mobile checkout drops the last cart item when the cart has more than one
+item.** `frontend-mobile/App.js:353–355` sends
+`items: cart.length > 1 ? cart.slice(0, -1) : cart` to `POST /api/checkout`.
+For a cart with two or more entries, `slice(0, -1)` removes the final item before
+the request is sent, so a real mobile checkout silently omits a cart item. This
+is a consumer-side functional bug, not a useful provider contract expectation.
 
 **`PUT /api/orders/:id/cancel` allows cancelling a `shipping` order (FR-10).**
 `server.js:329`: guard is

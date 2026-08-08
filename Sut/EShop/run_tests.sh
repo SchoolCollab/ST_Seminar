@@ -4,7 +4,7 @@
 #
 # Usage: ./run_all_tests.sh
 # Run this script FROM Sut/EShop/ (the folder containing backend/,
-# frontend-web/, frontend-admin/).
+# frontend-web/, frontend-admin/, frontend-mobile/).
 
 set -uo pipefail
 
@@ -92,7 +92,7 @@ consumer_section_contains() {
 }
 
 run_provider_verification() {
-  local label="3/3 — backend provider verification (both consumers)"
+  local label="4/4 — backend provider verification (three consumers)"
   local output_file clean_file exit_code
 
   section "$label"
@@ -113,15 +113,19 @@ run_provider_verification() {
   local expected_web_failures=3
   local expected_admin_total=21
   local expected_admin_failures=1
+  local expected_mobile_total=2
+  local expected_mobile_failures=0
 
-  local web_total admin_total web_failures admin_failures
+  local web_total admin_total mobile_total web_failures admin_failures mobile_failures
   web_total="$(consumer_total_from_summary "eshop-web" "$clean_file")"
   admin_total="$(consumer_total_from_summary "eshop-admin" "$clean_file")"
+  mobile_total="$(consumer_total_from_summary "eshop-mobile" "$clean_file")"
   web_failures="$(consumer_failure_count "eshop-web" "$clean_file")"
   admin_failures="$(consumer_failure_count "eshop-admin" "$clean_file")"
+  mobile_failures="$(consumer_failure_count "eshop-mobile" "$clean_file")"
 
   if ! grep -q "Pact verification summary:" "$clean_file" ||
-     [[ -z "$web_total" || -z "$admin_total" ]]; then
+     [[ -z "$web_total" || -z "$admin_total" || -z "$mobile_total" ]]; then
     echo ""
     echo "FAILED: $label"
     echo "Provider verification did not reach a parseable Pact summary."
@@ -135,8 +139,10 @@ run_provider_verification() {
 
   [[ "$web_total" == "$expected_web_total" ]] || baseline_ok=0
   [[ "$admin_total" == "$expected_admin_total" ]] || baseline_ok=0
+  [[ "$mobile_total" == "$expected_mobile_total" ]] || baseline_ok=0
   [[ "$web_failures" == "$expected_web_failures" ]] || baseline_ok=0
   [[ "$admin_failures" == "$expected_admin_failures" ]] || baseline_ok=0
+  [[ "$mobile_failures" == "$expected_mobile_failures" ]] || baseline_ok=0
 
   consumer_section_contains "eshop-web" "a checkout request" "$clean_file" || baseline_ok=0
   consumer_section_contains "eshop-web" "order created by web checkout" "$clean_file" || baseline_ok=0
@@ -147,6 +153,7 @@ run_provider_verification() {
   echo "Parsed Pact provider baseline:"
   echo "- eshop-web: $((web_total - web_failures))/$web_total"
   echo "- eshop-admin: $((admin_total - admin_failures))/$admin_total"
+  echo "- eshop-mobile: $((mobile_total - mobile_failures))/$mobile_total"
 
   if [[ "$baseline_ok" -eq 1 ]]; then
     echo ""
@@ -160,8 +167,10 @@ run_provider_verification() {
   echo "BASELINE MISMATCH — investigate: $label"
   echo "Expected eshop-web: $((expected_web_total - expected_web_failures))/$expected_web_total"
   echo "Expected eshop-admin: $((expected_admin_total - expected_admin_failures))/$expected_admin_total"
+  echo "Expected eshop-mobile: $((expected_mobile_total - expected_mobile_failures))/$expected_mobile_total"
   echo "Actual eshop-web: $((web_total - web_failures))/$web_total"
   echo "Actual eshop-admin: $((admin_total - admin_failures))/$admin_total"
+  echo "Actual eshop-mobile: $((mobile_total - mobile_failures))/$mobile_total"
   echo "$NPM_CMD run pact:verify exit code: $exit_code"
   BASELINE_MISMATCH=1
   rm -f "$output_file" "$clean_file"
@@ -169,9 +178,9 @@ run_provider_verification() {
 }
 
 # Sanity check — must be run from Sut/EShop/, not some other directory.
-if [[ ! -d "backend" || ! -d "frontend-web" || ! -d "frontend-admin" ]]; then
+if [[ ! -d "backend" || ! -d "frontend-web" || ! -d "frontend-admin" || ! -d "frontend-mobile" ]]; then
   echo "ERROR: this script must be run from Sut/EShop/ — expected to find"
-  echo "backend/, frontend-web/, and frontend-admin/ in the current directory."
+  echo "backend/, frontend-web/, frontend-admin/, and frontend-mobile/ in the current directory."
   echo "Current directory: $ROOT_DIR"
   exit 1
 fi
@@ -180,7 +189,7 @@ echo "Running from: $ROOT_DIR"
 echo "Using npm command: $NPM_CMD"
 
 # 1. Consumer tests — frontend-web
-if ! run_step "1/3 — frontend-web consumer tests (eshop-web)" "frontend-web" "\"$NPM_CMD\" run test:pact --runInBand"; then
+if ! run_step "1/4 — frontend-web consumer tests (eshop-web)" "frontend-web" "\"$NPM_CMD\" run test:pact --runInBand"; then
   echo ""
   echo "Stopping — frontend-web's consumer tests failed. Provider verification"
   echo "would run against a stale or missing pact file, so it's skipped rather"
@@ -189,7 +198,7 @@ if ! run_step "1/3 — frontend-web consumer tests (eshop-web)" "frontend-web" "
 fi
 
 # 2. Consumer tests — frontend-admin
-if ! run_step "2/3 — frontend-admin consumer tests (eshop-admin)" "frontend-admin" "\"$NPM_CMD\" run test:pact --runInBand"; then
+if ! run_step "2/4 — frontend-admin consumer tests (eshop-admin)" "frontend-admin" "\"$NPM_CMD\" run test:pact --runInBand"; then
   echo ""
   echo "Stopping — frontend-admin's consumer tests failed. Provider verification"
   echo "would run against a stale or missing pact file, so it's skipped rather"
@@ -197,7 +206,16 @@ if ! run_step "2/3 — frontend-admin consumer tests (eshop-admin)" "frontend-ad
   exit 1
 fi
 
-# 3. Provider verification — verifies against both consumers' pact files.
+# 3. Consumer tests — frontend-mobile
+if ! run_step "3/4 — frontend-mobile consumer tests (eshop-mobile)" "frontend-mobile" "\"$NPM_CMD\" run test:pact --runInBand"; then
+  echo ""
+  echo "Stopping — frontend-mobile's consumer tests failed. Provider verification"
+  echo "would run against a stale or missing pact file, so it's skipped rather"
+  echo "than giving a misleading result."
+  exit 1
+fi
+
+# 4. Provider verification — verifies against all three consumers' pact files.
 # This step is expected to exit non-zero when the documented Pact baseline has
 # known provider failures. Parse the verifier output instead of treating the
 # raw exit code as the result.
@@ -209,7 +227,8 @@ section "SUMMARY"
 if [[ "$FAIL" -eq 0 ]]; then
   if [[ "$BASELINE_MISMATCH" -eq 0 ]]; then
     echo "All steps completed. Provider verification matched the documented"
-    echo "expected Pact baseline: 14/17 (eshop-web) and 20/21 (eshop-admin)."
+    echo "expected Pact baseline: 14/17 (eshop-web), 20/21 (eshop-admin),"
+    echo "and 2/2 (eshop-mobile)."
   else
     echo "All steps ran, but provider verification did not match the documented"
     echo "Pact baseline. Treat this as BASELINE MISMATCH — investigate."
