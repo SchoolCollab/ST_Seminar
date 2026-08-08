@@ -38,7 +38,7 @@ describe("frontend-mobile auth/profile Pact contract", () => {
             shipping_address: M.string("123 Le Loi, Q1, HCMC"),
           },
         },
-    });
+      });
 
     await provider.executeTest(async (mock) => {
       setApiBaseUrl(`${mock.url}/api`);

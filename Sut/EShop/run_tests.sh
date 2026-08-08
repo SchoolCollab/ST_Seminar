@@ -16,10 +16,13 @@ if [[ -n "${BASH:-}" && "$BASH" == */* ]]; then
   PATH="${BASH%/*}:$PATH"
 fi
 
-if command -v npm.cmd >/dev/null 2>&1; then
+if command -v npm >/dev/null 2>&1; then
+  NPM_CMD="npm"
+elif command -v npm.cmd >/dev/null 2>&1; then
   NPM_CMD="npm.cmd"
 else
-  NPM_CMD="npm"
+  echo "ERROR: npm was not found on PATH."
+  exit 1
 fi
 
 section() {
@@ -113,8 +116,8 @@ run_provider_verification() {
   local expected_web_failures=3
   local expected_admin_total=21
   local expected_admin_failures=1
-  local expected_mobile_total=2
-  local expected_mobile_failures=0
+  local expected_mobile_total=13
+  local expected_mobile_failures=1
 
   local web_total admin_total mobile_total web_failures admin_failures mobile_failures
   web_total="$(consumer_total_from_summary "eshop-web" "$clean_file")"
@@ -148,6 +151,7 @@ run_provider_verification() {
   consumer_section_contains "eshop-web" "order created by web checkout" "$clean_file" || baseline_ok=0
   consumer_section_contains "eshop-web" "SAVE10" "$clean_file" || baseline_ok=0
   consumer_section_contains "eshop-admin" "canceled order 1 as delivered" "$clean_file" || baseline_ok=0
+  consumer_section_contains "eshop-mobile" "SAVE10" "$clean_file" || baseline_ok=0
 
   echo ""
   echo "Parsed Pact provider baseline:"
@@ -228,7 +232,7 @@ if [[ "$FAIL" -eq 0 ]]; then
   if [[ "$BASELINE_MISMATCH" -eq 0 ]]; then
     echo "All steps completed. Provider verification matched the documented"
     echo "expected Pact baseline: 14/17 (eshop-web), 20/21 (eshop-admin),"
-    echo "and 2/2 (eshop-mobile)."
+    echo "and 12/13 (eshop-mobile)."
   else
     echo "All steps ran, but provider verification did not match the documented"
     echo "Pact baseline. Treat this as BASELINE MISMATCH — investigate."

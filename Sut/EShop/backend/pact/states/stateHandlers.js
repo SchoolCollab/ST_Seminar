@@ -248,6 +248,10 @@ module.exports = {
         await reset()
     },
 
+    'coupon SAVE10 exists for mobile checkout': async () => {
+        await reset()
+    },
+
     'authenticated user and coupon 1 exist': async () => {
         await reset()
         return { token: jwt.sign({ id: 2, role: 'user' }, SECRET_KEY) }

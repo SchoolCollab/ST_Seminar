@@ -226,14 +226,17 @@ run serially unless each worker writes a distinct pact file.
 
 **What happened.** During the frontend-web Pact rebuild, provider verification
 timed out on a `PUT /api/orders/1/cancel` interaction that asserted an explicit
-empty request body. The real frontend calls the cancel endpoint without
-meaningful body data; the body assertion was not protecting a real consumer
-dependency.
+empty request body. The same symptom later appeared independently while expanding
+`eshop-mobile`'s cancel-order contract, where the extracted mobile API client
+sent `JSON.stringify({})` even though the endpoint has no business request
+payload. In both cases, the body assertion was not protecting a meaningful
+consumer dependency.
 
-**Where it showed up.** The first corrected `eshop-web` order-cancel contract for
-`PUT /api/orders/{id}/cancel`. The consumer test itself could be made to pass
-against the mock server, but provider verification hung instead of returning a
-clean body-mismatch failure.
+**Where it showed up.** First in the corrected `eshop-web` order-cancel contract
+for `PUT /api/orders/{id}/cancel`, then independently in the `eshop-mobile`
+cancel-order interaction for the same endpoint. The consumer tests themselves
+could be made to pass against Pact's mock server, but provider verification hung
+instead of returning a clean body-mismatch failure.
 
 **Why it's misleading.** The signal looked like Pact or the provider had stalled,
 not like an over-specified contract. Because the request body was `{}` rather
@@ -242,16 +245,33 @@ debugging path toward transport/tooling behavior instead of the simpler question
 "does this body assertion represent a real consumer dependency?"
 
 **Root cause.** The contract asserted a request-body detail for an endpoint where
-the real consumer sends no meaningful payload. That over-specified the
-interaction around an implementation-neutral empty body and made provider
-verification brittle in a way that did not correspond to user-visible behavior.
+the consumers send no meaningful payload. That over-specified the interaction
+around an implementation-neutral empty body and made provider verification
+brittle in a way that did not correspond to user-visible behavior. The second
+mobile occurrence confirmed this is a general empty-body `PUT` assertion hazard,
+not a one-off quirk of the original web test file.
 
 **Resolution.** Removed the empty-body and content-type assertions from the
-cancel-order interactions and routed the real request as
-`apiClient.put('/api/orders/1/cancel', undefined, { headers })`. The contract now
-asserts the behavior that matters to the consumer: authenticated cancel requests
-for the relevant order states return the expected status/body, without pinning a
+cancel-order interactions. For `eshop-web`, the request is routed as
+`apiClient.put('/api/orders/1/cancel', undefined, { headers })`; for
+`eshop-mobile`, the extracted API client no longer sends `JSON.stringify({})`
+for cancel because the backend ignores `req.body` for this endpoint and the UI
+does not depend on an empty payload being present. The contracts now assert the
+behavior that matters to the consumers: authenticated cancel requests for the
+relevant order states return the expected status/body, without pinning a
 meaningless body shape.
+
+The mobile resolution used a different mechanical path from the original
+`eshop-web` resolution. The original pattern was "remove the assertion, not the
+client behavior": keep the real request intact and avoid asserting incidental
+empty bodies. In the mobile case, the empty body was removed from production
+client code only after checking both sides: `App.js` only calls
+`cancelOrderRequest(token, orderId)` and consumes the returned `{ ok, data }`,
+while `server.js`'s `PUT /api/orders/:id/cancel` handler never reads `req.body`.
+That made the empty object confirmed dead weight, so deleting it was safe. This
+should not be generalized to "delete whatever triggers the timeout"; if a future
+empty-body or small-body request carries meaningful consumer behavior, preserve
+the client behavior and narrow the Pact assertion instead.
 
 **Lesson for the User Guide.** Pact should assert the request data a consumer
 actually depends on, not incidental placeholders. Empty bodies on methods like

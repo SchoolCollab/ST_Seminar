@@ -107,7 +107,6 @@ export async function cancelOrder(token, orderId) {
   const response = await fetch(url(`/orders/${orderId}/cancel`), {
     method: "PUT",
     headers: jsonHeaders(token),
-    body: JSON.stringify({}),
   });
   const data = await jsonOrEmpty(response);
   return { ok: response.ok, status: response.status, data };
