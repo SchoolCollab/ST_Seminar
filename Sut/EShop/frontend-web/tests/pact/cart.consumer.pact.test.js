@@ -1,7 +1,8 @@
 /**
  * Consumer contract — Cart & Checkout.
  * Covers: POST /api/apply-coupon, POST /api/checkout, POST /api/coupon-usage.
- * Cross-ref: EShop_Defect.md (checkout trusts client total_amount, does not clear cart).
+ * Cross-ref: Material/Document/SUT-Reference/EShop_Defect.md
+ * (checkout trusts client total_amount, does not clear cart).
  */
 const { provider, M } = require('./pact-setup')
 const apiClient = require('../../src/api/apiClient').default

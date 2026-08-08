@@ -6,13 +6,13 @@ Step-by-step build of the Apidog project from `EShop_OpenApi.yaml` through a
 fully configured collection with the chained-token hook, per-endpoint scenarios,
 and multi-step flows. The end state is a project runnable green from a fresh
 environment in one click. Step 6/6a here establish the mechanics on one endpoint
-in full detail; `EShop_Apidog_TestCases.md` carries the same pattern through all
+in full detail; `Material/Document/Apidog/EShop_Apidog_TestCases.md` carries the same pattern through all
 31 operations with concrete case values, and is the file to work from for Step 7
 onward.
 
 Prerequisites: `EShop_OpenApi.yaml` on disk, EShop backend running at
 `http://localhost:3000`, two accounts registered against the running backend —
-one regular user, one promoted to admin (see `EShop_Apidog_Setup.md` or the
+one regular user, one promoted to admin (see `Material/Document/Apidog/EShop_Apidog_Setup.md` or the
 SEC-06 role-injection flow for how to promote).
 
 ## Step 1 — Import the OpenAPI file
@@ -134,7 +134,7 @@ now populated automatically.
 > correctly on its own, with no folder-level Auth override needed. Naming it
 > something else silently breaks auth on any endpoint bound to the Apidog
 > default, producing a 403 that looks like an auth-logic bug rather than a
-> naming mismatch. See `EShop_Failure_Modes.md`, FM-01.
+> naming mismatch. See `Material/Document/SUT-Reference/EShop_Failure_Modes.md`, FM-01.
 
 **C. Now send and verify.**
 
@@ -166,7 +166,7 @@ troubleshooting, remove it.
    `200 OK` with the product array, no Bearer header sent.
 3. If either fails, check the specific request's **Auth** tab — it should read
    either "Corresponding security scheme" (protected) or "Inherit from parent"
-   (public), not a stale per-request override. See `EShop_Failure_Modes.md`,
+   (public), not a stale per-request override. See `Material/Document/SUT-Reference/EShop_Failure_Modes.md`,
    FM-01, for the diagnosis path if a `403` appears here.
 
 ## Step 6 — Add the four-scenario matrix to one endpoint (`POST /api/cart`)
@@ -282,14 +282,14 @@ written. For Cases 2–4, use only the Status assertion and, where relevant, a
 body-field check for the `error` field's presence rather than an exact value
 (since error messages vary by case).
 
-4. Run all four cases. Log any deviations in `EShop_Defect.md`.
+4. Run all four cases. Log any deviations in `Material/Document/SUT-Reference/EShop_Defect.md`.
 
 ## Step 7 — Replicate the matrix for the other core endpoints
 
 Apply the same mechanics from Step 6/6a — case creation, category selection,
 Response validation toggle, Assertion post-processors — to every remaining
 endpoint. The concrete case names, bodies, auth, and expected status for **all
-31 operations** are in `EShop_Apidog_TestCases.md`; that file is the reference
+31 operations** are in `Material/Document/Apidog/EShop_Apidog_TestCases.md`; that file is the reference
 to work through here, endpoint by endpoint. It also flags which expected
 outcomes are known SUT defects (so a "wrong-looking" 200 is often the _correct_
 thing to assert) and which are unconfirmed and worth verifying as you go.
@@ -368,7 +368,7 @@ The first multi-step scenario. Uses Apidog **Test Scenarios** to chain requests.
    since the OpenAPI spec has no way to express "must be admin" — only "must
    have a valid token." Functionally either token would work here too, since the
    SUT doesn't check role on admin endpoints (a documented defect — see
-   `EShop_Defect.md`), but using `{{adminToken}}` demonstrates the intended flow
+   `Material/Document/SUT-Reference/EShop_Defect.md`), but using `{{adminToken}}` demonstrates the intended flow
    rather than relying on the bug.
     1. `{ "status": "confirmed" }` → assert 200.
     2. `{ "status": "shipping" }` → assert 200.
@@ -386,7 +386,7 @@ The first multi-step scenario. Uses Apidog **Test Scenarios** to chain requests.
     3. Assert `final_amount = total_amount − discount_amount` (the script
        assertion from Step 8).
 3. Record the actual `final_amount` returned. The percent-formula defect will
-   surface here — document the observed values verbatim in `EShop_Defect.md` and
+   surface here — document the observed values verbatim in `Material/Document/SUT-Reference/EShop_Defect.md` and
    in the User Guide's Failure Modes section.
 
 ## Step 12 — Cold-run verification
@@ -403,7 +403,7 @@ The final gate before Step 13's export.
       schema-matching error body.
     - All three scenarios complete without human intervention.
 4. Any deviation is either an Apidog misconfiguration (fix it here) or a SUT
-   defect (log it in `EShop_Defect.md`, do not "fix" the test to pass).
+   defect (log it in `Material/Document/SUT-Reference/EShop_Defect.md`, do not "fix" the test to pass).
 
 ## Step 13 — Export and back up
 

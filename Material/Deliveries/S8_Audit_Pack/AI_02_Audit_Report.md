@@ -25,7 +25,7 @@ honest about the shape of the AI dependency):
   to build the project; it is _the object of study_ for M4 and for the seminar's
   central diff table. Its outputs are recorded in §5, not §3.
 - **Ollama / any local LLM.** Not used this cycle — deliberately deferred out of
-  scope, per `W07_Action_Plan.md`.
+  scope, per `Material/Document/Planning/W07_Action_Plan.md`.
 
 **Rule.** No AI-generated text goes into the User Guide unedited (auto-penalty
 per S1 rubric). Verified in §3.4 below by reading the final User Guide against
@@ -38,11 +38,11 @@ explicitly logged as unverified in this document.
 Full transcripts are not committed. Representative categories of prompts, in
 order of frequency:
 
-1. **Document synthesis.** _"Read `EShop_Apidog_Setup.md`, `EShop_Apidog_
+1. **Document synthesis.** _"Read `Material/Document/Apidog/EShop_Apidog_Setup.md`, `EShop_Apidog_
    Steps.md`, `EShop*Pact_Plan.md`, and draft the User Guide's Installation
    section transcribed from them — no new claims, no filler."*
-2. **Cross-document consistency review.** _"Reread `EShop_Defect.md` and
-   `EShop_Apidog_TestCases.md` — for every defect in the former, does the latter
+2. **Cross-document consistency review.** _"Reread `Material/Document/SUT-Reference/EShop_Defect.md` and
+   `Material/Document/Apidog/EShop_Apidog_TestCases.md` — for every defect in the former, does the latter
    have a defect-demo case that pins the observed outcome?"_
 3. **Code reading + expected-outcome derivation.** _"Read `backend/server. js`
    lines 322–341 and tell me, per case in the POST /api/cart matrix, what the
@@ -63,21 +63,21 @@ verification step (see §3.3).
 
 Sections drafted with substantial Claude assistance:
 
-- `Material/Document/W07/W09_Action_Plan.md` — draft written by Claude after
+- `Material/Document/Planning/W09_Action_Plan.md` — draft written by Claude after
   conversation-time context loading; edited by hand for calendar correction
   ("actually, this is Week 9") and tone.
-- `Material/Document/W07/W09_TrackA_Execution_Brief.md` — draft written by
+- `Material/Document/Apidog/W09_TrackA_Execution_Brief.md` — draft written by
   Claude from a directed reading of `server.js`; every line reference in the
   brief was cross-checked against the actual file.
 - `Material/Deliveries/S5_Pre-Share/User_Guide.md` — draft written by Claude from the
-  source-document map in `W09_Action_Plan.md` §Track E. Each transcribed passage
+  source-document map in `Material/Document/Planning/W09_Action_Plan.md` §Track E. Each transcribed passage
   traces to a specific source paragraph.
 
 **Verification steps.** For each of the above: (a) every claim about `server.js`
 behavior was checked against the file at the cited line range; (b) every claim
-about Apidog UI behavior was checked against `EShop_Apidog_Setup.md` and
-`EShop_Apidog_Steps.md`; (c) every claim about the Pact runs was checked against
-`EShop_Pact_Plan.md` §6 and §7.
+about Apidog UI behavior was checked against `Material/Document/Apidog/EShop_Apidog_Setup.md` and
+`Material/Document/Apidog/EShop_Apidog_Steps.md`; (c) every claim about the Pact runs was checked against
+`Material/Document/Pact/EShop_Pact_Plan.md` §6 and §7.
 
 ### 3.2 Claude — read-only analysis
 
@@ -106,7 +106,7 @@ Substantial Copilot involvement:
   (snake_case, matching the rest of the API). The server returns `orderId`. This
   remains one of the four stable failures in the current 34/38 two-consumer Pact
   baseline — surfaced a real camelCase inconsistency defect in the SUT, logged
-  in `EShop_Defect.md` under "Response conventions."
+  in `Material/Document/SUT-Reference/EShop_Defect.md` under "Response conventions."
 
 ### 3.4 Where AI output was rejected outright
 
@@ -143,6 +143,7 @@ corresponding hand-built case, and the diff itself is a seminar deliverable. See
 - `[AI-04]` reflective statement (300 words) — draft complete except for the
   live-seminar reflection sub-section.
 - Primary sources verified against: `Sut/EShop/backend/server.js`,
-  `Sut/EShop/EShop_OpenApi.yaml`, `EShop_Defect.md`, `EShop_Failure_Modes. md`,
-  `EShop_Apidog_Setup.md`, `EShop_Apidog_Steps.md`, `EShop_Apidog_TestCases.md`,
-  `EShop_Pact_Plan.md`.
+  `Sut/EShop/EShop_OpenApi.yaml`, `Material/Document/SUT-Reference/EShop_Defect.md`,
+  `Material/Document/SUT-Reference/EShop_Failure_Modes.md`,
+  `Material/Document/Apidog/EShop_Apidog_Setup.md`, `Material/Document/Apidog/EShop_Apidog_Steps.md`, `Material/Document/Apidog/EShop_Apidog_TestCases.md`,
+  `Material/Document/Pact/EShop_Pact_Plan.md`.

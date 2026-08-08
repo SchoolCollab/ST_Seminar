@@ -13,7 +13,7 @@ running server matches an OpenAPI spec at a chosen moment. Pact verifies that
 headers, and the response fields the UI reads — remain valid across backend
 changes, without frontend and backend having to run together. For an SUT like
 EShop, whose implementation diverges from its SRS in dozens of catalogued ways
-(see `EShop_Defect.md`), that distinction is the point: contract tests pin the
+(see `Material/Document/SUT-Reference/EShop_Defect.md`), that distinction is the point: contract tests pin the
 _lived_ contract, not the aspirational one.
 
 **Status as of this submission: Iteration 1 complete.** One consumer
@@ -28,7 +28,7 @@ deployment gate) — described as future work in the original version of this pl
 | --------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | S1 proposal     | Third tool, alongside Apidog + Apidog AI | Justified against Spring Cloud Contract / Specmatic                                                  |
 | S3 milestone M5 | Metrics                                  | Setup time, verification duration, interaction count                                                 |
-| S3 milestone M6 | Contract violations                      | Primary source — the one failing interaction, cross-referenced to `EShop_Defect.md`                  |
+| S3 milestone M6 | Contract violations                      | Primary source — the one failing interaction, cross-referenced to `Material/Document/SUT-Reference/EShop_Defect.md`                  |
 | S4 user guide   | Screencast segment                       | "When Apidog is not enough — CDC with Pact"                                                          |
 | S8 AI audit     | AI-02/03/04                              | Two AI tools in scope: Claude (documents, planning, review) and GitHub Copilot (Pact implementation) |
 
@@ -43,7 +43,7 @@ must keep proving it.
 
 **Provider:** `Sut/EShop/backend/` — Node.js, Express, SQLite. 31 operations
 across 24 paths (`EShop_OpenApi.yaml`). `SECRET_KEY` is hard-coded and JWTs
-never expire — a documented defect (`EShop_Defect.md`); Pact does not "fix" it,
+never expire — a documented defect (`Material/Document/SUT-Reference/EShop_Defect.md`); Pact does not "fix" it,
 and provider states deliberately do not depend on this defect.
 
 **Consumer used:** `frontend-web` — React, `axios`. All hard-coded
@@ -182,7 +182,7 @@ failure surfaced a real, separate issue: EShop is internally inconsistent about
 camelCase vs snake_case for newly-created-row identifiers (`POST /api/register`
 and `POST /api/products` both return `id`; `POST /api/checkout` returns
 `orderId`; nearly every other field in the API is snake_case). That
-inconsistency is logged as a genuine defect in `EShop_Defect.md`, under
+inconsistency is logged as a genuine defect in `Material/Document/SUT-Reference/EShop_Defect.md`, under
 **Response conventions**, correctly attributed to how it was found.
 
 **Desired-shape contracts, verified correct:**
@@ -194,7 +194,7 @@ inconsistency is logged as a genuine defect in `EShop_Defect.md`, under
 
 ## 7. Failure modes logged
 
-**FM-02** (`EShop_Failure_Modes.md`): `PactV3`'s Rust FFI crashes when
+**FM-02** (`Material/Document/SUT-Reference/EShop_Failure_Modes.md`): `PactV3`'s Rust FFI crashes when
 `MatchersV3.regex` is applied to a header value (`Content-Type` on responses,
 `Authorization` on requests), rather than failing gracefully. Worked around by
 using plain string literals on both headers. For `Authorization`, low-risk — the
@@ -240,12 +240,12 @@ planned.
 ## 11. Cross-references
 
 **Reads from:** `EShop_OpenApi.yaml` (response shapes),
-`EShop_Apidog_TestCases.md` (case-name overlap where relevant),
-`EShop_Defect.md` (every defect referenced here traces to an entry there).
+`Material/Document/Apidog/EShop_Apidog_TestCases.md` (case-name overlap where relevant),
+`Material/Document/SUT-Reference/EShop_Defect.md` (every defect referenced here traces to an entry there).
 
-**Updates:** `EShop_Failure_Modes.md` (FM-02 added here), `EShop_Defect.md` (the
-naming-convention entry added from §6), `W07_Action_Plan.md` /
-`W08_Action_Plan.md` (M6 marked done; Pact scope frozen).
+**Updates:** `Material/Document/SUT-Reference/EShop_Failure_Modes.md` (FM-02 added here), `Material/Document/SUT-Reference/EShop_Defect.md` (the
+naming-convention entry added from §6), `Material/Document/Planning/W07_Action_Plan.md` /
+`Material/Document/Planning/W08_Action_Plan.md` (M6 marked done; Pact scope frozen).
 
 ## 12. Seminar activity script (S6, ~7 minutes)
 

@@ -169,7 +169,7 @@ write this case.
 generated assertion is `Status=404` — the spec-implied behavior. The SUT
 actually returns `Status=200` with `{}`. The case runs **red** for the wrong
 reason: the assertion is right by the spec but the SUT is quirky. A human
-writing the case with `EShop_Defect.md` in view would either write the
+writing the case with `Material/Document/SUT-Reference/EShop_Defect.md` in view would either write the
 defect-demo case (`Status=200; Body:$ Equals {}`) or add a comment
 distinguishing spec-conformance from SUT-observed behavior.
 

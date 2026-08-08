@@ -20,7 +20,7 @@
   before any spec-driven tooling could be used.
 - Added named request examples per endpoint and `x-apidog-status` lifecycle tags
   to all 31 operations, so Apidog pre-populates request bodies on import.
-- Compiled `EShop_Defect.md` — a catalogue of every observed deviation between
+- Compiled `Material/Document/SUT-Reference/EShop_Defect.md` — a catalogue of every observed deviation between
   EShop's implementation and either its SRS (FR-/SEC- rules) or standard REST
   convention, each entry citing a `server.js` line number.
 - Set up the Apidog project: imported the spec, configured the `Local`
@@ -46,16 +46,16 @@
   failure traced to a genuine EShop naming-convention inconsistency —
   `POST /api/checkout` returns `orderId` (camelCase) while `POST /api/register`
   and `POST /api/products` both return `id`, against an otherwise-uniform
-  snake_case field convention. Logged in `EShop_Defect.md` (**M6**).
-- Logged two tooling failure modes in `EShop_Failure_Modes.md`: **FM-01**,
+  snake_case field convention. Logged in `Material/Document/SUT-Reference/EShop_Defect.md` (**M6**).
+- Logged two tooling failure modes in `Material/Document/SUT-Reference/EShop_Failure_Modes.md`: **FM-01**,
   Apidog's OpenAPI import silently binding endpoints to a self-generated auth
   variable name that did not match the project's environment, producing a `403`
   that looked like an application bug; and **FM-02**, `PactV3`'s Rust FFI
   crashing on `MatchersV3.regex` applied to headers (**M3**, partial).
-- Wrote the Apidog reference set: `EShop_Apidog_Steps.md` (13-step build
-  walkthrough), `EShop_Apidog_Setup.md` (runtime configuration), and
-  `EShop_Apidog_TestCases.md` (concrete cases for all 31 operations).
-- Revised the schedule into `W07_Action_Plan.md` and `W08_Action_Plan.md` after
+- Wrote the Apidog reference set: `Material/Document/Apidog/EShop_Apidog_Steps.md` (13-step build
+  walkthrough), `Material/Document/Apidog/EShop_Apidog_Setup.md` (runtime configuration), and
+  `Material/Document/Apidog/EShop_Apidog_TestCases.md` (concrete cases for all 31 operations).
+- Revised the schedule into `Material/Document/Planning/W07_Action_Plan.md` and `Material/Document/Planning/W08_Action_Plan.md` after
   the two lost weeks.
 
 ## Scope Deviation
@@ -123,7 +123,7 @@ contract-drift finding.
 - Complete **M1** and **M2**: confirm the Apidog "hello world", then build the
   four-scenario matrix (Positive / Security / Boundary / Negative) on
   `POST /api/cart` and extend outward through the core buyer flow using
-  `EShop_Apidog_TestCases.md`.
+  `Material/Document/Apidog/EShop_Apidog_TestCases.md`.
 - Build the `Happy Path Purchase` test scenario with chained `bearerToken`,
   `productId`, and `orderId` capture, and confirm it passes from a cold
   environment.
@@ -163,7 +163,7 @@ contract-drift finding.
   exploratory work. The risk is that local inference setup consumes time;
   addressed by a hard mid-week decision gate to fall back to an external LLM on
   a reduced endpoint set rather than debugging indefinitely.
-- **Pact Iterations 2 and 3 deprioritized this cycle.** `EShop_Pact_Plan.md`
+- **Pact Iterations 2 and 3 deprioritized this cycle.** `Material/Document/Pact/EShop_Pact_Plan.md`
   proposed three consumers across three iterations with a hard `can-i-deploy`
   deployment gate. `frontend-admin` and `frontend-mobile` remain planned but are
   not yet executed: they were scheduled into exactly the weeks now needed for S4

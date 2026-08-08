@@ -13,7 +13,7 @@ running server matches an OpenAPI spec at a chosen moment. Pact verifies that
 headers, and the response fields the UI reads — remain valid across backend
 changes, without frontend and backend having to run together. For an SUT like
 EShop, whose implementation diverges from its SRS in dozens of catalogued ways
-(see `EShop_Defect.md`), that distinction is the point: contract tests pin the
+(see `Material/Document/SUT-Reference/EShop_Defect.md`), that distinction is the point: contract tests pin the
 _lived_ contract, not the aspirational one.
 
 **Status as of this submission: Iterations 1 and 2 complete.** Two consumers
@@ -29,7 +29,7 @@ executed** — they remain planned, deferred rather than cancelled.
 | --------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | S1 proposal     | Third tool, alongside Apidog + Apidog AI | Justified against Spring Cloud Contract / Specmatic                                                  |
 | S3 milestone M5 | Metrics                                  | Setup time, verification duration, interaction count                                                 |
-| S3 milestone M6 | Contract violations                      | Primary source — the one failing interaction, cross-referenced to `EShop_Defect.md`                  |
+| S3 milestone M6 | Contract violations                      | Primary source — the one failing interaction, cross-referenced to `Material/Document/SUT-Reference/EShop_Defect.md`                  |
 | S4 user guide   | Screencast segment                       | "When Apidog is not enough — CDC with Pact"                                                          |
 | S8 AI audit     | AI-02/03/04                              | Two AI tools in scope: Claude (documents, planning, review) and GitHub Copilot (Pact implementation) |
 
@@ -44,7 +44,7 @@ must keep proving it.
 
 **Provider:** `Sut/EShop/backend/` — Node.js, Express, SQLite. 31 operations
 across 24 paths (`EShop_OpenApi.yaml`). `SECRET_KEY` is hard-coded and JWTs
-never expire — a documented defect (`EShop_Defect.md`); Pact does not "fix" it,
+never expire — a documented defect (`Material/Document/SUT-Reference/EShop_Defect.md`); Pact does not "fix" it,
 and provider states deliberately do not depend on this defect.
 
 **Consumer used:** `frontend-web` — React, `axios`. All hard-coded
@@ -220,7 +220,7 @@ failure surfaced a real, separate issue: EShop is internally inconsistent about
 camelCase vs snake_case for newly-created-row identifiers (`POST /api/register`
 and `POST /api/products` both return `id`; `POST /api/checkout` returns
 `orderId`; nearly every other field in the API is snake_case). Logged as a
-genuine defect in `EShop_Defect.md`, under **Response conventions**.
+genuine defect in `Material/Document/SUT-Reference/EShop_Defect.md`, under **Response conventions**.
 
 **Failure 2 — `GET /api/cart` (shape mismatch) — root-caused, category (a), same
 pattern as Failure 1.** The contract expects `M.like({ cart: [] })` — an object
@@ -232,7 +232,7 @@ implementation or the spec. Unlike Failure 1, chasing this one surfaced no
 secondary defect — EShop is otherwise consistent about returning collections as
 bare arrays (`GET /api/products`, `GET /api/categories` do the same), so this is
 a clean contract-authoring error with nothing behind it. **Not yet logged in
-`EShop_Defect.md`, and shouldn't be** — there's no SUT defect here to log.
+`Material/Document/SUT-Reference/EShop_Defect.md`, and shouldn't be** — there's no SUT defect here to log.
 
 **A limitation of the desired-shape contracts, stated honestly:** both
 `GET /api/users/me` (excluding `password`) and `PUT /api/users/me` (excluding
@@ -274,7 +274,7 @@ with a `400` response and an error body. The provider instead returns `200` and
 updates the order. Unlike the two `eshop-web` failures, this is **not** a
 contract-authoring mistake; it is live provider-verification evidence of the
 known terminal-state defect documented in
-`Material/Document/General/EShop_State_Transition_Testing.md` as `STT-A-24`.
+`Material/Document/Methodology/EShop_State_Transition_Testing.md` as `STT-A-24`.
 That entry now has both source-level analysis and independent Pact verification
 as corroborating evidence.
 
@@ -287,7 +287,7 @@ blocking in Iteration 2.
 
 ## 7. Failure modes logged
 
-**FM-02** (`EShop_Failure_Modes.md`): `PactV3`'s Rust FFI crashes when
+**FM-02** (`Material/Document/SUT-Reference/EShop_Failure_Modes.md`): `PactV3`'s Rust FFI crashes when
 `MatchersV3.regex` is applied to a header value (`Content-Type` on responses,
 `Authorization` on requests), rather than failing gracefully. Worked around by
 using plain string literals on both headers. For `Authorization`, confirmed
@@ -299,7 +299,7 @@ direction of the charset ever being _dropped or changed_ by the server — not
 appended, as an earlier version of this document stated before the discrepancy
 was caught during a read-only verification pass.
 
-**FM-04** (`EShop_Failure_Modes.md`): parallel Jest workers can race while
+**FM-04** (`Material/Document/SUT-Reference/EShop_Failure_Modes.md`): parallel Jest workers can race while
 writing the same Pact output file. This first appeared during `frontend-admin`
 Iteration 2: all 16 consumer tests passed, but the generated pact contained only
 7 interactions. Setting `maxWorkers: 1` fixed `frontend-admin`, and the same
@@ -362,12 +362,12 @@ part of the still-pending Iteration 3 and has not been built yet.
 ## 11. Cross-references
 
 **Reads from:** `EShop_OpenApi.yaml` (response shapes),
-`EShop_Apidog_TestCases.md` (case-name overlap where relevant),
-`EShop_Defect.md` (every defect referenced here traces to an entry there).
+`Material/Document/Apidog/EShop_Apidog_TestCases.md` (case-name overlap where relevant),
+`Material/Document/SUT-Reference/EShop_Defect.md` (every defect referenced here traces to an entry there).
 
-**Updates:** `EShop_Failure_Modes.md` (FM-02 added here), `EShop_Defect.md` (the
-naming-convention entry added from §6), `W07_Action_Plan.md` /
-`W08_Action_Plan.md` (M6 marked done; Iterations 2–3 marked pending, not
+**Updates:** `Material/Document/SUT-Reference/EShop_Failure_Modes.md` (FM-02 added here), `Material/Document/SUT-Reference/EShop_Defect.md` (the
+naming-convention entry added from §6), `Material/Document/Planning/W07_Action_Plan.md` /
+`Material/Document/Planning/W08_Action_Plan.md` (M6 marked done; Iterations 2–3 marked pending, not
 scheduled to a specific week yet).
 
 ## 12. Seminar activity script (S6, ~7 minutes)

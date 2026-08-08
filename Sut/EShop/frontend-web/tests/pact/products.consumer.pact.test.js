@@ -2,7 +2,8 @@
  * Consumer contract — Products.
  * Covers: GET /api/products?search=, GET /api/products?search={term},
  * GET /api/products/:id.
- * Cross-ref: EShop_Apidog_TestCases.md §3, EShop_Defect.md (missing product returns {}+200).
+ * Cross-ref: Material/Document/Apidog/EShop_Apidog_TestCases.md §3,
+ * Material/Document/SUT-Reference/EShop_Defect.md (missing product returns {}+200).
  */
 const { provider, M } = require('./pact-setup')
 const apiClient = require('../../src/api/apiClient').default

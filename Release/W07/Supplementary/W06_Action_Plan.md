@@ -1,19 +1,19 @@
 # T06 — Action Plan (Week 06 — as originally written)
 
-## Status: not executed as planned — see `W07_Action_Plan.md` for the actual recovery
+## Status: not executed as planned — see `Material/Document/Planning/W07_Action_Plan.md` for the actual recovery
 
 Weeks 05 and 06 of the semester coincided with midterm examinations, and in the
 same period the student was responsible for preparing and helping run an event
 promoting their company's game. No seminar work was produced in either week and
 **no Week 06 weekly report was submitted**. This document is kept as-written
 below for the historical record of what was intended; it was not carried out.
-Work resumed in Week 07 and is documented in `W07_Action_Plan.md`, which also
+Work resumed in Week 07 and is documented in `Material/Document/Planning/W07_Action_Plan.md`, which also
 explains what was recovered (Pact/M6, delivered ahead of its original position)
 and what remains outstanding from this plan (M1 confirmation, M2, M3-Apidog).
 
 Do not follow the checklists below as current instructions — they describe Week
 06 as originally scoped, not the actual state of the project.
-`W07_Action_Plan.md` and `W08_Action_Plan.md` are the live plans.
+`Material/Document/Planning/W07_Action_Plan.md` and `Material/Document/Planning/W08_Action_Plan.md` are the live plans.
 
 ## Overview
 
@@ -38,16 +38,16 @@ weeks; the seminar spans stages S1–S8.
 | Week 05       | Report Week 02     | No work; treated as slack                                                                 | Matches — no work (midterm exams)                                                                            |
 | **Week 06**   | **Report Week 03** | **S3 in progress — M1, M2, M4, M3 (Apidog only)**                                         | **No work at all — midterm exams + a company event; no Week 06 report submitted**                            |
 | Week 07       | Report Week 04     | S3 finish — M3 (Pact), M5, M6; S8 audit drafting begins                                   | **S3 partial** — M6 done (Pact, out of order), M1 partial, M2/M3-Apidog carried into the weekend             |
-| Week 08       | Report Week 05     | S4 — `User_Guide.md` draft, screencast recording; S8 drafts continue                      | Revised — see `W08_Action_Plan.md` (M4/M5 completion plus S4 start)                                          |
-| Week 09       | Report Week 06     | S4 finish + rehearsal → S5 pre-share by end of Week 09                                    | Unchanged for now, but at real risk given the two lost weeks — see `W07_Action_Plan.md`'s schedule-risk note |
+| Week 08       | Report Week 05     | S4 — `User_Guide.md` draft, screencast recording; S8 drafts continue                      | Revised — see `Material/Document/Planning/W08_Action_Plan.md` (M4/M5 completion plus S4 start)                                          |
+| Week 09       | Report Week 06     | S4 finish + rehearsal → S5 pre-share by end of Week 09                                    | Unchanged for now, but at real risk given the two lost weeks — see `Material/Document/Planning/W07_Action_Plan.md`'s schedule-risk note |
 | **Week 10**   | **Report Week 07** | **S6 live seminar + S7 audience feedback**; S8 reflection finalized within 2 working days | Unchanged — seminar date is fixed                                                                            |
 | Week 11       | Report Week 08     | Buffer only — audit pack should already be submitted                                      | Unchanged                                                                                                    |
 
 **What this means going forward.** The two-week gap removed all schedule slack.
-`W07_Action_Plan.md` covers the recovery in detail — Pact was completed first
+`Material/Document/Planning/W07_Action_Plan.md` covers the recovery in detail — Pact was completed first
 (better suited to a concentrated block of agentic AI assistance) while the
 Apidog manual work below remains open, and Apidog AI (M4) was deliberately
-deferred to Week 08 pending a local model setup. `W08_Action_Plan.md` now
+deferred to Week 08 pending a local model setup. `Material/Document/Planning/W08_Action_Plan.md` now
 carries S3's remaining milestones (M2, M4, M5) concurrently with the start of
 S4, since there is no week left to do them separately.
 
@@ -95,7 +95,7 @@ M6 is the T06-specific contract-testing milestone.
 
 **What actually happened:** none of Week 06's scope was executed. Week 07
 delivered M6 (Pact) instead of M3/M5, ahead of position; M1/M2/M3-Apidog carried
-over. See `W07_Action_Plan.md`.
+over. See `Material/Document/Planning/W07_Action_Plan.md`.
 
 ## Week 06 work — as originally planned (not executed)
 
@@ -103,7 +103,7 @@ over. See `W07_Action_Plan.md`.
 > banner at the top of this document. Kept as-written for the record; the
 > checkboxes are historical, not a to-do list. The Preparation and Baseline
 > items were eventually completed, but in **Week 07**, not Week 06 — see
-> `W07_Action_Plan.md`'s "Housekeeping" and "Baseline" groups for what actually
+> `Material/Document/Planning/W07_Action_Plan.md`'s "Housekeeping" and "Baseline" groups for what actually
 > happened and when.
 
 Work is grouped by kind, not by day. Groups build on each other in the order
@@ -245,13 +245,13 @@ Wrap-up:
 ---
 
 > **Everything from here to the end of this document (original Week 07–11
-> sections) is superseded.** `W07_Action_Plan.md` and `W08_Action_Plan.md` are
+> sections) is superseded.** `Material/Document/Planning/W07_Action_Plan.md` and `Material/Document/Planning/W08_Action_Plan.md` are
 > the current, accurate versions of this content, written after the actual Week
 > 06/07 outcomes were known. Weeks 09–11 below are kept as the original
 > projection and haven't been rewritten yet — treat them as provisional until a
-> `W09_Action_Plan.md` exists.
+> `Material/Document/Planning/W09_Action_Plan.md` exists.
 
-## Week 07 — S3 finish, S8 drafting begins (original projection — see `W07_Action_Plan.md` instead)
+## Week 07 — S3 finish, S8 drafting begins (original projection — see `Material/Document/Planning/W07_Action_Plan.md` instead)
 
 - [ ] Install `@pact-foundation/pact` and `@pact-foundation/pact-core`. Write
       one consumer expectation → pact JSON → run the verifier against EShop's
@@ -265,7 +265,7 @@ Wrap-up:
 - [ ] **S8 groundwork:** start `[AI-02]` audit report from S3 material — prompts
       used, what AI generated, what was verified against primary sources.
 
-## Week 08 — S4 core, S8 drafting continues (original projection — see `W08_Action_Plan.md` instead)
+## Week 08 — S4 core, S8 drafting continues (original projection — see `Material/Document/Planning/W08_Action_Plan.md` instead)
 
 - [ ] Full `User_Guide.md` draft: 7 sections plus **Failure Modes** (skipping
       this is an auto-penalty).

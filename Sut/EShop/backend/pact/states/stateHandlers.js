@@ -14,7 +14,8 @@ const jwt = require('jsonwebtoken')
 const db = require('../../database')
 
 // Must match SECRET_KEY hard-coded in server.js. Defect noted in
-// EShop_Defect.md — Pact does not fix it, only works around it in tests.
+// Material/Document/SUT-Reference/EShop_Defect.md — Pact does not fix it, only
+// works around it in tests.
 const SECRET_KEY = 'super_secret_key_that_should_not_be_here'
 
 function run(sql, params = []) {

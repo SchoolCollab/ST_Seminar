@@ -20,7 +20,7 @@ single sit-down at the end of Week 09.
 | 8   | Close                                    | 0:30     | Straight-to-cam                     |
 
 Total: ~7:00. Buffer: 1:00 if a segment runs long; drop segment 7 first (per cut
-order #5 in `W09_Action_Plan.md`).
+order #5 in `Material/Document/Planning/W09_Action_Plan.md`).
 
 ## 2. Per-segment shot list + narration
 
@@ -150,5 +150,5 @@ order #5 in `W09_Action_Plan.md`).
 - Segment 4 (Apidog AI) depends on the hosted-LLM provider being reachable. If
   it flakes, record from a pre-generated screenshot with the same narration;
   note the substitution in `[AI-02]` §3.
-- Segment 7 (broken provider) is the softest cut per `W09_Action_Plan.md` cut
+- Segment 7 (broken provider) is the softest cut per `Material/Document/Planning/W09_Action_Plan.md` cut
   order #5. Drop it and walk through it live in S6 if editing runs long.

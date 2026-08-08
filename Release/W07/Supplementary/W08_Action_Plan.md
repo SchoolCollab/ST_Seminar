@@ -47,7 +47,7 @@ Work is grouped by kind. The AI setup group gates the AI comparison group; every
   - What the AI missed — business rules absent from the spec: coupon reuse, ordering beyond stock, cross-user cart access, expired sessions, race conditions.
   - What the AI got wrong — assertions on non-existent fields, invented endpoints, overconfident "valid" cases, auth ignored on protected routes.
   - Coverage against the four-scenario matrix — does the AI generate invalid-auth and not-found cases at all, or only happy paths?
-- [ ] Check the two AI-specific predictions already logged as candidates in `EShop_Failure_Modes.md`: whether the AI generates a "valid" case including `role` on `PUT /api/users/me` (validating SEC-06 as if it were a feature), and whether Apidog's schema auto-validation passes on the `{}`-with-200 response from `GET /api/products/{id}`. Either confirmation becomes a numbered failure mode.
+- [ ] Check the two AI-specific predictions already logged as candidates in `Material/Document/SUT-Reference/EShop_Failure_Modes.md`: whether the AI generates a "valid" case including `role` on `PUT /api/users/me` (validating SEC-06 as if it were a feature), and whether Apidog's schema auto-validation passes on the `{}`-with-200 response from `GET /api/products/{id}`. Either confirmation becomes a numbered failure mode.
 - [ ] Screenshot the diff — it is both M4 evidence and a User Guide figure.
 
 ### Metrics (M5)
@@ -65,8 +65,8 @@ Work is grouped by kind. The AI setup group gates the AI comparison group; every
 ### S4 start — User Guide and screencast material
 
 - [ ] Draft `User_Guide.md` to its 7-section skeleton: Introduction, Installation, First Test, Advanced Usage, Troubleshooting, **Failure Modes**, References.
-- [ ] Populate Installation and First Test directly from `EShop_Apidog_Steps.md` — that document was written as a walkthrough and largely transfers.
-- [ ] Populate Failure Modes from `EShop_Failure_Modes.md`; populate the defect discussion from `EShop_Defect.md`.
+- [ ] Populate Installation and First Test directly from `Material/Document/Apidog/EShop_Apidog_Steps.md` — that document was written as a walkthrough and largely transfers.
+- [ ] Populate Failure Modes from `Material/Document/SUT-Reference/EShop_Failure_Modes.md`; populate the defect discussion from `Material/Document/SUT-Reference/EShop_Defect.md`.
 - [ ] Capture screencast material *while doing the work above*, not afterwards: one clean recording of the hand-built scenario passing, one of AI generation plus the diff, one of the Pact verifier running (and, if arrangeable, a deliberately-broken provider so the failure is informative).
 - [ ] No AI-generated text goes into the guide unedited — that is an explicit auto-penalty.
 

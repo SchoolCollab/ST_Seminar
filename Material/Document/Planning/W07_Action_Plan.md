@@ -25,7 +25,7 @@ work originally scoped for Week 06 remains outstanding. Two further changes:
   during study work.
 - **Pact Iteration 1 is complete** at one consumer (`eshop-web`), 10
   interactions, and one provider verification. Iterations 2 and 3 from
-  `EShop_Pact_Plan.md` (adding `frontend-admin`, `frontend-mobile`, hard
+  `Material/Document/Pact/EShop_Pact_Plan.md` (adding `frontend-admin`, `frontend-mobile`, hard
   `can-i-deploy` gating) are **not yet executed, not cancelled** — they were
   deprioritized behind S4/S5, which carry far more grade weight, and remain on
   the roadmap to pick up as schedule allows.
@@ -89,14 +89,14 @@ complete; Baseline and Automation carry over into Sunday and Monday.
       from `backend/server.js`, `api_specification.md`, and the SRS. 24 paths,
       31 operations, 30 schemas; validates clean. Named request examples added
       per endpoint, plus `x-apidog-status` on every operation.
-- [x] Compile `EShop_Defect.md` — every observed deviation between
+- [x] Compile `Material/Document/SUT-Reference/EShop_Defect.md` — every observed deviation between
       implementation and either the SRS or REST convention, each citing a
       `server.js` line.
-- [x] Write the Apidog reference set: `EShop_Apidog_Steps.md` (13-step build),
-      `EShop_Apidog_Setup.md` (runtime config), `EShop_Apidog_TestCases.md` (all
+- [x] Write the Apidog reference set: `Material/Document/Apidog/EShop_Apidog_Steps.md` (13-step build),
+      `Material/Document/Apidog/EShop_Apidog_Setup.md` (runtime config), `Material/Document/Apidog/EShop_Apidog_TestCases.md` (all
       31 operations).
-- [x] Restructure `Material/` into `Config/`, `Document/General/`,
-      `Document/W07/`.
+- [x] Restructure `Material/` into `Config/` and type-based `Document/`
+      categories.
 
 ### Contract testing (M6, M3-Pact) — complete
 
@@ -115,7 +115,7 @@ complete; Baseline and Automation carry over into Sunday and Monday.
       `docker-compose.yml`.
 - [x] Result: **8/10 interactions verified**; 2 failures — `POST /api/checkout`
       (contract `order_id` vs server `orderId`, surfacing a real
-      naming-convention inconsistency logged in `EShop_Defect.md`) and
+      naming-convention inconsistency logged in `Material/Document/SUT-Reference/EShop_Defect.md`) and
       `GET /api/cart` (contract `{cart:[]}` vs server/spec bare `[]`, a
       contract-authoring mistake with no underlying defect).
 - [x] Log FM-02 — `PactV3`'s Rust FFI crashes on `MatchersV3.regex` applied to
@@ -138,9 +138,9 @@ complete; Baseline and Automation carry over into Sunday and Monday.
 ### Baseline — hand-built end-to-end scenario (M2) — Sunday/Monday
 
 - [ ] Build the four-scenario matrix on `POST /api/cart` end-to-end (Positive /
-      Security / Boundary / Negative), following `EShop_Apidog_Steps.md` Step 6
+      Security / Boundary / Negative), following `Material/Document/Apidog/EShop_Apidog_Steps.md` Step 6
       and 6a.
-- [ ] Work outward through `EShop_Apidog_TestCases.md`, prioritising endpoints
+- [ ] Work outward through `Material/Document/Apidog/EShop_Apidog_TestCases.md`, prioritising endpoints
       with documented defects so the cases double as defect evidence.
 
 ### Automation — Sunday/Monday
@@ -156,14 +156,14 @@ complete; Baseline and Automation carry over into Sunday and Monday.
 
 - [ ] Log two further Apidog-side failure modes to complete M3's "three per
       tool" requirement (FM-01 is the first). Candidates already flagged in
-      `EShop_Failure_Modes.md`: AI generating assertions on
+      `Material/Document/SUT-Reference/EShop_Failure_Modes.md`: AI generating assertions on
       documented-but-invalid fields, schema auto-validation passing on the
       `{}`-on-404 quirk, and scenario chaining continuing silently after a
       failed step.
 
 ## Week 08 — S3 finish + S4 start
 
-See `W08_Action_Plan.md`. Headline: stand up the local AI model, run M4 and the
+See `Material/Document/Planning/W08_Action_Plan.md`. Headline: stand up the local AI model, run M4 and the
 hand-vs-AI diff, capture M5 metrics, and begin the User Guide.
 
 ## Week 09 — S4 finish, S5 pre-share

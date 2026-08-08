@@ -41,7 +41,7 @@ S6's activity properly.
 | ------------- | --------------------------------------------------------------------------------------------------------- |
 | **M1**        | Partial — spec imported, environment + auth configured; "hello world" green request not formally captured |
 | **M2**        | Outstanding — four-scenario matrix on `POST /api/cart`, plus Happy Path Purchase flow                     |
-| **M3-Apidog** | Partial — FM-01 logged; **2 more failure modes needed** (candidates in `EShop_Failure_Modes.md`)          |
+| **M3-Apidog** | Partial — FM-01 logged; **2 more failure modes needed** (candidates in `Material/Document/SUT-Reference/EShop_Failure_Modes.md`)          |
 | **M3-Pact**   | Done — FM-02 logged                                                                                       |
 | **M4**        | Outstanding — hosted-LLM route (local Ollama deferred out of scope for this cycle)                        |
 | **M5**        | Outstanding — setup time / run time / flake rate table                                                    |
@@ -63,12 +63,12 @@ hand-built cases to diff against).
       `Material/Evidence/M1_hello_world.png`. This is a 15-minute closure item,
       not a work stream.
 - [ ] Build the **four-scenario matrix on `POST /api/cart`** following
-      `EShop_Apidog_Steps.md` Step 6 and 6a:
+      `Material/Document/Apidog/EShop_Apidog_Steps.md` Step 6 and 6a:
     - Positive: authenticated add of an in-stock item.
     - Security: unauthenticated add → 401; cross-user cart access.
     - Boundary: quantity 0 / negative / above stock; missing `price`.
     - Negative: non-existent `product_id`; malformed body.
-- [ ] Extend outward through `EShop_Apidog_TestCases.md`, **prioritising
+- [ ] Extend outward through `Material/Document/Apidog/EShop_Apidog_TestCases.md`, **prioritising
       endpoints with documented defects** so cases double as defect evidence.
       Order: `PUT /api/users/me` (SEC-06), `GET /api/users/me` (SEC-01),
       `POST /api/checkout` (trust-client-total), `GET /api/products/:id`
@@ -109,7 +109,7 @@ table (User Guide figure).
     - Coverage against the four-scenario matrix — does the AI generate
       invalid-auth and not-found cases at all?
 - [ ] Check the two AI-specific candidates already flagged in
-      `EShop_Failure_Modes.md`: (a) does the AI generate a "valid" case
+      `Material/Document/SUT-Reference/EShop_Failure_Modes.md`: (a) does the AI generate a "valid" case
       including `role` on `PUT /api/users/me` (SEC-06 as a feature)? (b) does
       Apidog's schema auto-validation pass on `{}`-with-200 from
       `GET /api/products/:id`? Either confirmation becomes a numbered failure
@@ -147,7 +147,7 @@ columns (Apidog manual, Apidog AI, Pact) committed to the User Guide.
 
 Feeds: User Guide's Failure Modes section (mandatory — skipping = auto-penalty).
 
-- [ ] Confirm the FM-02 (Pact) entry is complete in `EShop_Failure_Modes.md`.
+- [ ] Confirm the FM-02 (Pact) entry is complete in `Material/Document/SUT-Reference/EShop_Failure_Modes.md`.
 - [ ] Log the two remaining Apidog-side failure modes from Track B's candidates.
       Preserve the six-field structure (what happened / where / why misleading /
       root cause / resolution / lesson) so entries drop straight into the User
@@ -156,7 +156,7 @@ Feeds: User Guide's Failure Modes section (mandatory — skipping = auto-penalty
       already-flagged candidate: "scenario chaining continues silently after a
       failed step in Apidog test scenarios."
 
-**Exit criterion:** `EShop_Failure_Modes.md` contains ≥ 3 Apidog entries and ≥ 1
+**Exit criterion:** `Material/Document/SUT-Reference/EShop_Failure_Modes.md` contains ≥ 3 Apidog entries and ≥ 1
 Pact entry, each with the six-field structure filled in.
 
 ### Track E — User Guide (S4 core)
@@ -169,20 +169,20 @@ this is transcription, not new writing.
       Troubleshooting, Failure Modes, References**. The Failure Modes section is
       required by name; skipping it is an auto-penalty.
 - [ ] **Introduction:** what Apidog is, what Pact is, what each answers that the
-      other doesn't. Pull from `EShop_Pact_Plan.md` §Overview.
-- [ ] **Installation:** transcribe from `EShop_Apidog_Setup.md` (Apidog) and
-      `EShop_Pact_Plan.md` §4 (Pact prerequisite refactors).
-- [ ] **First Test:** transcribe from `EShop_Apidog_Steps.md` Steps 1–6 (Apidog
-      "hello world" through first assertion) and `EShop_Pact_Plan.md` §5 (one
+      other doesn't. Pull from `Material/Document/Pact/EShop_Pact_Plan.md` §Overview.
+- [ ] **Installation:** transcribe from `Material/Document/Apidog/EShop_Apidog_Setup.md` (Apidog) and
+      `Material/Document/Pact/EShop_Pact_Plan.md` §4 (Pact prerequisite refactors).
+- [ ] **First Test:** transcribe from `Material/Document/Apidog/EShop_Apidog_Steps.md` Steps 1–6 (Apidog
+      "hello world" through first assertion) and `Material/Document/Pact/EShop_Pact_Plan.md` §5 (one
       consumer test walkthrough).
 - [ ] **Advanced Usage:** the four-scenario matrix pattern (Track A), the AI
       diff table (Track B), the metrics table (Track C).
 - [ ] **Troubleshooting:** the common gotchas encountered — babel-jest
       `import.meta` handling, `NODE_ENV=test` for `:memory:`, `requestFilter`
       for JWT injection, `MatchersV3.regex` on headers (FM-02).
-- [ ] **Failure Modes:** transcribe from `EShop_Failure_Modes.md` (all entries).
-- [ ] **References:** `EShop_OpenApi.yaml`, `EShop_Defect.md`,
-      `EShop_Pact_Plan.md`, Apidog docs, Pact docs.
+- [ ] **Failure Modes:** transcribe from `Material/Document/SUT-Reference/EShop_Failure_Modes.md` (all entries).
+- [ ] **References:** `EShop_OpenApi.yaml`, `Material/Document/SUT-Reference/EShop_Defect.md`,
+      `Material/Document/Pact/EShop_Pact_Plan.md`, Apidog docs, Pact docs.
 - [ ] **No AI-generated text goes into the guide unedited** — auto-penalty.
 
 **Exit criterion:** all 7 sections drafted; Failure Modes section present with ≥
@@ -204,7 +204,7 @@ Editing is a single sit-down at the end of the week.
       teaching material, don't hide them).
 - [ ] If arrangeable: record a deliberately-broken provider run so the failure
       is informative — e.g. rename `price` to `unitPrice` in `server.js` per the
-      seminar activity script in `EShop_Pact_Plan.md` §12.
+      seminar activity script in `Material/Document/Pact/EShop_Pact_Plan.md` §12.
 - [ ] Edit to 5–8 minutes total. Constraints: **1080p, ≤100 MB, English
       narration, no background music**. Deliver to
       `Material/Deliveries/S5_Pre-Share/Demo_Screencast.mp4`.
@@ -311,10 +311,11 @@ cutting further.
 
 ## Cross-references
 
-**Reads from:** `EShop_Apidog_Steps.md`, `EShop_Apidog_Setup.md`,
-`EShop_Apidog_TestCases.md`, `EShop_OpenApi.yaml`, `EShop_Defect.md`,
-`EShop_Failure_Modes.md`, `EShop_Pact_Plan.md`, W07/W08 action plans.
+**Reads from:** `Material/Document/Apidog/EShop_Apidog_Steps.md`, `Material/Document/Apidog/EShop_Apidog_Setup.md`,
+`Material/Document/Apidog/EShop_Apidog_TestCases.md`, `EShop_OpenApi.yaml`, `Material/Document/SUT-Reference/EShop_Defect.md`,
+`Material/Document/SUT-Reference/EShop_Failure_Modes.md`, `Material/Document/Pact/EShop_Pact_Plan.md`,
+`Material/Document/Planning/W07_Action_Plan.md`, and `Material/Document/Planning/W08_Action_Plan.md`.
 
-**Updates:** `EShop_Failure_Modes.md` (Track D adds ≥ 2 Apidog entries);
+**Updates:** `Material/Document/SUT-Reference/EShop_Failure_Modes.md` (Track D adds ≥ 2 Apidog entries);
 `Material/Deliveries/S5_Pre-Share/*` (all four S5 files land here); `Material/Config/`
 (exported Apidog project from Track A); `Material/Evidence/` (M1 screenshot).

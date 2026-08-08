@@ -2,7 +2,8 @@
  * Consumer contract — Authentication & Users.
  * Covers: POST /api/register, POST /api/login, POST /api/forgot-password,
  * POST /api/reset-password, GET /api/users/me, PUT /api/users/me.
- * Cross-ref: EShop_Defect.md (users/me leaks password, PUT accepts role — SEC-06).
+ * Cross-ref: Material/Document/SUT-Reference/EShop_Defect.md
+ * (users/me leaks password, PUT accepts role — SEC-06).
  * Contracts intentionally do NOT include `password` or `role` on responses
  * so the desired shape drives verification, not the current buggy shape.
  */
@@ -152,7 +153,8 @@ describe('Auth & Users contract', () => {
             .willRespondWith({
                 status: 200,
                 // NOTE: `password` intentionally excluded — provider currently leaks it
-                // (see EShop_Defect.md). Failing verification here is a valid M6 hit.
+                // (see Material/Document/SUT-Reference/EShop_Defect.md).
+                // Failing verification here is a valid M6 hit.
                 body: {
                     id: M.integer(1),
                     name: M.string('Tester One'),

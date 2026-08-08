@@ -81,7 +81,7 @@ findings — read from what they wrote.
 - **What went worse than expected:**
 - **What one thing would we change for a re-run:**
 - **Direct quotes (verbatim, one per line) worth keeping for `[AI-04]` §2 or
-  `EShop_Failure_Modes.md`:**
+  `Material/Document/SUT-Reference/EShop_Failure_Modes.md`:**
     -
     -
     -
@@ -90,7 +90,7 @@ findings — read from what they wrote.
 
 Items from this file that feed downstream:
 
-- §3 technical failures → `EShop_Failure_Modes.md` as new candidates.
+- §3 technical failures → `Material/Document/SUT-Reference/EShop_Failure_Modes.md` as new candidates.
 - §4 coverage ticks → `[AI-02]` §4 (live-seminar reflection) as quantitative
   evidence.
 - §5 cooldown notes → `[AI-04]` §2 (post-seminar paragraph).

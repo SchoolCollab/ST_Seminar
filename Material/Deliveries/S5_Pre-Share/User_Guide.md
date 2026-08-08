@@ -34,7 +34,7 @@ spec has. Neither notices when the backend silently changes a field the frontend
 reads, as long as the spec stays in step. Pact inverts the direction — the
 client declares what it needs, and the backend must keep proving it. For an SUT
 like EShop, whose implementation diverges from its SRS in dozens of catalogued
-ways (see `EShop_Defect.md`), that distinction is the point.
+ways (see `Material/Document/SUT-Reference/EShop_Defect.md`), that distinction is the point.
 
 ## 2. Installation
 
@@ -138,7 +138,7 @@ walkthrough.
    the scheme-direct binding resolved `{{bearerToken}}` on its own, no manual
    header configured.
 
-Full step-by-step is in `EShop_Apidog_Steps.md` (Steps 1–6).
+Full step-by-step is in `Material/Document/Apidog/EShop_Apidog_Steps.md` (Steps 1–6).
 
 ### 3.3 Pact consumer "hello world"
 
@@ -191,7 +191,7 @@ categories: **Positive** (Success), **Security** (Invalid auth), **Boundary**
 mutates exactly one field — single-fault-mode.
 
 _[TABLE — Positive / Security / Boundary / Negative rows with body, auth,
-expected status, assertions. Grounded per `W09_TrackA_Execution_Brief.md`; two
+expected status, assertions. Grounded per `Material/Document/Apidog/W09_TrackA_Execution_Brief.md`; two
 of the four are defect-demo cases, since the SUT accepts any JSON shape on POST
 /api/cart. Filled from Track A on execution.]_
 

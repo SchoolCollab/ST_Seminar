@@ -6,7 +6,7 @@ This document is the runtime companion to `EShop_OpenApi.yaml`. The YAML
 describes the API surface; this file describes how the Apidog project on top of
 that spec is configured — environment variables, chained-token hook,
 per-endpoint assertion scripts, and multi-step scenarios.
-`EShop_Apidog_TestCases.md` carries the per-endpoint case pattern established
+`Material/Document/Apidog/EShop_Apidog_TestCases.md` carries the per-endpoint case pattern established
 here through all 31 operations, with concrete bodies and expected outcomes.
 
 It has two audiences. During Week 06 it is a **setup recipe** — follow it
@@ -81,7 +81,7 @@ scheme" setting), which resolves `{{bearerToken}}` automatically — because
 scheme. This only works because the variable name matches; naming it something
 else (e.g. `accessToken`) silently breaks every protected request with a `403`,
 since the scheme then resolves an empty variable instead. See
-`EShop_Failure_Modes.md`, FM-01, for the full diagnosis.
+`Material/Document/SUT-Reference/EShop_Failure_Modes.md`, FM-01, for the full diagnosis.
 
 Do **not** set a Bearer Token override on the top-level project folder — it
 isn't needed and can cause public endpoints to inherit an auth header they
@@ -128,7 +128,7 @@ the others follow.
 
 The full set — every endpoint, all 31 operations, with concrete bodies, auth,
 and expected status (including which "wrong-looking" results are actually
-documented defects) — is in `EShop_Apidog_TestCases.md`. Work through that file
+documented defects) — is in `Material/Document/Apidog/EShop_Apidog_TestCases.md`. Work through that file
 for every endpoint beyond this one; save each case as its own Test Case inside
 the endpoint's folder.
 
@@ -143,7 +143,7 @@ operator and expected value). A third option, **Script** post-processors, takes
 raw JavaScript for checks the UI can't express — arithmetic invariants,
 cross-field relationships. Prefer Response validation + Assertion where they
 suffice; drop to Script only when the check is genuinely non-trivial. Full
-field-by-field walkthrough is in `EShop_Apidog_Steps.md`, Step 6a.
+field-by-field walkthrough is in `Material/Document/Apidog/EShop_Apidog_Steps.md`, Step 6a.
 
 **Assertions to configure on every case:**
 
@@ -236,4 +236,4 @@ Expected outcome:
   via scheme-direct binding, `adminToken` only where explicitly overridden.
 
 Any deviation from the above is either an Apidog misconfiguration (fix here) or
-a SUT defect (log it in `EShop_Defect.md`).
+a SUT defect (log it in `Material/Document/SUT-Reference/EShop_Defect.md`).

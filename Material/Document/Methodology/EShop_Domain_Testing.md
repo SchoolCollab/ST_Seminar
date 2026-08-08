@@ -15,7 +15,7 @@ words for zero extra insight. Endpoints with genuinely distinct multi-field
 bodies get the full per-field breakdown; endpoints that share a pattern get the
 pattern derived once and then applied per-endpoint in a compact table.
 
-**Assertion principle, unchanged from `EShop_Apidog_TestCases.md`:** every
+**Assertion principle, unchanged from `Material/Document/Apidog/EShop_Apidog_TestCases.md`:** every
 invalid case asserts the _specification-correct_ rejection, never a prediction
 of a known bug. Cases expected to currently fail because of a confirmed or
 suspected defect are marked **[EXPECTED TO FAIL]**. Genuinely unknown outcomes
@@ -27,7 +27,7 @@ beyond auth (`GET /api/users/me`, `GET /api/products`'s base call,
 `GET /api/coupons`, `GET /api/admin/users`, `GET /api/admin/orders`) — there's
 no request body or parameter to partition into equivalence classes, so S04
 doesn't apply to them structurally. Their coverage lives in
-`EShop_Apidog_TestCases.md` (auth/role Security cases) instead, which is the
+`Material/Document/Apidog/EShop_Apidog_TestCases.md` (auth/role Security cases) instead, which is the
 right tool for "does this endpoint enforce access control," a different question
 than "does this endpoint handle bad input correctly."
 
@@ -62,7 +62,7 @@ spec but never validated as such anywhere confirmed in source.
 ### Step 3 — test cases
 
 EC-id-1 is each endpoint's existing Success case — already in
-`EShop_Apidog_TestCases.md`, not repeated here. EC-id-2 (nonexistent id) is also
+`Material/Document/Apidog/EShop_Apidog_TestCases.md`, not repeated here. EC-id-2 (nonexistent id) is also
 already present for most of these. **EC-id-3 (non-numeric id) has never been
 tested on any of these seven endpoints — this is the real gap this pattern
 closes.**
@@ -98,7 +98,7 @@ else"), already captured above.
 
 Covers: `POST /api/categories` (`name`), `PUT /api/categories/{id}` (`name`),
 `POST /api/forgot-password` (`email`) — forgot-password already has its
-email-existence case in `EShop_Apidog_TestCases.md`; this section adds the
+email-existence case in `Material/Document/Apidog/EShop_Apidog_TestCases.md`; this section adds the
 classes that were missing.
 
 ### `POST /api/categories` and `PUT /api/categories/{id}` — `name`
@@ -107,7 +107,7 @@ classes that were missing.
 | ------------ | ------------------------------------------ | ------------------------------------------------------------------------------------- |
 | EC-catname-1 | A reasonable non-empty string              | Valid                                                                                 |
 | EC-catname-2 | Not a string (number, boolean, null)       | Invalid — type                                                                        |
-| EC-catname-3 | Empty string                               | Invalid — boundary (already in `EShop_Apidog_TestCases.md` for POST; missing for PUT) |
+| EC-catname-3 | Empty string                               | Invalid — boundary (already in `Material/Document/Apidog/EShop_Apidog_TestCases.md` for POST; missing for PUT) |
 | EC-catname-4 | Missing from the body entirely             | Invalid — required-field                                                              |
 | EC-catname-5 | Extremely long string (10,000+ characters) | Invalid — boundary (upper)                                                            |
 
@@ -140,7 +140,7 @@ exist).
 
 ## `POST /api/register` — `name`, `email`, `password`
 
-`EShop_Apidog_TestCases.md` already has the malformed-email and duplicate-email
+`Material/Document/Apidog/EShop_Apidog_TestCases.md` already has the malformed-email and duplicate-email
 cases (both `[EXPECTED TO FAIL]`, tracking the confirmed no-validation defect).
 Missing: type classes on all three fields, and any coverage of `password` at
 all.
@@ -194,7 +194,7 @@ No BVA — `email`/`password` aren't ordered-range fields.
 
 ---
 
-## `PUT /api/users/me` — `name`, `shipping_address`, `phone` (`role` handled separately, see `EShop_Apidog_TestCases.md`)
+## `PUT /api/users/me` — `name`, `shipping_address`, `phone` (`role` handled separately, see `Material/Document/Apidog/EShop_Apidog_TestCases.md`)
 
 Only `phone` currently has an invalid-class case. `name` and `shipping_address`
 have zero negative coverage — this is one of the biggest real gaps in the whole
@@ -210,7 +210,7 @@ array).
 |                    | EC-pname-2                                                         | Not a string      | Invalid — type |
 | `shipping_address` | EC-addr-1                                                          | Reasonable string | Valid          |
 |                    | EC-addr-2                                                          | Not a string      | Invalid — type |
-| `phone`            | _(already covered — malformed shape, `EShop_Apidog_TestCases.md`)_ |                   |                |
+| `phone`            | _(already covered — malformed shape, `Material/Document/Apidog/EShop_Apidog_TestCases.md`)_ |                   |                |
 |                    | EC-phone-2                                                         | Not a string      | Invalid — type |
 
 Since nothing is `required` in this schema, there's no "missing field" invalid
@@ -235,7 +235,7 @@ No BVA — no declared length bounds on any of these three fields either.
 The richest schema in the API — `name` has a real declared `maxLength: 255`, and
 `price` has a real declared `minimum: 1`. This is the one endpoint pair where
 BVA has genuine spec-declared boundaries to test against, not just hypothesized
-ones. `EShop_Apidog_TestCases.md` already covers `price` boundary (zero,
+ones. `Material/Document/Apidog/EShop_Apidog_TestCases.md` already covers `price` boundary (zero,
 negative) on both — this section fills in `name`, `category_id`, and the
 declared `maxLength`.
 
@@ -274,7 +274,7 @@ declared `maxLength`.
 
 `name`'s 255-char boundary (cases 3–4 above) is the cleanest BVA in this whole
 document — a real declared bound, not a hypothesis. `price`'s boundary (0, 1,
--1) is already in `EShop_Apidog_TestCases.md`; note that the declared
+-1) is already in `Material/Document/Apidog/EShop_Apidog_TestCases.md`; note that the declared
 `minimum: 1` means `price: 0` is the correct LB−1 case and `price: 1` should be
 the true lower boundary success case, not `price: 100000` as the only "valid"
 example — worth adding a `price: 1` case specifically to test the exact
@@ -306,7 +306,7 @@ fields (already covered above) — the array itself has its own classes.
 ## `POST /api/cart` — `id`, `name`, `price`, `quantity`
 
 `quantity` boundary (0, 1) is already covered. `id`, `name`, `price` have never
-been given an invalid class at all, despite `EShop_Defect.md` documenting that
+been given an invalid class at all, despite `Material/Document/SUT-Reference/EShop_Defect.md` documenting that
 this endpoint performs zero schema validation — meaning every one of these is a
 strong defect-tracking candidate, not a routine gap-fill.
 
@@ -320,7 +320,7 @@ strong defect-tracking candidate, not a routine gap-fill.
 
 These five cases are collectively the strongest evidence yet for the "no schema
 validation on `POST /api/cart`" defect already flagged as a hypothesis in
-`EShop_Apidog_TestCases.md` — if even two or three of these come back 200, that
+`Material/Document/Apidog/EShop_Apidog_TestCases.md` — if even two or three of these come back 200, that
 single write-up is well-evidenced rather than resting on one uncertain case.
 
 ---
@@ -421,7 +421,7 @@ directly comparable to `price`'s boundary on Products.
 This field is a closed enum, which changes the domain-testing shape: instead of
 type/format/boundary classes, the relevant classes are "each valid enum value"
 and "any non-enum value" — and the _combination_ of `status` with the order's
-current state is what `EShop_State_Transition_Testing.md` already covers
+current state is what `Material/Document/Methodology/EShop_State_Transition_Testing.md` already covers
 exhaustively (25 cells). This section only adds the classes that document
 doesn't cover: type and enum-violation on the field itself, independent of
 state.
@@ -433,7 +433,7 @@ state.
 | 3   | Missing status field rejected  | `{}`                                                             | 400 (verify) |                                                                                                                                                                      |
 
 For the full state × target-state matrix, use
-`EShop_State_Transition_Testing.md` — that document is the authoritative source
+`Material/Document/Methodology/EShop_State_Transition_Testing.md` — that document is the authoritative source
 for this endpoint's behavior once a _valid_ enum value is confirmed to reach the
 handler at all.
 
@@ -470,7 +470,7 @@ itself:
 | Variable      | Declared type              | Notes from source/defects                                                                                                                                                           |
 | ------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `email`       | string                     | Must both be syntactically valid _and_ belong to a registered user — two distinct conditions bundled in one field                                                                   |
-| `resetToken`  | string                     | Actual generation logic produces a 4-digit numeric code (`EShop_Defect.md`), though the schema doesn't declare that pattern. Never expires; invalidated only by a successful reset. |
+| `resetToken`  | string                     | Actual generation logic produces a 4-digit numeric code (`Material/Document/SUT-Reference/EShop_Defect.md`), though the schema doesn't declare that pattern. Never expires; invalidated only by a successful reset. |
 | `newPassword` | string, `format: password` | No enforced strength rule confirmed anywhere in the codebase for any endpoint                                                                                                       |
 
 **Output:** success (`200`) or a single documented error branch (`400`,

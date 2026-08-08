@@ -2,7 +2,7 @@
 
 This folder wires **consumer-driven contract testing** into the EShop SUT using
 [Pact](https://docs.pact.io/). Plan document:
-[Material/Document/W07/EShop_Pact_Plan.md](../../Material/Document/W07/EShop_Pact_Plan.md).
+[Material/Document/Pact/EShop_Pact_Plan.md](../../Material/Document/Pact/EShop_Pact_Plan.md).
 
 ## Layout
 

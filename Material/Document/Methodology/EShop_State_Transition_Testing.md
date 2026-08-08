@@ -22,7 +22,7 @@ test to "fix" back to asserting the bug.
 **Read the "Be careful about this" section before running anything** — several
 things here are genuinely different from a textbook single-mechanism state
 machine, and most cells in both tables below are hypotheses inferred from the
-admin transition logic already documented in `EShop_Defect.md`, not freshly
+admin transition logic already documented in `Material/Document/SUT-Reference/EShop_Defect.md`, not freshly
 re-verified. Building the table is step 2 of 4; actually running the cells is
 what turns hypotheses into results.
 
@@ -64,7 +64,7 @@ the cancel endpoint (Table B) — both violate the diagram above.
 
 Rows = current state, columns = requested target state. **Confirmed** = actually
 executed in this project so far. **Hypothesis** = inferred from the admin
-handler's documented allow-list (`EShop_Defect.md`), not yet independently
+handler's documented allow-list (`Material/Document/SUT-Reference/EShop_Defect.md`), not yet independently
 re-run — treat these as the thing this table exists to verify, not as settled
 fact.
 
@@ -174,7 +174,7 @@ those 30 cases have never actually been run.
 real transitions in one test (e.g. `pending→confirmed→shipping` as a single case
 checking both steps succeed in sequence) rather than treating each as
 independent. None of the cases above do this; Scenario B in
-`EShop_Apidog_Steps.md` does walk a real multi-step sequence but wasn't designed
+`Material/Document/Apidog/EShop_Apidog_Steps.md` does walk a real multi-step sequence but wasn't designed
 as 1-switch coverage and doesn't systematically cover pairs.
 
 ---
@@ -259,7 +259,7 @@ that branches to `canceled` from `confirmed`.
 **Before running any of this as a one-click Apidog Test Scenario:** it's
 unconfirmed whether a failed assertion in an Apidog scenario halts the remaining
 steps or lets them run anyway (this is one of the open candidates already
-flagged in `EShop_Failure_Modes.md`). Given that a wrongly-succeeding "invalid"
+flagged in `Material/Document/SUT-Reference/EShop_Failure_Modes.md`). Given that a wrongly-succeeding "invalid"
 transition here would silently corrupt every downstream step's precondition,
 **run each scenario step-by-step manually the first time**, checking the actual
 status after every request before sending the next one. Only convert it into an
