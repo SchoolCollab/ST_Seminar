@@ -8,7 +8,7 @@
  *      into subsequent requests via requestFilter.
  *
  * State names MUST match the strings used in the consumer tests
- * (see frontend-web/src/__tests__/pact/*.pact.test.js).
+ * (see frontend-web/tests/pact/*.pact.test.js).
  */
 const jwt = require('jsonwebtoken')
 const db = require('../../database')
@@ -40,20 +40,6 @@ async function seedTester() {
     return jwt.sign({ id, role: 'user' }, SECRET_KEY)
 }
 
-async function seedProduct1() {
-    await run(
-        'INSERT INTO products (id, name, price, description, imageUrl, category_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [
-            1,
-            'iPhone 15 Pro Max',
-            30000000,
-            'Điện thoại cao cấp',
-            'https://placehold.co/300x300/png',
-            1,
-        ]
-    )
-}
-
 async function seedAdmin() {
     await reset()
     return jwt.sign({ id: 1, role: 'admin' }, SECRET_KEY)
@@ -66,6 +52,25 @@ async function seedOrder(status = 'pending') {
     )
 }
 
+async function postJson(url, token, body) {
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+        throw new Error(
+            `Provider setup request failed: ${response.status} ${response.statusText}`
+        )
+    }
+
+    return response.json()
+}
+
 module.exports = {
     'email not registered': async () => {
         await reset()
@@ -73,6 +78,18 @@ module.exports = {
 
     'user tester.1@example.com exists': async () => {
         await seedTester()
+    },
+
+    'user test@eshop.com exists': async () => {
+        await reset()
+    },
+
+    'user test@eshop.com has reset token 1234': async () => {
+        await reset()
+        await run('UPDATE users SET reset_token = ? WHERE email = ?', [
+            '1234',
+            'test@eshop.com',
+        ])
     },
 
     'admin user admin@eshop.com exists': async () => {
@@ -120,6 +137,24 @@ module.exports = {
         return { token }
     },
 
+    'authenticated as admin with pending order 1': async () => {
+        const token = await seedAdmin()
+        await seedOrder('pending')
+        return { token }
+    },
+
+    'authenticated as admin with confirmed order 1': async () => {
+        const token = await seedAdmin()
+        await seedOrder('confirmed')
+        return { token }
+    },
+
+    'authenticated as admin with shipping order 1': async () => {
+        const token = await seedAdmin()
+        await seedOrder('shipping')
+        return { token }
+    },
+
     'authenticated as admin with canceled order 1': async () => {
         const token = await seedAdmin()
         await seedOrder('canceled')
@@ -146,22 +181,66 @@ module.exports = {
         return { token }
     },
 
-    'authenticated user has empty cart': async () => {
-        const token = await seedTester()
-        return { token }
-    },
-
-    'authenticated user, product 1 exists': async () => {
-        const token = await seedTester()
-        await seedProduct1().catch(() => {}) // ignore UNIQUE if reseeded
-        return { token }
-    },
-
     'authenticated user has 1 item worth 30000000': async () => {
         const token = await seedTester()
-        // Cart is in-memory (userCarts) in server.js — POST /api/cart during
-        // verification is what would populate it; for checkout we rely on the
-        // request body carrying total_amount (defect: server trusts client).
+        // For the current checkout contract, the request body carries the
+        // client-computed total_amount (defect: server trusts client).
         return { token }
+    },
+
+    'web checkout created order 1 from frontend payload': async () => {
+        await reset()
+        await run('UPDATE users SET shipping_address = ? WHERE id = ?', [
+            '123 Le Loi, Q1, HCMC',
+            2,
+        ])
+
+        const token = jwt.sign({ id: 2, role: 'user' }, SECRET_KEY)
+        const baseUrl = process.env.PACT_PROVIDER_BASE_URL
+        if (!baseUrl) {
+            throw new Error('PACT_PROVIDER_BASE_URL is required for this state')
+        }
+
+        await postJson(`${baseUrl}/api/checkout`, token, {
+            items: [
+                {
+                    id: 1,
+                    name: 'iPhone 15 Pro Max',
+                    price: 30000000,
+                    quantity: 1,
+                },
+            ],
+            total_amount: 30000000,
+            coupon_id: null,
+        })
+
+        return { token }
+    },
+
+    'coupon SAVE10 exists for web checkout': async () => {
+        await reset()
+    },
+
+    'authenticated user and coupon 1 exist': async () => {
+        await reset()
+        return { token: jwt.sign({ id: 2, role: 'user' }, SECRET_KEY) }
+    },
+
+    'authenticated user has pending order 1': async () => {
+        await reset()
+        await seedOrder('pending')
+        return { token: jwt.sign({ id: 2, role: 'user' }, SECRET_KEY) }
+    },
+
+    'authenticated user has confirmed order 1': async () => {
+        await reset()
+        await seedOrder('confirmed')
+        return { token: jwt.sign({ id: 2, role: 'user' }, SECRET_KEY) }
+    },
+
+    'authenticated user has shipping order 1': async () => {
+        await reset()
+        await seedOrder('shipping')
+        return { token: jwt.sign({ id: 2, role: 'user' }, SECRET_KEY) }
     },
 }

@@ -93,6 +93,7 @@ function buildOptions(port, consumer) {
 
 const server = app.listen(0, async () => {
     const { port } = server.address()
+    process.env.PACT_PROVIDER_BASE_URL = `http://localhost:${port}`
     const results = []
 
     try {

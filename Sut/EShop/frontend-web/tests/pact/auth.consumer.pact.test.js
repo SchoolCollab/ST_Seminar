@@ -1,6 +1,7 @@
 /**
  * Consumer contract — Authentication & Users.
- * Covers: POST /api/register, POST /api/login, GET /api/users/me, PUT /api/users/me.
+ * Covers: POST /api/register, POST /api/login, POST /api/forgot-password,
+ * POST /api/reset-password, GET /api/users/me, PUT /api/users/me.
  * Cross-ref: EShop_Defect.md (users/me leaks password, PUT accepts role — SEC-06).
  * Contracts intentionally do NOT include `password` or `role` on responses
  * so the desired shape drives verification, not the current buggy shape.
@@ -20,7 +21,7 @@ describe('Auth & Users contract', () => {
                 body: {
                     name: 'Tester One',
                     email: 'tester.1@example.com',
-                    password: 'TesterPass123!',
+                    password: 'Tester Pass123',
                 },
             })
             .willRespondWith({
@@ -36,7 +37,7 @@ describe('Auth & Users contract', () => {
             const res = await apiClient.post('/api/register', {
                 name: 'Tester One',
                 email: 'tester.1@example.com',
-                password: 'TesterPass123!',
+                password: 'Tester Pass123',
             })
             expect(res.status).toBe(200)
             expect(res.data.id).toBeGreaterThan(0)
@@ -78,6 +79,64 @@ describe('Auth & Users contract', () => {
             })
             expect(res.status).toBe(200)
             expect(typeof res.data.token).toBe('string')
+        })
+    })
+
+    it('POST /api/forgot-password returns a reset token for display', async () => {
+        provider
+            .given('user test@eshop.com exists')
+            .uponReceiving('a forgot-password request')
+            .withRequest({
+                method: 'POST',
+                path: '/api/forgot-password',
+                headers: { 'Content-Type': 'application/json' },
+                body: {
+                    email: 'test@eshop.com',
+                },
+            })
+            .willRespondWith({
+                status: 200,
+                body: {
+                    resetToken: M.string('1234'),
+                },
+            })
+
+        await provider.executeTest(async mock => {
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.post('/api/forgot-password', {
+                email: 'test@eshop.com',
+            })
+            expect(res.status).toBe(200)
+            expect(typeof res.data.resetToken).toBe('string')
+        })
+    })
+
+    it('POST /api/reset-password accepts the reset token and new password', async () => {
+        provider
+            .given('user test@eshop.com has reset token 1234')
+            .uponReceiving('a reset-password request')
+            .withRequest({
+                method: 'POST',
+                path: '/api/reset-password',
+                headers: { 'Content-Type': 'application/json' },
+                body: {
+                    email: 'test@eshop.com',
+                    resetToken: '1234',
+                    newPassword: 'New Pass123',
+                },
+            })
+            .willRespondWith({
+                status: 200,
+            })
+
+        await provider.executeTest(async mock => {
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.post('/api/reset-password', {
+                email: 'test@eshop.com',
+                resetToken: '1234',
+                newPassword: 'New Pass123',
+            })
+            expect(res.status).toBe(200)
         })
     })
 

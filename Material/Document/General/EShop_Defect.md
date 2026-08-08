@@ -144,6 +144,15 @@ interaction. FR-08 requires the cart to be cleared on success.
 only `total_amount` and `shipping_address` are stored. There is no `order_items`
 population.
 
+**`POST /api/checkout` stores no shipping address for real web checkouts.**
+`Checkout.jsx:47–53` sends `{ items, total_amount, coupon_id }`, but
+`server.js:331` still destructures `shipping_address` from the request body and
+`server.js:335` writes that missing value into `orders.shipping_address`. Result:
+orders created by the real `frontend-web` checkout flow silently persist a
+null/undefined shipping address. Found by correcting the Pact checkout contract
+to match the real consumer request shape; the older inaccurate contract had
+included `shipping_address` and therefore masked this integration bug.
+
 **`PUT /api/orders/:id/cancel` allows cancelling a `shipping` order (FR-10).**
 `server.js:329`: guard is
 `if (order.status === "delivered" || order.status === "canceled")`. Only those
