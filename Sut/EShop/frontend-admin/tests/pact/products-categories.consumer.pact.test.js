@@ -3,7 +3,7 @@
  * Covers: product list/create/update/delete and category list/create/delete.
  */
 const { provider, M } = require('./pact-setup')
-const apiClient = require('../../api/apiClient').default
+const apiClient = require('../../src/api/apiClient').default
 
 function useAdminMock(mock) {
     apiClient.defaults.baseURL = mock.url

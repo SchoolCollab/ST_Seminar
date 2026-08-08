@@ -3,7 +3,7 @@
  * Covers: GET/DELETE admin users, GET admin orders, PUT admin order status.
  */
 const { provider, M } = require('./pact-setup')
-const apiClient = require('../../api/apiClient').default
+const apiClient = require('../../src/api/apiClient').default
 
 function useAdminMock(mock) {
     apiClient.defaults.baseURL = mock.url

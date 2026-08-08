@@ -4,7 +4,7 @@
  * Cross-ref: EShop_Defect.md (checkout trusts client total_amount, does not clear cart).
  */
 const { provider, M } = require('./pact-setup')
-const apiClient = require('../../api/apiClient').default
+const apiClient = require('../../src/api/apiClient').default
 
 describe('Cart & Checkout contract', () => {
     it("GET /api/cart returns the user's cart", async () => {

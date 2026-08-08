@@ -3,7 +3,7 @@
  * Covers: POST /api/login.
  */
 const { provider, M } = require('./pact-setup')
-const apiClient = require('../../api/apiClient').default
+const apiClient = require('../../src/api/apiClient').default
 
 describe('Admin auth contract', () => {
     afterEach(() => {

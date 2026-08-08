@@ -4,7 +4,7 @@
  * Cross-ref: EShop_Apidog_TestCases.md §3, EShop_Defect.md (missing product returns {}+200).
  */
 const { provider, M } = require('./pact-setup')
-const apiClient = require('../../api/apiClient').default
+const apiClient = require('../../src/api/apiClient').default
 
 describe('Products & Categories contract', () => {
     const productLike = {

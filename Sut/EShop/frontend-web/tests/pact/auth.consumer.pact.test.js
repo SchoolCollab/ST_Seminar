@@ -6,7 +6,7 @@
  * so the desired shape drives verification, not the current buggy shape.
  */
 const { provider, M } = require('./pact-setup')
-const apiClient = require('../../api/apiClient').default
+const apiClient = require('../../src/api/apiClient').default
 
 describe('Auth & Users contract', () => {
     it('POST /api/register creates a new user', async () => {
