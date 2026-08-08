@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-
-const API_URL = "http://localhost:3000/api";
+import apiClient from "./api/apiClient";
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("adminToken") || "");
@@ -33,22 +31,22 @@ export default function App() {
 
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       fetchData();
     }
   }, [token]);
 
   const fetchData = async () => {
     try {
-      const userRes = await axios.get(`${API_URL}/admin/users`);
+      const userRes = await apiClient.get("/api/admin/users");
       setUsers(userRes.data);
-      const orderRes = await axios.get(`${API_URL}/admin/orders`);
+      const orderRes = await apiClient.get("/api/admin/orders");
       setOrders(orderRes.data);
-      const prodRes = await axios.get(`${API_URL}/products`);
+      const prodRes = await apiClient.get("/api/products");
       setProducts(prodRes.data);
-      const catRes = await axios.get(`${API_URL}/categories`);
+      const catRes = await apiClient.get("/api/categories");
       setCategories(catRes.data);
-      const couponRes = await axios.get(`${API_URL}/coupons`);
+      const couponRes = await apiClient.get("/api/coupons");
       setCoupons(couponRes.data);
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
@@ -61,7 +59,7 @@ export default function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${API_URL}/login`, { email, password });
+      const res = await apiClient.post("/api/login", { email, password });
       if (res.data.user.role !== "admin") {
         alert("Bạn không phải là admin!");
         return;
@@ -75,7 +73,7 @@ export default function App() {
 
   const deleteUser = async (id) => {
     try {
-      await axios.delete(`${API_URL}/admin/users/${id}`);
+      await apiClient.delete(`/api/admin/users/${id}`);
       fetchData();
     } catch (err) {
       alert("Lỗi xóa: " + err.message);
@@ -84,7 +82,7 @@ export default function App() {
 
   const updateOrderStatus = async (id, status) => {
     try {
-      await axios.put(`${API_URL}/admin/orders/${id}/status`, { status });
+      await apiClient.put(`/api/admin/orders/${id}/status`, { status });
       fetchData();
     } catch (err) {
       const msg = err.response?.data?.error || err.message;
@@ -106,7 +104,7 @@ export default function App() {
     e.preventDefault();
     try {
       if (productForm.id) {
-        await axios.put(`${API_URL}/products/${productForm.id}`, productForm);
+        await apiClient.put(`/api/products/${productForm.id}`, productForm);
         const fakeMassUpdatedProducts = products.map((p) => ({
           ...p,
           name: productForm.name,
@@ -114,7 +112,7 @@ export default function App() {
         setProducts(fakeMassUpdatedProducts);
         alert("Cập nhật thành công!");
       } else {
-        await axios.post(`${API_URL}/products`, productForm);
+        await apiClient.post("/api/products", productForm);
         fetchData();
       }
       setProductForm({
@@ -132,7 +130,7 @@ export default function App() {
 
   const deleteProduct = async (id) => {
     try {
-      await axios.delete(`${API_URL}/products/${id}`);
+      await apiClient.delete(`/api/products/${id}`);
       fetchData();
     } catch (err) {
       alert("Lỗi xóa SP: " + err.message);
@@ -142,7 +140,7 @@ export default function App() {
   const handleCategorySubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/categories`, { name: categoryName });
+      await apiClient.post("/api/categories", { name: categoryName });
       setCategoryName("");
       fetchData();
     } catch (err) {
@@ -152,7 +150,7 @@ export default function App() {
 
   const deleteCategory = async (id) => {
     try {
-      await axios.delete(`${API_URL}/categories/${id}`);
+      await apiClient.delete(`/api/categories/${id}`);
       fetchData();
     } catch (err) {
       alert("Lỗi xóa DM: " + err.message);
@@ -402,8 +400,8 @@ export default function App() {
                         ),
                       }));
 
-                      const res = await axios.post(
-                        `${API_URL}/admin/import-products`,
+                      const res = await apiClient.post(
+                        "/api/admin/import-products",
                         { products: prods },
                       );
                       setImportResult(res.data);
@@ -616,7 +614,7 @@ export default function App() {
               onSubmit={async (e) => {
                 e.preventDefault();
                 try {
-                  await axios.post(`${API_URL}/admin/coupons`, couponForm);
+                  await apiClient.post("/api/admin/coupons", couponForm);
                   setCouponForm({
                     code: "",
                     type: "percent",
@@ -755,8 +753,8 @@ export default function App() {
                         className="bg-red-500 text-white px-2 py-1 rounded text-sm"
                         onClick={async () => {
                           try {
-                            await axios.delete(
-                              `${API_URL}/admin/coupons/${c.id}`,
+                            await apiClient.delete(
+                              `/api/admin/coupons/${c.id}`,
                             );
                             fetchData();
                           } catch (err) {

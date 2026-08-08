@@ -16,11 +16,12 @@ EShop, whose implementation diverges from its SRS in dozens of catalogued ways
 (see `EShop_Defect.md`), that distinction is the point: contract tests pin the
 _lived_ contract, not the aspirational one.
 
-**Status as of this submission: Iteration 1 complete.** One consumer
-(`eshop-web`), 10 interactions, local broker-optional provider verification, and
-a working CI pipeline. Iterations 2 and 3 (additional consumers, a hard
-deployment gate) are **not yet executed** — they remain planned, deferred behind
-S4/S5 rather than cancelled. The reasoning for the sequencing is in §3.
+**Status as of this submission: Iterations 1 and 2 complete.** Two consumers
+(`eshop-web` and `eshop-admin`), 26 total interactions, local broker-optional
+provider verification, and consumer CI workflows for both web and admin. The
+confirmed provider baseline is `eshop-web` 8/10 and `eshop-admin` 15/16.
+Iteration 3 (`frontend-mobile`) and a hard deployment gate are **not yet
+executed** — they remain planned, deferred rather than cancelled.
 
 ## 1. Positioning within T06
 
@@ -61,9 +62,9 @@ can point at Pact's mock server.
   Provider states needing an admin token mint one directly via `jsonwebtoken`,
   not by exercising SEC-06 — this keeps the defect visible and unrelied-on.
 
-## 3. Scope — Iteration 1 complete, Iterations 2–3 pending
+## 3. Scope — Iterations 1–2 complete, Iteration 3 pending
 
-**What was built (complete):**
+**What was built in Iteration 1 (complete):**
 
 - Consumer: `frontend-web` only.
 - 10 interactions: `POST /api/register`, `POST /api/login`, `GET /api/products`,
@@ -75,12 +76,25 @@ can point at Pact's mock server.
 - Local broker via `docker-compose.yml`; GitHub Actions workflows for consumer
   publish and provider verify.
 
-**What remains to be executed:** a second consumer (`frontend-admin`), a third
-consumer (`frontend-mobile`), and promoting `can-i-deploy` from advisory to a
-hard CI gate with `record-deployment` against a simulated production
-environment. These are not cancelled — they're part of the original plan and
-still intended — but they are not yet built, and no specific week is currently
-allocated to them.
+**What was built in Iteration 2 (complete):**
+
+- Consumer: `frontend-admin`.
+- 16 interactions covering admin login, user management, order management,
+  product/category CRUD, coupon management, and CSV import.
+- Consumer-side refactor to a centralized `apiClient`, matching the corrected
+  `frontend-web` pattern so Pact tests exercise the same request path as the UI.
+- Provider verification runs both consumers sequentially so `eshop-web` and
+  `eshop-admin` results are reported separately.
+- A parallel `.github/workflows/pact-consumer-admin.yml` workflow, rather than
+  folding admin into the web workflow. Keeping one consumer per workflow makes
+  path triggers, cache keys, broker publishing, and advisory `can-i-deploy`
+  output easy to read separately.
+
+**What remains to be executed:** a third consumer (`frontend-mobile`) and
+promoting `can-i-deploy` from advisory to a hard CI gate with
+`record-deployment` against a simulated production environment. These are not
+cancelled — they're part of the original plan and still intended — but they are
+not yet built, and no specific week is currently allocated to them.
 
 **Why Iteration 1 was prioritized first.** Iterations 2 and 3 would have
 collided with Weeks 08–09, which are needed for the User Guide (20% of the
@@ -240,6 +254,37 @@ than `eachLike` provides.
   pass, not fail.
 - `PUT /api/users/me`'s request body excludes `role` — SEC-06; same reasoning.
 
+## 6a. Iteration 2 result — `frontend-admin`: 15/16 verified, confirmed stable
+
+`frontend-admin` adds a second consumer named `eshop-admin` against the same
+provider, `eshop-backend`. Its consumer suite passes **16/16** and produces a
+16-interaction pact after forcing Jest to run Pact tests serially (see FM-04).
+
+The full provider cycle was then run three consecutive times under the same
+execution path. All three runs matched:
+
+- `eshop-web`: **8/10** verified, with the same two deliberate contract-authoring
+  failures documented above.
+- `eshop-admin`: **15/16** verified, with one real provider failure.
+
+**Admin failure — `PUT /api/admin/orders/:id/status`
+(`canceled`→`delivered`).** The admin contract asserts the correct state-machine
+behavior: an already-canceled order should reject a transition to `delivered`
+with a `400` response and an error body. The provider instead returns `200` and
+updates the order. Unlike the two `eshop-web` failures, this is **not** a
+contract-authoring mistake; it is live provider-verification evidence of the
+known terminal-state defect documented in
+`Material/Document/General/EShop_State_Transition_Testing.md` as `STT-A-24`.
+That entry now has both source-level analysis and independent Pact verification
+as corroborating evidence.
+
+**CI status.** `frontend-admin` now has its own consumer workflow,
+`.github/workflows/pact-consumer-admin.yml`, mirroring the web workflow:
+install, generate pacts, publish to the broker when broker secrets are present,
+then run advisory `can-i-deploy` with `continue-on-error: true`. This keeps the
+hard deployment gate deferred; no consumer or provider gate has been promoted to
+blocking in Iteration 2.
+
 ## 7. Failure modes logged
 
 **FM-02** (`EShop_Failure_Modes.md`): `PactV3`'s Rust FFI crashes when
@@ -253,6 +298,12 @@ verification time regardless of what's recorded. For `Content-Type`, the literal
 direction of the charset ever being _dropped or changed_ by the server — not
 appended, as an earlier version of this document stated before the discrepancy
 was caught during a read-only verification pass.
+
+**FM-04** (`EShop_Failure_Modes.md`): parallel Jest workers can race while
+writing the same Pact output file. This first appeared during `frontend-admin`
+Iteration 2: all 16 consumer tests passed, but the generated pact contained only
+7 interactions. Setting `maxWorkers: 1` fixed `frontend-admin`, and the same
+guard was added to `frontend-web` because it had the same latent risk.
 
 ## 8. Outstanding housekeeping — all three resolved
 

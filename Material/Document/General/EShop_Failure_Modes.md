@@ -181,6 +181,47 @@ nothing if the original failure was never reproducible in the first place.
 
 ---
 
+### FM-04 — Parallel Jest workers can race Pact file writes and silently leave a partial consumer contract
+
+**What happened.** Adding Pact tests for `frontend-admin` split the 16
+interactions across four Jest files. The first consumer run reported all 16
+tests passing, but the generated pact file contained only 7 interactions. The
+provider verifier then reported `eshop-admin` as a 7-interaction consumer,
+which was wrong — the missing 9 interactions had never made it into the final
+pact file.
+
+**Where it showed up.** `frontend-admin/src/__tests__/pact/*.pact.test.js`.
+Jest ran the Pact test files in parallel workers, and each worker used the same
+consumer/provider pair (`eshop-admin` → `eshop-backend`) and the same output
+file (`pacts/eshop-admin-eshop-backend.json`). The tests themselves passed; the
+bad artifact only became obvious when counting interactions in the generated
+pact before provider verification.
+
+**Why it's misleading.** The failure does not point at parallel workers. There
+is no direct "file write race" error, and the consumer suite can still look
+green. Downstream, the verifier appears to be checking a smaller contract, which
+can be mistaken for a test-scope mistake, a Pact merge bug, or another transient
+Pact FFI problem. Without explicitly counting the generated interactions, the
+missing contracts are easy to miss.
+
+**Root cause.** Multiple Jest workers wrote/merged the same Pact output file for
+the same consumer/provider pair concurrently. Pact's file generation is safe
+when the suite runs serially, but this project was not configured to force Pact
+consumer tests into a single worker.
+
+**Resolution.** Set `maxWorkers: 1` in `frontend-admin/jest.config.mjs` and
+regenerated the pact; the file then contained the expected 16 interactions. The
+same setting was also added to `frontend-web/jest.config.mjs`, because the first
+consumer had the same latent risk even though its smaller three-file suite had
+not triggered the race during Iteration 1.
+
+**Lesson for the User Guide.** A green Pact consumer suite is not enough by
+itself — verify the generated pact artifact has the expected interaction count,
+especially when tests are split across files. Pact consumer generation should be
+run serially unless each worker writes a distinct pact file.
+
+---
+
 ## Candidates to watch for (not yet confirmed)
 
 Things flagged during setup as _possible_ future failure modes, worth

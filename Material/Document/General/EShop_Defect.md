@@ -60,6 +60,12 @@ matching row.** `server.js:114` does not check `err` or a null row;
 **Admin can delete their own account (FR-19).** `server.js:504–507`:
 unconditional DELETE. SRS forbids self-delete.
 
+**Admin user list omits `phone` although the admin UI renders it.**
+`server.js:540–547` selects `id, name, email, role, login_attempts,
+locked_until, shipping_address` from `users`, but not `phone`. The admin
+frontend renders `u.phone` in its user table, so that column is always empty
+even when user phone data exists.
+
 **`DELETE /api/admin/users/:id` always returns `200`.** `server.js:505`:
 callback ignores `err` and `this.changes`. No signal of failure or missing id.
 

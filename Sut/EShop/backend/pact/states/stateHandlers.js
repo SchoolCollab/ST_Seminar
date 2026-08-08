@@ -54,6 +54,18 @@ async function seedProduct1() {
     )
 }
 
+async function seedAdmin() {
+    await reset()
+    return jwt.sign({ id: 1, role: 'admin' }, SECRET_KEY)
+}
+
+async function seedOrder(status = 'pending') {
+    await run(
+        'INSERT INTO orders (id, user_id, total_amount, status, shipping_address) VALUES (?, ?, ?, ?, ?)',
+        [1, 2, 30000000, status, '123 Le Loi, Q1, HCMC']
+    )
+}
+
 module.exports = {
     'email not registered': async () => {
         await reset()
@@ -61,6 +73,10 @@ module.exports = {
 
     'user tester.1@example.com exists': async () => {
         await seedTester()
+    },
+
+    'admin user admin@eshop.com exists': async () => {
+        await reset()
     },
 
     'at least one product exists': async () => {
@@ -79,6 +95,54 @@ module.exports = {
 
     'authenticated as tester.1': async () => {
         const token = await seedTester()
+        return { token }
+    },
+
+    'authenticated as admin': async () => {
+        const token = await seedAdmin()
+        return { token }
+    },
+
+    'authenticated as admin with users': async () => {
+        const token = await seedAdmin()
+        return { token }
+    },
+
+    'authenticated as admin with disposable admin user 2': async () => {
+        const token = await seedAdmin()
+        await run('UPDATE users SET role = ? WHERE id = ?', ['admin', 2])
+        return { token }
+    },
+
+    'authenticated as admin with orders': async () => {
+        const token = await seedAdmin()
+        await seedOrder('pending')
+        return { token }
+    },
+
+    'authenticated as admin with canceled order 1': async () => {
+        const token = await seedAdmin()
+        await seedOrder('canceled')
+        return { token }
+    },
+
+    'authenticated as admin with product 1': async () => {
+        const token = await seedAdmin()
+        return { token }
+    },
+
+    'authenticated as admin with disposable category 3': async () => {
+        const token = await seedAdmin()
+        return { token }
+    },
+
+    'authenticated as admin with coupons': async () => {
+        const token = await seedAdmin()
+        return { token }
+    },
+
+    'authenticated as admin with coupon 1': async () => {
+        const token = await seedAdmin()
         return { token }
     },
 

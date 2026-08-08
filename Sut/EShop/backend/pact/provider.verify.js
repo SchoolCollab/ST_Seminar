@@ -15,6 +15,8 @@
 process.env.NODE_ENV = 'test'
 
 const { Verifier } = require('@pact-foundation/pact')
+const fs = require('fs')
+const path = require('path')
 const app = require('../server')
 const stateHandlers = require('./states/stateHandlers')
 
@@ -30,49 +32,104 @@ const wrappedHandlers = Object.fromEntries(
     ])
 )
 
+const consumers = [
+    {
+        name: 'eshop-web',
+        localPact: path.resolve(
+            __dirname,
+            '../../frontend-web/pacts/eshop-web-eshop-backend.json'
+        ),
+    },
+    {
+        name: 'eshop-admin',
+        localPact: path.resolve(
+            __dirname,
+            '../../frontend-admin/pacts/eshop-admin-eshop-backend.json'
+        ),
+    },
+]
+
+function countInteractions(pactPath) {
+    try {
+        const pact = JSON.parse(fs.readFileSync(pactPath, 'utf8'))
+        return pact.interactions.length
+    } catch (_err) {
+        return null
+    }
+}
+
+function buildOptions(port, consumer) {
+    const options = {
+        provider: 'eshop-backend',
+        providerBaseUrl: `http://localhost:${port}`,
+        publishVerificationResult: process.env.CI === 'true',
+        providerVersion: process.env.GIT_SHA || 'local',
+        providerVersionBranch: process.env.GIT_BRANCH || 'local',
+        stateHandlers: wrappedHandlers,
+        requestFilter: (req, _res, next) => {
+            if (stateToken) {
+                req.headers['authorization'] = `Bearer ${stateToken}`
+            }
+            next()
+        },
+    }
+
+    if (process.env.PACT_BROKER_BASE_URL) {
+        options.pactBrokerUrl = process.env.PACT_BROKER_BASE_URL
+        if (process.env.PACT_BROKER_TOKEN) {
+            options.pactBrokerToken = process.env.PACT_BROKER_TOKEN
+        }
+        options.consumerVersionSelectors = [
+            { consumer: consumer.name, mainBranch: true },
+            { consumer: consumer.name, deployedOrReleased: true },
+        ]
+        options.consumerFilters = [consumer.name]
+    } else {
+        options.pactUrls = [consumer.localPact]
+    }
+
+    return options
+}
+
 const server = app.listen(0, async () => {
     const { port } = server.address()
+    const results = []
+
     try {
-        const options = {
-            provider: 'eshop-backend',
-            providerBaseUrl: `http://localhost:${port}`,
-            publishVerificationResult: process.env.CI === 'true',
-            providerVersion: process.env.GIT_SHA || 'local',
-            providerVersionBranch: process.env.GIT_BRANCH || 'local',
-            stateHandlers: wrappedHandlers,
-            requestFilter: (req, _res, next) => {
-                if (stateToken) {
-                    req.headers['authorization'] = `Bearer ${stateToken}`
-                }
-                next()
-            },
-        }
+        for (const consumer of consumers) {
+            stateToken = null
+            const total = countInteractions(consumer.localPact)
+            console.log(`Verifying ${consumer.name} against eshop-backend...`)
 
-        if (process.env.PACT_BROKER_BASE_URL) {
-            options.pactBrokerUrl = process.env.PACT_BROKER_BASE_URL
-            if (process.env.PACT_BROKER_TOKEN) {
-                options.pactBrokerToken = process.env.PACT_BROKER_TOKEN
+            try {
+                await new Verifier(buildOptions(port, consumer)).verifyProvider()
+                const countLabel = total === null ? 'unknown' : `${total}/${total}`
+                console.log(
+                    `Pact verification succeeded for ${consumer.name}: ${countLabel}.`
+                )
+                results.push({ consumer: consumer.name, passed: true, total })
+            } catch (err) {
+                console.error(
+                    `Pact verification failed for ${consumer.name}:`,
+                    err
+                )
+                results.push({ consumer: consumer.name, passed: false, total })
             }
-            options.consumerVersionSelectors = [
-                { mainBranch: true },
-                { deployedOrReleased: true },
-            ]
-        } else {
-            // Local fallback: read the pact file produced by the consumer.
-            options.pactUrls = [
-                require('path').resolve(
-                    __dirname,
-                    '../../frontend-web/pacts/eshop-web-eshop-backend.json'
-                ),
-            ]
         }
 
-        await new Verifier(options).verifyProvider()
-        console.log('Pact verification succeeded.')
-        process.exit(0)
-    } catch (err) {
-        console.error('Pact verification failed:', err)
-        process.exit(1)
+        const failed = results.filter(result => !result.passed)
+        console.log('Pact verification summary:')
+        for (const result of results) {
+            const countLabel =
+                result.total === null
+                    ? 'unknown interactions'
+                    : `${result.total} interactions`
+            console.log(
+                `- ${result.consumer}: ${result.passed ? 'passed' : 'failed'} (${countLabel})`
+            )
+        }
+
+        process.exit(failed.length === 0 ? 0 : 1)
     } finally {
         server.close()
     }

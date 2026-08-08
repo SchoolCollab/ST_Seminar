@@ -133,6 +133,14 @@ restating Expected Result.
 | STT-A-24 | Verify status update rejects canceled→delivered (both are terminal states) | Order in `canceled`            | `{"status":"delivered"}`                       | **400** [EXPECTED TO FAIL — tracks a confirmed defect]      | 200             | Fail (expected) |
 | STT-A-25 | Verify status update rejects canceled→canceled (self-transition)           | Order in `canceled`            | `{"status":"canceled"}`                        | 400 (hypothesis)                                            |                 |                 |
 
+**Pact corroboration for STT-A-24.** Iteration 2's `eshop-admin` Pact provider
+verification independently exercised this same transition through
+`PUT /api/admin/orders/1/status` with `{"status":"delivered"}` from a seeded
+`canceled` order. The contract asserted the intended `400`/error response, while
+the live backend returned `200`; this was the single `eshop-admin` verification
+failure in the confirmed 15/16 baseline. That gives STT-A-24 both source-level
+evidence and live contract-verification evidence.
+
 ### Table B test cases (user cancel)
 
 | TC ID    | Description                                               | Pre-condition        | Steps            | Expected Result                           | Observed Result | Status |
