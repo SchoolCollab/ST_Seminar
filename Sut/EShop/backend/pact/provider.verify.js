@@ -155,6 +155,18 @@ const server = app.listen(0, async () => {
             )
         }
 
+        if (failed.length > 0) {
+            console.log('')
+            console.log(
+                `${failed.length} of ${results.length} consumer(s) FAILED verification: ${failed
+                    .map(r => r.consumer)
+                    .join(', ')}`
+            )
+            console.log(
+                'See the "Failures:" section(s) logged above for the specific failing interaction(s) and assertion mismatch.'
+            )
+        }
+
         process.exit(failed.length === 0 ? 0 : 1)
     } finally {
         server.close()
