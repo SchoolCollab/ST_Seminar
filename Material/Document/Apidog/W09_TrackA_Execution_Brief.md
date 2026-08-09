@@ -151,9 +151,10 @@ so that specific defect still needs human-authored oracle coverage.
 `Material/Document/Apidog/EShop_Apidog_Steps.md` Step 9 in tightened form, with every request body,
 variable extraction, and assertion pinned to what `server.js` returns.
 
-**Prereq environment variables** (per Step 2): `userEmail`, `userPassword`
-populated; `bearerToken`, `productId`, `orderId` blank. One product must exist
-in the DB (seed via the M1 step above if needed).
+**Prereq environment variables** (per Step 2): `userEmail=test@eshop.com`,
+`userPassword=Test1234!`; `bearerToken`, `productId`, `orderId` blank. One
+product must exist in the DB (seed via the M1 step above if needed). After
+re-importing a checkpoint, confirm the Local Value cells were not cleared.
 
 | #   | Endpoint                    | Request body                                                                | Auth              | Post-processor                                                | Assertion                                                               |
 | --- | --------------------------- | --------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------- |

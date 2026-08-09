@@ -335,6 +335,49 @@ evidence, useful regression coverage, or generated noise.
 
 ---
 
+### FM-07 — Apidog checkpoint re-import preserves environment fields but wipes Local Values
+
+**What happened.** Re-importing the Apidog project checkpoint preserved the
+`Local` environment and its variable names, but cleared the Local Value cells.
+The full `EShop — Full Regression` suite still executed, so the failure looked
+like a real backend or test-suite problem at first. In the report
+`Material/Config/Apidog/Report/apidog-reports-2026-08-10-00-36-09.html`, valid
+login returned `401`, then protected requests cascaded into `401`, and requests
+that depended on blank `orderId`/`productId` values generated URLs such as
+`/api/orders//cancel` and `/api/admin/orders//status`.
+
+**Where it showed up.** The first imported run of
+`Material/Config/Apidog/Checkpoint/seminar.apidog.checkpoint.2.json`, after the
+suite and scenario configuration had been added. The checkpoint contains the
+environment structure, but the Apidog desktop import did not preserve the local
+credential values used by that environment.
+
+**Why it's misleading.** The test suite can produce a very large red report even
+though the SUT, endpoint cases, and suite orchestration are not the first-order
+cause. The report showed 235 HTTP requests with 183 failed and 242 assertions
+with 174 failed, but many failures were downstream symptoms of blank
+credentials and blank chained variables rather than independent endpoint
+findings.
+
+**Root cause.** Apidog treats Local Values as local/session data during project
+import/export. The variable fields survive, but the values are not reliable
+after re-import. This is distinct from FM-01: FM-01 is a variable-name mismatch;
+FM-07 is a variable-value wipe even when the names are correct.
+
+**Resolution.** After every import or re-import, manually verify the `Local`
+environment values before running the suite. For the current seeded database,
+set `userEmail=test@eshop.com`, `userPassword=Test1234!`,
+`adminEmail=admin@eshop.com`, and `adminPassword=Admin123!`. Leave
+`bearerToken`, `adminToken`, `productId`, and `orderId` blank initially, because
+scenario post-processors should populate them during execution.
+
+**Lesson.** Treat an imported Apidog environment as a shape, not as proof that
+runtime values are ready. If a full suite suddenly turns mostly red, inspect the
+active environment values and the first login request before interpreting the
+rest of the failures.
+
+---
+
 ## Checked and Remaining Candidates
 
 Things flagged during setup as _possible_ future failure modes. Move an item out
@@ -346,10 +389,12 @@ when the result is useful but does not justify a new FM entry.
   pass: empty/high-id product responses produced visible "Response data differs
   from endpoint spec" failures. Keep this as observed evidence, not a remaining
   candidate, unless a later report contradicts it.
-- **Test Scenario chaining silently continuing after a step fails.** Not yet
-  confirmed either way — verify whether a failed assertion in an early scenario
-  step (e.g. login) actually halts the scenario, or whether later steps run
-  anyway with stale/empty variables and produce confusing downstream failures.
+- **Test Scenario chaining after an early step fails.** Confirmed in the
+  `apidog-reports-2026-08-10-00-36-09.html` suite run: login failed with blank
+  credentials, but later scenario steps still ran with blank/stale variables and
+  produced downstream `401`/blank-id `404` noise. Captured under FM-07 rather
+  than split into a separate numbered entry because the root incident was the
+  re-imported environment's wiped Local Values.
 
 ## How to add an entry
 

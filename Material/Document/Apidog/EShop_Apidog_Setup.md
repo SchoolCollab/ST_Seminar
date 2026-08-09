@@ -21,8 +21,8 @@ test-runtime configuration.
 
 - `EShop_OpenApi.yaml` imported as an Apidog project.
 - EShop backend running (`http://localhost:3000` by default).
-- Two accounts registered against the running backend — one regular user, one
-  promoted to admin via the `PUT /api/users/me` role-injection flow (SEC-06).
+- The seeded regular and admin accounts from `Sut/EShop/backend/database.js`:
+  `test@eshop.com` / `Test1234!` and `admin@eshop.com` / `Admin123!`.
 
 ## Environment
 
@@ -39,14 +39,20 @@ deliberately want the same value across multiple environments.
 
 | Variable        | Local Value                                             | Purpose                                                                                                                             |
 | --------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `userEmail`     | `tester.1@example.com` (or your own registered account) | Login body.                                                                                                                         |
-| `userPassword`  | `TesterPass123!`                                        | Login body.                                                                                                                         |
+| `userEmail`     | `test@eshop.com`                                        | Seeded regular-user login body (`Sut/EShop/backend/database.js`).                                                                    |
+| `userPassword`  | `Test1234!`                                             | Seeded regular-user login body.                                                                                                     |
 | `bearerToken`   | _(empty)_                                               | Written by the login post-processor; resolved automatically by every protected request's scheme-direct Auth binding.                |
-| `adminEmail`    | `admin@example.com` (registered, then promoted)         | Admin login body.                                                                                                                   |
-| `adminPassword` | `AdminPass123!`                                         | Admin login body.                                                                                                                   |
+| `adminEmail`    | `admin@eshop.com`                                      | Seeded admin login body (`Sut/EShop/backend/database.js`).                                                                          |
+| `adminPassword` | `Admin123!`                                             | Seeded admin login body.                                                                                                            |
 | `adminToken`    | _(empty)_                                               | Written by a separate admin-login post-processor; used only where a request's Auth is explicitly overridden to it (see Scenario B). |
 | `productId`     | _(empty)_                                               | Written by cart/checkout scenarios so downstream requests reuse a known-good product id.                                            |
 | `orderId`       | _(empty)_                                               | Written by the checkout scenario so cancel/status-update scenarios reference a real order.                                          |
+
+After re-importing a project checkpoint, re-check these **Local Value** cells
+before running the suite. Apidog has been observed preserving the variable names
+while blanking the values, which makes login return `401` and then cascades into
+protected-request `401`s and blank-id `404`s. See
+`Material/Document/SUT-Reference/EShop_Failure_Modes.md`, FM-07.
 
 All variables — regular user and admin — live in this one `Local` environment,
 since a scenario needing both tokens in the same run (see Scenario B) requires

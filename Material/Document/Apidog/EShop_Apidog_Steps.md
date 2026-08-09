@@ -11,9 +11,9 @@ in full detail; `Material/Document/Apidog/EShop_Apidog_TestCases.md` carries the
 onward.
 
 Prerequisites: `EShop_OpenApi.yaml` on disk, EShop backend running at
-`http://localhost:3000`, two accounts registered against the running backend —
-one regular user, one promoted to admin (see `Material/Document/Apidog/EShop_Apidog_Setup.md` or the
-SEC-06 role-injection flow for how to promote).
+`http://localhost:3000`, and the seeded regular/admin accounts from
+`Sut/EShop/backend/database.js`: `test@eshop.com` / `Test1234!` and
+`admin@eshop.com` / `Admin123!`.
 
 ## Step 1 — Import the OpenAPI file
 
@@ -61,14 +61,19 @@ SEC-06 role-injection flow for how to promote).
 
 | Variable        | Local Value                                                             |
 | --------------- | ----------------------------------------------------------------------- |
-| `userEmail`     | `tester.1@example.com` (or your own registered account)                 |
-| `userPassword`  | `TesterPass123!`                                                        |
+| `userEmail`     | `test@eshop.com`                                                        |
+| `userPassword`  | `Test1234!`                                                             |
 | `bearerToken`   | _(leave blank)_                                                         |
-| `adminEmail`    | `admin@example.com` (registered, then promoted via `PUT /api/users/me`) |
-| `adminPassword` | `AdminPass123!`                                                         |
+| `adminEmail`    | `admin@eshop.com`                                                       |
+| `adminPassword` | `Admin123!`                                                             |
 | `adminToken`    | _(leave blank)_                                                         |
 | `productId`     | _(leave blank)_                                                         |
 | `orderId`       | _(leave blank)_                                                         |
+
+The regular and admin accounts above are seeded by
+`Sut/EShop/backend/database.js` whenever the database is reset. After importing
+or re-importing an Apidog checkpoint, verify these Local Value cells again:
+Apidog may preserve the variable names while clearing the values.
 
 4. Save. Select `Local` as the active environment. All variables — regular user
    and admin — live in this one environment, since a scenario needing both

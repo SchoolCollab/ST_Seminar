@@ -69,13 +69,20 @@ for Pact provider verification (see §2.4) and would wipe state between runs.
    URL row to `http://localhost:3000` (not a variable — the Base URL panel at
    the top of the environment).
 4. Add environment variables in the **Local Value** column: `userEmail`,
-   `userPassword`, `adminEmail`, `adminPassword` (with your registered
-   credentials); `bearerToken`, `adminToken`, `productId`, `orderId` left blank.
+   `userPassword`, `adminEmail`, `adminPassword` using the seeded credentials
+   `test@eshop.com` / `Test1234!` and `admin@eshop.com` / `Admin123!`;
+   `bearerToken`, `adminToken`, `productId`, `orderId` left blank.
 
 The variable name `bearerToken` matters. Apidog's OpenAPI importer auto-binds
 protected endpoints to a variable **of that exact name**. Renaming it to
 anything else silently breaks every protected request with a 403 that looks like
 an auth bug. See §6, FM-01.
+
+After importing or re-importing a checkpoint, re-check the Local Value cells.
+The suite report `apidog-reports-2026-08-10-00-36-09.html` showed that Apidog
+can preserve the fields while clearing the values, causing valid login to fail
+with `401` and most downstream protected requests to fail for the wrong reason.
+See §6, FM-07.
 
 ### 2.4 Pact prerequisites — one-time backend refactors
 
@@ -371,6 +378,31 @@ contract was really over-specified around an incidental empty body.
 **Resolution.** Omit empty-body and content-type assertions for this endpoint.
 Assert the consumer-visible behavior: method, path, auth, expected status, and
 response shape.
+
+### FM-06 — Apidog AI can generate useful defect evidence and contradictory oracles
+
+**What happened.** Apidog AI's generated `PUT /api/users/me` set included a
+valuable SEC-06 security case expecting `403` for `role: "admin"` and receiving
+`200`, confirming a real defect. The same generated set also treated role enum
+coverage as a positive case, allowing `role=admin` as if it were valid input.
+
+**Resolution.** Treat generated cases as hypotheses, not final oracles. Keep
+the SEC-06 failure as evidence, but classify or rewrite contradictory/noisy AI
+cases before promoting them into regression coverage.
+
+### FM-07 — Apidog checkpoint re-import can preserve environment fields but wipe Local Values
+
+**What happened.** Re-importing the Apidog checkpoint preserved the `Local`
+environment and variable names, but cleared the Local Value cells. The full
+suite still ran, but valid login used blank credentials and returned `401`.
+Most protected requests then cascaded into `401`, while requests using blank
+`orderId`/`productId` variables produced malformed URLs such as
+`/api/orders//cancel`.
+
+**Resolution.** After every import or re-import, manually re-enter the seeded
+credentials: `test@eshop.com` / `Test1234!` and `admin@eshop.com` /
+`Admin123!`. Leave `bearerToken`, `adminToken`, `productId`, and `orderId`
+blank so the scenario post-processors can populate them during the run.
 
 ## 7. References
 

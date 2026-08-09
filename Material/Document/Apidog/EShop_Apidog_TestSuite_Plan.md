@@ -17,14 +17,20 @@ orderable build list.
 **Current next step (2026-08-10).** M4 Apidog AI generation is frozen at two
 executed endpoint sets: `PUT /api/users/me` and `GET /api/products/{id}`. The
 combined checkpoint now contains `EShop — Full Regression` with static
-references to 209 endpoint test cases (163 manual + 46 AI). The active work now
-moves here: import/confirm that suite in Apidog, run it, and use its report to
-help fill M5's metrics table.
+references to 209 endpoint test cases (163 manual + 46 AI) plus four workflow
+test scenarios. The suite has been run once, producing
+`Material/Config/Apidog/Report/apidog-reports-2026-08-10-00-36-09.html`, but
+that report is not a clean M5 baseline: Apidog preserved the environment
+variable names on re-import while clearing their Local Values, so login failed
+with blank credentials and many downstream failures were cascade noise. Before
+the next run, set `userEmail=test@eshop.com`, `userPassword=Test1234!`,
+`adminEmail=admin@eshop.com`, and `adminPassword=Admin123!`; leave
+`bearerToken`, `adminToken`, `productId`, and `orderId` blank.
 
 The current combined checkpoint is
-`Material/Config/Apidog/Checkpoint/seminar.apidog.checkpoint.1.json`. Treat it
-as the latest versioned snapshot, not as execution evidence; the suite still
-needs a real Apidog run/report.
+`Material/Config/Apidog/Checkpoint/seminar.apidog.checkpoint.2.json`. Treat it
+as the latest versioned snapshot; the first suite report is import-validation
+evidence, not final pass/fail evidence.
 
 ## 1. What the three screenshots actually show
 
