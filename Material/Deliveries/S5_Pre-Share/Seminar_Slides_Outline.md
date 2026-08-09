@@ -113,11 +113,12 @@ a slide bullet or a speaker note; no bullet is decorative. **Session budget:**
 ### Slide 9 — Demo anchor: Pact provider verifier
 
 - Two runs, back to back:
-    - Baseline run: `npm run pact:verify` — 34/38 pass, 4 documented failures
+    - Baseline run: `npm run pact:verify` — 46/51 pass, 5 documented failures
       visible (don't hide them, they're teaching material).
     - Broken run: rename `price → unitPrice` in `server.js` (a one-line edit
       prepared on a separate branch), re-run — Products interactions fail for
-      both `eshop-web` and `eshop-admin`. Revert, re-run, baseline restored.
+      `eshop-web`, `eshop-admin`, and `eshop-mobile`. Revert, re-run, baseline
+      restored.
 - **Speaker note:** land on _"`price` is shared by two real consumers. One
   backend rename breaks both contracts before either consumer ships against it;
   spec-based checks would only stay honest if the spec did not move with the

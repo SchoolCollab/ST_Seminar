@@ -15,7 +15,7 @@ single sit-down at the end of Week 09.
 | 3   | Four-scenario matrix on `POST /api/cart` | 1:00     | Track A execution (tomorrow)        |
 | 4   | Apidog AI generation + diff              | 1:30     | Track B execution (Wednesday)       |
 | 5   | Pact consumer test passing               | 0:30     | Existing state — record any time    |
-| 6   | Pact provider verifier: 34/38 baseline   | 0:45     | Existing state — record any time    |
+| 6   | Pact provider verifier: 46/51 baseline   | 0:45     | Existing state — record any time    |
 | 7   | Pact broken-provider demo                | 0:45     | Track F, deliberately-broken branch |
 | 8   | Close                                    | 0:30     | Straight-to-cam                     |
 
@@ -88,25 +88,26 @@ order #5 in `Material/Document/Planning/W09_Action_Plan.md`).
     > from the backend, as an executable test. The consumer suite passes; a pact
     > file is generated.
 
-### Segment 6 — Pact provider verifier: 34/38 baseline (0:45)
+### Segment 6 — Pact provider verifier: 46/51 baseline (0:45)
 
 - **On screen:** terminal in `Sut/EShop/backend/`, `npm run pact:verify`,
-  output showing 34/38 pass across `eshop-web` and `eshop-admin`, with the four
-  documented failures visible.
+  output showing 46/51 pass across `eshop-web`, `eshop-admin`, and
+  `eshop-mobile`, with the five documented failures visible.
 - **Narration:**
 
-    > Thirty-four of thirty-eight interactions verified across two consumers.
-    > Four failures are teaching material, not surprises: checkout still returns
+    > Forty-six of fifty-one interactions verified across three consumers.
+    > Five failures are teaching material, not surprises: checkout still returns
     > `orderId` where the web contract expects `order_id`; a real checkout stores
     > a null `shipping_address`; the coupon percent formula returns the wrong
-    > discount; and the admin state machine still accepts canceled to delivered.
+    > discount on both the web and mobile contracts; and the admin state machine
+    > still accepts canceled to delivered.
 
 ### Segment 7 — Pact broken-provider demo (0:45)
 
 - **On screen:** VS Code, edit `server.js` to rename `price → unitPrice` on
   `GET /api/products`. Save. Re-run provider verification and show the Products
-  interactions failing under both `eshop-web` and `eshop-admin`. Revert. Re-run
-  to return to the documented 34/38 baseline.
+  interactions failing under `eshop-web`, `eshop-admin`, and `eshop-mobile`.
+  Revert. Re-run to return to the documented 46/51 baseline.
 - **Narration:**
 
     > This is the segment neither Apidog nor Apidog AI would catch. `price` is a

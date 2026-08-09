@@ -9,7 +9,7 @@ false today (FM-05, the reorganization).
 
 ## Done, verified
 
-- [x] Pact: **64 interactions, 56/64 baseline, three consumers** (eshop-web
+- [x] Pact: **51 interactions, 46/51 baseline, three consumers** (eshop-web
       14/17, eshop-admin 20/21, eshop-mobile 12/13) — confirmed via one single,
       complete `run_tests.sh` execution, exit 0, clean `git status`. Commit
       `a8628f0`.
@@ -21,9 +21,8 @@ false today (FM-05, the reorganization).
 - [x] `Material/Document/` reorganized by type — confirmed via real `git log`,
       `git show --stat`, and `ls` output.
 - [x] S5/S8 deliverable files refreshed to current Pact numbers (now stale again
-      re: the exact interaction counts — 34/38 → 56/64 — worth one more
-      numbers-only pass before final submission, low priority given the shape of
-      the narrative hasn't changed).
+      re: the exact interaction counts — 34/38 (two consumers) → 46/51 (three
+      consumers) — this pass fixes those references directly, see below).
 - [x] Backend prerequisites, all three consumers' API-client extractions, full
       CI for all three consumers (web, admin, mobile).
 - [x] Pact CI made honest, not advisory-masked: `continue-on-error` removed

@@ -344,7 +344,7 @@ response shape.
 - `Material/Document/Apidog/EShop_Apidog_TestCases.md` — per-endpoint case matrices
   with the assertion shorthand.
 - `Material/Document/Pact/EShop_Pact_Plan.md` — Pact build record, iteration
-  scope, and the current 34/38 two-consumer verification baseline.
+  scope, and the current 46/51 three-consumer verification baseline.
 - `Material/Document/SUT-Reference/EShop_Failure_Modes.md` — canonical FM log.
 - `Material/Document/SUT-Reference/EShop_Defect.md` — SUT defect catalogue
   (SEC-01, SEC-06, FR-07, FR-08, camelCase `orderId`, checkout
