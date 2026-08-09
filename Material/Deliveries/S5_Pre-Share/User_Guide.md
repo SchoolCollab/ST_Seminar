@@ -232,10 +232,13 @@ run with `NODE_ENV=test` so the backend switches to `:memory:` and the
 `resetDatabase()` state handlers work. Without it, verification runs against the
 on-disk dev DB and state contaminates between interactions.
 
-**Provider verification passes locally but fails in CI.** The verifier is
-broker-optional (falls back to reading the local pact file when
-`PACT_BROKER_BASE_URL` is unset). Confirm the CI job publishes the pact file
-before the verify step consumes it.
+**Provider verification passes locally but fails in CI.** Each consumer's
+workflow generates and verifies its own pact file within the same job
+(`PACT_VERIFY_ONLY=<consumer>`), so there's no broker or separate publish step
+to go stale — confirm instead that the workflow's path filters actually
+include the change you pushed (each consumer workflow triggers on its own
+frontend directory **and** `Sut/EShop/backend/**`). This step is now a hard
+gate: a genuinely failing interaction fails the job, it isn't masked.
 
 **Pact verifier reports a malformed pact file after a consumer crash.** Delete
 the truncated pact file and rerun before concluding a code regression happened;

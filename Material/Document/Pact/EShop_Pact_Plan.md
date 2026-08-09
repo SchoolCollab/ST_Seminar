@@ -17,11 +17,11 @@ EShop, whose implementation diverges from its SRS in dozens of catalogued ways
 _lived_ contract, not the aspirational one.
 
 **Status as of this submission: Iterations 1, 2, and 3 complete.** Three
-consumers (`eshop-web`, `eshop-admin`, and `eshop-mobile`), 40 total
-interactions, local broker-optional provider verification, and consumer CI
-workflows for web and admin. The confirmed provider baseline is `eshop-web`
-14/17, `eshop-admin` 20/21, and `eshop-mobile` 2/2 — **36/40 total**, with four
-documented provider failures. A hard deployment gate remains deferred.
+consumers (`eshop-web`, `eshop-admin`, and `eshop-mobile`), local
+broker-optional provider verification, and a consumer CI workflow for each of
+the three consumers, each of which now fails the job for real on a Pact
+mismatch (see §10). A hard deployment gate (`can-i-deploy` as a blocking check)
+remains deferred.
 
 ## 1. Positioning within T06
 
@@ -284,12 +284,15 @@ known terminal-state defect documented in
 That entry now has both source-level analysis and independent Pact verification
 as corroborating evidence.
 
-**CI status.** `frontend-admin` now has its own consumer workflow,
+**CI status.** `frontend-admin` has its own consumer workflow,
 `.github/workflows/pact-consumer-admin.yml`, mirroring the web workflow:
-install, generate pacts, publish to the broker when broker secrets are present,
-then run advisory `can-i-deploy` with `continue-on-error: true`. This keeps the
-hard deployment gate deferred; no consumer or provider gate has been promoted to
-blocking in Iteration 2.
+install, generate pacts, install the backend, then verify this consumer's
+contract directly against the provider in the same job
+(`PACT_VERIFY_ONLY=eshop-admin`). That verification step is now a hard gate —
+a failing interaction fails the job (`continue-on-error` was removed from it;
+see §10). Broker publishing and `can-i-deploy` remain present but inert, since
+no broker secrets are configured; `can-i-deploy` itself stays advisory
+(`continue-on-error: true`) by design, independent of the broker question.
 
 ## 6b. Iteration 3 result — `frontend-mobile`: 2/2 verified, confirmed clean
 
@@ -399,11 +402,37 @@ works without it, reading the local pact file directly when
 
 ## 10. CI/CD — as built
 
-Two GitHub Actions workflows exist: `pact-consumer-web.yml` (generate → publish
-→ advisory `can-i-deploy`) and `pact-provider-backend.yml` (verify → advisory
-`can-i-deploy`, triggered on push and by a broker webhook). Both `can-i-deploy`
-steps are advisory (`continue-on-error`) — promoting either to a hard gate is
-still deferred and has not been built yet.
+Four GitHub Actions workflows exist. Each of the three consumer workflows
+(`pact-consumer-web.yml`, `pact-consumer-admin.yml`, `pact-consumer-mobile.yml`)
+triggers on push/PR to its own frontend directory **and** to
+`Sut/EShop/backend/**` (a backend-only change must still trigger verification —
+an earlier gap where it didn't has been fixed). Each job installs the
+consumer, generates that consumer's pact file (`npm run test:pact`), installs
+the backend, then verifies that one consumer's contract directly against the
+provider in the same job/runner via `PACT_VERIFY_ONLY=<consumer>` — no broker
+involved, since the pact file was just generated in the same job.
+**That verification step's exit code is a hard gate**: `continue-on-error` was
+removed from it, so a failing interaction now fails the job for real, instead
+of the earlier design where it was masked as advisory. `provider.verify.js`'s
+summary output also now explicitly names which consumer(s) failed.
+
+`pact-provider-backend.yml` has no push/PR trigger — a bare backend push alone
+never has any consumer's pact file to verify against without a broker, so a
+push-triggered run there would always fail for a reason unrelated to any real
+regression. It's kept as `workflow_dispatch` (manual demo trigger) and
+`repository_dispatch` (for a future Pact Broker webhook, not currently
+configured).
+
+Broker publishing and `can-i-deploy` steps remain in the workflows for
+completeness but are gated `if: env.PACT_BROKER_BASE_URL != ''` and currently
+no-op, since no broker secrets are configured. Where `can-i-deploy` does run,
+it keeps `continue-on-error: true` — that step is advisory by design,
+independent of whether a broker is even present; a hard deployment gate stays
+out of scope. This is a deliberate departure from an earlier "publish to
+broker, then verify separately" design, which never worked because the
+provider's own workflow had no consumer pact file to read — verifying inside
+each consumer's own job, right after generating its pact file, is what
+actually closes the loop without needing a broker at all.
 
 ## 11. Cross-references
 
