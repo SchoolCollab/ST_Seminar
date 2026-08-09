@@ -12,11 +12,11 @@ afterEach(() => {
 });
 
 describe("frontend-mobile cart/checkout Pact contract", () => {
-  it("POST /api/apply-coupon returns discount data the mobile checkout UI displays [EXPECTED TO FAIL: corroborates known percent-formula defect]", async () => {
+  it("POST /api/apply-coupon returns discount data the mobile checkout UI displays", async () => {
     provider
         .given("coupon SAVE10 exists for mobile checkout")
       .uponReceiving(
-        "a mobile apply-coupon request for SAVE10 [EXPECTED TO FAIL: corroborates known percent-formula defect]",
+        "a mobile apply-coupon request for SAVE10",
       )
       .withRequest({
         method: "POST",

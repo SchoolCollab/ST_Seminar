@@ -11,9 +11,7 @@ describe('Cart & Checkout contract', () => {
     it('POST /api/apply-coupon returns the discount data the checkout UI displays', async () => {
         provider
             .given('coupon SAVE10 exists for web checkout')
-            .uponReceiving(
-                'an apply-coupon request for SAVE10 [EXPECTED TO FAIL: corroborates known percent-formula defect]'
-            )
+            .uponReceiving('an apply-coupon request for SAVE10')
             .withRequest({
                 method: 'POST',
                 path: '/api/apply-coupon',
@@ -81,9 +79,7 @@ describe('Cart & Checkout contract', () => {
 
         provider
             .given('web checkout created order 1 from frontend payload')
-            .uponReceiving(
-                'a request for the order created by web checkout [EXPECTED TO FAIL]'
-            )
+            .uponReceiving('a request for the order created by web checkout')
             .withRequest({
                 method: 'GET',
                 path: '/api/orders/1',
