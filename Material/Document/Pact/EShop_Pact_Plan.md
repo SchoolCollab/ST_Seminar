@@ -29,7 +29,7 @@ deferred.
 | --------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | S1 proposal     | Third tool, alongside Apidog + Apidog AI | Justified against Spring Cloud Contract / Specmatic                                                                 |
 | S3 milestone M5 | Metrics                                  | Setup time, verification duration, interaction count                                                                |
-| S3 milestone M6 | Contract violations                      | Primary source — the one failing interaction, cross-referenced to `Material/Document/SUT-Reference/EShop_Defect.md` |
+| S3 milestone M6 | Contract violations                      | Primary source — 51 interactions across three consumers, with five named provider-verification failures cross-referenced to `Material/Document/SUT-Reference/EShop_Defect.md` |
 | S4 user guide   | Screencast segment                       | "When Apidog is not enough — CDC with Pact"                                                                         |
 | S8 AI audit     | AI-02/03/04                              | Two AI tools in scope: Claude (documents, planning, review) and GitHub Copilot (Pact implementation)                |
 
@@ -48,10 +48,13 @@ never expire — a documented defect
 (`Material/Document/SUT-Reference/EShop_Defect.md`); Pact does not "fix" it, and
 provider states deliberately do not depend on this defect.
 
-**Consumer used:** `frontend-web` — React, `axios`. All hard-coded
-`http://localhost:3000` base URLs replaced with a single `apiClient`
-(`src/api/apiClient.js`), overridable via `VITE_API_BASE_URL` so a consumer test
-can point at Pact's mock server.
+**Consumers covered:** `frontend-web` (React/Vite), `frontend-admin`
+(React/Vite), and `frontend-mobile` (Expo/React Native, tested only through an
+extracted plain JS API module). The two web-stack apps route API traffic through
+centralized `axios.create()` clients in `src/api/apiClient.js`, overridable via
+`VITE_API_BASE_URL`. The mobile app routes API traffic through
+`src/api/apiClient.js`, a fetch-based module overridable via
+`MOBILE_API_BASE_URL`.
 
 **Constraints respected:**
 
@@ -67,10 +70,13 @@ can point at Pact's mock server.
 
 **What was built in Iteration 1 (complete):**
 
-- Consumer: `frontend-web` only.
-- 10 interactions: `POST /api/register`, `POST /api/login`, `GET /api/products`,
-  `GET /api/products/:id`, `GET /api/categories`, `GET /api/users/me`,
-  `PUT /api/users/me`, `GET /api/cart`, `POST /api/cart`, `POST /api/checkout`.
+- Consumer: `frontend-web`.
+- Current corrected scope: 17 interactions. The original 10-interaction set was
+  later audited against real `frontend-web` call sites; orphaned `GET
+  /api/categories`, `GET /api/cart`, and `POST /api/cart` interactions were
+  removed, checkout/product-search fidelity was corrected, and missing
+  password-reset, coupon, order-history, order-cancel, and checkout evidence
+  interactions were added.
 - Provider verifier, broker-optional (falls back to reading the local pact file
   directly when no broker URL is set — no dependency on a broker being reachable
   for local runs).
@@ -80,12 +86,13 @@ can point at Pact's mock server.
 **What was built in Iteration 2 (complete):**
 
 - Consumer: `frontend-admin`.
-- 16 interactions covering admin login, user management, order management,
+- Current corrected scope: 21 interactions covering admin login, user management, order management,
   product/category CRUD, coupon management, and CSV import.
 - Consumer-side refactor to a centralized `apiClient`, matching the corrected
   `frontend-web` pattern so Pact tests exercise the same request path as the UI.
-- Provider verification runs both consumers sequentially so `eshop-web` and
-  `eshop-admin` results are reported separately.
+- At that stage, provider verification ran both web and admin sequentially so
+  `eshop-web` and `eshop-admin` results were reported separately. The current
+  verifier now runs all three consumers sequentially.
 - A parallel `.github/workflows/pact-consumer-admin.yml` workflow, rather than
   folding admin into the web workflow. Keeping one consumer per workflow makes
   path triggers, cache keys, broker publishing, and advisory `can-i-deploy`
@@ -141,10 +148,11 @@ operation.
 ```
 frontend-web/
 ├─ src/api/apiClient.js
-├─ src/__tests__/pact/
+├─ tests/pact/
 │  ├─ pact-setup.js
 │  ├─ auth.consumer.pact.test.js
 │  ├─ products.consumer.pact.test.js
+│  ├─ orders.consumer.pact.test.js
 │  └─ cart.consumer.pact.test.js
 └─ pacts/                          (generated; gitignored)
 ```
@@ -153,27 +161,31 @@ frontend-web/
 
 ```js
 const { provider, M } = require('./pact-setup')
-const apiClient = require('../../api/apiClient').default
+const apiClient = require('../../src/api/apiClient').default
 
 describe('Products contract', () => {
-    it('GET /api/products returns a list', async () => {
+    it('GET /api/products?search= returns products on initial load', async () => {
         provider
             .given('at least one product exists')
-            .uponReceiving('a request for the product list')
-            .withRequest({ method: 'GET', path: '/api/products' })
+            .uponReceiving('an initial product-list request with empty search')
+            .withRequest({
+                method: 'GET',
+                path: '/api/products',
+                query: { search: '' },
+            })
             .willRespondWith({
                 status: 200,
-                headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: M.eachLike({
                     id: M.integer(1),
-                    name: M.string('Product A'),
-                    price: M.integer(100000),
+                    name: M.string('iPhone 15 Pro Max'),
+                    price: M.integer(30000000),
                     category_id: M.integer(1),
                 }),
             })
 
         await provider.executeTest(async mock => {
-            const res = await axios.get(`${mock.url}/api/products`)
+            apiClient.defaults.baseURL = mock.url
+            const res = await apiClient.get('/api/products?search=')
             expect(res.status).toBe(200)
             expect(res.data[0]).toHaveProperty('id')
         })
@@ -181,18 +193,15 @@ describe('Products contract', () => {
 })
 ```
 
-**The tests call `axios` directly against `${mock.url}`, not through
-`apiClient`.** The `apiClient` refactor is real and did consolidate production
-call sites onto one `axios.create()` instance — but the Pact consumer tests
-bypass it and hit the mock server with raw axios calls instead. This means the
-contract tests don't exercise the same code path production traffic actually
-uses. Worth fixing at some point (route the tests through `apiClient` with
-`baseURL` overridden to `mock.url`), but flagged here rather than silently
-corrected, since it wasn't in scope for this verification pass.
+**The tests route through `apiClient`, not raw `axios`.** Each interaction points
+`apiClient.defaults.baseURL` at Pact's mock server before sending the request.
+This was corrected after the original frontend-web implementation, so the
+consumer tests now exercise the same request path production traffic uses.
 
-**Header assertions use plain string literals, not matchers** — see §7 (FM-02).
-`Content-Type: 'application/json; charset=utf-8'` above is a literal, charset
-included, because `MatchersV3.regex` on a header crashes the underlying FFI.
+**Header assertions avoid regex matchers** — see §7 (FM-02). Interactions focus
+on method, path, auth where needed, status, and body shape. Header regex
+matchers are not used because `MatchersV3.regex` on a header crashes the
+underlying FFI.
 
 **Matcher discipline** — always use `M.integer`, `M.string`, `M.eachLike` on
 **body** fields. Avoid fixed literal values in body assertions; fixed values
@@ -201,87 +210,62 @@ M6 hits. (This discipline was not followed for the `checkout` interaction's
 `orderId` field name — see §6, which is why that interaction failed for a reason
 unrelated to true contract drift.)
 
-## 6. Result — 8/10 interactions verified, confirmed stable
+## 6. Current frontend-web result — 14/17 verified, three documented failures
 
-Running the consumer suite then the provider verifier: **10/10 consumer tests
-pass; 8/10 interactions verify against the provider**, with two documented
-failures. This has been re-confirmed across 5 consecutive runs with no code
-changes, so it's the reproducible baseline — not a transient state.
+The `frontend-web` contract set was rebuilt after a call-site audit. The current
+consumer suite passes **17/17** and provider verification passes **14/17**. This
+supersedes the earlier 10-interaction / 8-of-10 baseline: orphaned cart/category
+interactions were removed, real `?search=` product-list behavior was added, the
+checkout request body was corrected to match `Checkout.jsx`, and missing
+password-reset, coupon, order-history, order-cancel, and checkout evidence
+interactions were added.
 
-**Decision: both failures are left in place deliberately, for the demo.**
-Neither represents an actual SUT defect being tracked as open work — Failure 1's
-contract could be corrected (`order_id` → `orderId`) and Failure 2's contract
-could be corrected (`{ cart: [] }` → `[]`), which would bring the suite to
-10/10. That fix is not being applied. The 8/10 result stands as the seminar's
-demo state: two distinct, fully root-caused failure paths — a naming mismatch
-and a shape mismatch — each traced to its actual cause rather than left
-mysterious, which is stronger material for showing that contract testing catches
-more than one class of drift.
-
-**Failure 1 — `POST /api/checkout`.** The contract asserted a field named
-`order_id`; the server returns `orderId`. This is **not a contract-drift
-finding** — the OpenAPI spec (`EShop_OpenApi.yaml`) already documented `orderId`
-correctly before this contract was written, so nothing changed between spec and
-implementation. The contract's own expectation was incorrect, and chasing the
-failure surfaced a real, separate issue: EShop is internally inconsistent about
-camelCase vs snake_case for newly-created-row identifiers (`POST /api/register`
-and `POST /api/products` both return `id`; `POST /api/checkout` returns
-`orderId`; nearly every other field in the API is snake_case). Logged as a
-genuine defect in `Material/Document/SUT-Reference/EShop_Defect.md`, under
+**Failure 1 — `POST /api/checkout` response id casing.** The contract asserts
+the consumer-facing desired response field `order_id`; the server returns
+`orderId`. Chasing the original failure surfaced a real response-convention
+defect: EShop is internally inconsistent about camelCase vs snake_case for
+newly-created-row identifiers (`POST /api/register` and `POST /api/products`
+return `id`; `POST /api/checkout` returns `orderId`; most other fields are
+snake_case). Logged in `Material/Document/SUT-Reference/EShop_Defect.md` under
 **Response conventions**.
 
-**Failure 2 — `GET /api/cart` (shape mismatch) — root-caused, category (a), same
-pattern as Failure 1.** The contract expects `M.like({ cart: [] })` — an object
-wrapping the array under a `cart` key. The server (`server.js:319`,
-`res.json(userCarts[userId])`) returns a bare array. The OpenAPI spec's `Cart`
-schema (`type: array`) agrees with the server. Two of three artifacts are
-consistent; only the contract invented a wrapper that exists nowhere in the
-implementation or the spec. Unlike Failure 1, chasing this one surfaced no
-secondary defect — EShop is otherwise consistent about returning collections as
-bare arrays (`GET /api/products`, `GET /api/categories` do the same), so this is
-a clean contract-authoring error with nothing behind it. **Not yet logged in
-`Material/Document/SUT-Reference/EShop_Defect.md`, and shouldn't be** — there's
-no SUT defect here to log.
+**Failure 2 — checkout `shipping_address` persistence evidence.** The corrected
+contract request body matches the real frontend payload:
+`{ items, total_amount, coupon_id }`. `server.js` destructures
+`shipping_address` from that body, so a real checkout persists a null/undefined
+shipping address. The evidence interaction creates an order through the real
+checkout code path and then reads it back via `GET /api/orders/:id`, asserting
+the correct intended stored value rather than the buggy null result.
 
-**A limitation of the desired-shape contracts, stated honestly:** both
-`GET /api/users/me` (excluding `password`) and `PUT /api/users/me` (excluding
-`role`) are currently among the 8 green — meaning Pact's `eachLike` matcher only
-checks that the _expected_ fields are present with the right shape; it does not
-fail on _extra_, unlisted fields being present in the response. So these two
-contracts document the intended shape correctly, but they are not actually
-catching SEC-01 or SEC-06 as regressions right now — a fix to either defect
-would make the interaction pass (as intended), but so would leaving the defect
-exactly as it is, since the contract never asserted the field's _absence_. If
-closed-shape enforcement matters for the seminar's narrative, that needs an
-explicit "field must not be present" assertion, which is a different mechanism
-than `eachLike` provides.
+**Failure 3 — `POST /api/apply-coupon` percent formula.** The checkout UI reads
+`discount_amount` and `final_amount`; the contract asserts the correct 10%
+discount for `SAVE10`. The provider computes
+`discount_amount = total_amount * (1 - discount_value)`, which produces the
+wrong value. This corroborates an already-known coupon defect documented in
+`Material/Document/SUT-Reference/EShop_Defect.md`.
 
-**Desired-shape contracts, verified correct:**
+**A limitation of the desired-shape contracts, stated honestly:** Pact matchers
+check that expected fields are present with the right shape; they do not fail on
+extra, unlisted response fields unless the test adds an explicit negative
+assertion. For example, the web `GET /api/users/me` contract does not prove the
+password leak is fixed; that defect remains documented separately in
+`EShop_Defect.md`.
 
-- `GET /api/users/me`'s contract excludes `password` — EShop leaks it (SEC-01);
-  this is intentional, so a hypothetical future fix would make this interaction
-  pass, not fail.
-- `PUT /api/users/me`'s request body excludes `role` — SEC-06; same reasoning.
-
-## 6a. Iteration 2 result — `frontend-admin`: 15/16 verified, confirmed stable
+## 6a. Iteration 2 result — `frontend-admin`: 20/21 verified, confirmed stable
 
 `frontend-admin` adds a second consumer named `eshop-admin` against the same
-provider, `eshop-backend`. Its consumer suite passes **16/16** and produces a
-16-interaction pact after forcing Jest to run Pact tests serially (see FM-04).
-
-The full provider cycle was then run three consecutive times under the same
-execution path. All three runs matched:
-
-- `eshop-web`: **8/10** verified, with the same two deliberate
-  contract-authoring failures documented above.
-- `eshop-admin`: **15/16** verified, with one real provider failure.
+provider, `eshop-backend`. Its current consumer suite passes **21/21** and
+provider verification passes **20/21**. The original 16-interaction admin set
+was later expanded with five real UI-triggered order-status transitions from
+`Material/Document/Methodology/EShop_State_Transition_Testing.md`
+(`STT-A-01`, `STT-A-05`, `STT-A-08`, `STT-A-10`, `STT-A-14`); all five pass
+against the provider.
 
 **Admin failure — `PUT /api/admin/orders/:id/status` (`canceled`→`delivered`).**
 The admin contract asserts the correct state-machine behavior: an
 already-canceled order should reject a transition to `delivered` with a `400`
 response and an error body. The provider instead returns `200` and updates the
-order. Unlike the two `eshop-web` failures, this is **not** a contract-authoring
-mistake; it is live provider-verification evidence of the known terminal-state
+order. This is live provider-verification evidence of the known terminal-state
 defect documented in
 `Material/Document/Methodology/EShop_State_Transition_Testing.md` as `STT-A-24`.
 That entry now has both source-level analysis and independent Pact verification
@@ -368,14 +352,13 @@ from source reading in `EShop_Defect.md`.
 **FM-02** (`Material/Document/SUT-Reference/EShop_Failure_Modes.md`): `PactV3`'s
 Rust FFI crashes when `MatchersV3.regex` is applied to a header value
 (`Content-Type` on responses, `Authorization` on requests), rather than failing
-gracefully. Worked around by using plain string literals on both headers. For
-`Authorization`, confirmed low-risk — the literal in the contract is
+gracefully. Resolved by removing response header assertions and using plain
+literals only for request headers that remain relevant. For `Authorization`,
+confirmed low-risk — the literal in the contract is
 `Bearer placeholder.token.value`, never a real token, and the verifier's
 `requestFilter` injects the real JWT at verification time regardless of what's
-recorded. For `Content-Type`, the literal (`'application/json; charset=utf-8'`,
-charset included) is brittle in the direction of the charset ever being _dropped
-or changed_ by the server — not appended, as an earlier version of this document
-stated before the discrepancy was caught during a read-only verification pass.
+recorded. Response `Content-Type` assertions were later removed entirely, so the
+contracts rely on status and body shape instead of header matching.
 
 **FM-04** (`Material/Document/SUT-Reference/EShop_Failure_Modes.md`): parallel
 Jest workers can race while writing the same Pact output file. This first
@@ -399,16 +382,15 @@ the same latent risk.
       `Sut/EShop/backend/.gitignore` and removed from tracking. It regenerates
       locally and stays untracked — the intended steady state.
 
-**The `apiClient`-routing finding — investigated, then implemented.** The Pact
-consumer tests originally called `axios` directly against the mock server URL
-rather than routing through `apiClient`, which meant the tests weren't
-exercising the same code path production traffic uses. This has since been
-fixed: all three consumer test files now route through `apiClient` with
-`baseURL` overridden to `mock.url`, requiring
-`babel-plugin-transform-vite-meta-env` so Jest can parse `import.meta.env`.
-Confirmed **not** the cause of a later false-positive suite crash (see the note
-below) — the routing change itself is solid and consumer tests pass 10/10 with
-it in place.
+**The `apiClient`-routing finding — investigated, then implemented.** The early
+`frontend-web` Pact consumer tests called `axios` directly against the mock
+server URL rather than routing through `apiClient`, which meant the tests
+weren't exercising the same code path production traffic uses. This has since
+been fixed: web/admin Pact tests route through their centralized axios clients
+with `baseURL` overridden to `mock.url`, and mobile Pact tests route through the
+extracted fetch-based API module with `MOBILE_API_BASE_URL` overridden. The
+Vite consumers use `babel-plugin-transform-vite-meta-env` so Jest can parse
+`import.meta.env`.
 
 **A resolved false alarm, worth keeping on record.** A status-report pass
 initially found the full suite crashing at 0/10 with `PACT CRASHED` errors on
@@ -472,22 +454,22 @@ relevant), `Material/Document/SUT-Reference/EShop_Defect.md` (every defect
 referenced here traces to an entry there).
 
 **Updates:** `Material/Document/SUT-Reference/EShop_Failure_Modes.md` (FM-02
-added here), `Material/Document/SUT-Reference/EShop_Defect.md` (the
-naming-convention entry added from §6),
-`Material/Document/Planning/W07_Action_Plan.md` /
-`Material/Document/Planning/W08_Action_Plan.md` (M6 marked done; Iterations 2–3
-marked pending, not scheduled to a specific week yet).
+through FM-05), `Material/Document/SUT-Reference/EShop_Defect.md` (Pact-surfaced
+and Pact-corroborated defects), and the planning/delivery documents that now
+cite the three-consumer 46/51 baseline.
 
 ## 12. Seminar activity script (S6, ~7 minutes)
 
-1. Open the broker (or the local pact file) showing `eshop-web ↔ eshop-backend`,
-   currently green on 9/10 — call out the 10th and what it taught.
+1. Run the current Pact baseline: 46/51 provider interactions verified across
+   `eshop-web`, `eshop-admin`, and `eshop-mobile`, with five documented failures
+   visible.
 2. On a fresh branch, rename a response field in `backend/server.js` (e.g.
-   `price` → `unitPrice` on `GET /api/products`). Commit and push.
-3. Watch the provider-verify workflow fail on the Products interaction — the
-   mock recorded by `frontend-web` still expects `price`.
-4. Revert the rename; push again; pipeline goes green.
-5. Close on the point: neither Apidog nor Apidog AI would catch this, because
-   both read the spec — and the spec would have been updated in the same change.
-   Pact catches it because it reads what the frontend actually needs, not what
-   the spec currently says.
+   `price` → `unitPrice` on `GET /api/products`). Commit and push, or run the
+   verifier locally for the demo.
+3. Watch Products interactions fail for all three consumers — the contracts
+   recorded by web, admin, and mobile still expect `price`.
+4. Revert the rename; re-run verification; the system returns to the documented
+   46/51 baseline.
+5. Close on the point: neither Apidog nor Apidog AI would catch this if the spec
+   moved with the code. Pact catches it because it reads what the frontends
+   actually need, not what the spec currently says.

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# run_all_tests.sh — run every consumer test suite, then provider verification,
+# run_tests.sh — run every consumer test suite, then provider verification,
 # in sequence, from the Sut/EShop/ root.
 #
-# Usage: ./run_all_tests.sh
+# Usage: ./run_tests.sh
 # Run this script FROM Sut/EShop/ (the folder containing backend/,
 # frontend-web/, frontend-admin/, frontend-mobile/).
 

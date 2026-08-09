@@ -110,25 +110,22 @@ the current `PactV3` FFI bindings' handling of regex matchers when applied to
 headers specifically, rather than a usage mistake. Not something a
 workaround-free fix was found for in the time available.
 
-**Resolution.** Dropped regex matchers on both affected headers and used plain
-string literals instead. For `Authorization`, this is confirmed low-risk: every
-interaction uses the literal `Bearer placeholder.token.value` (never a real
-token, verified via a read-only check of the generated pact file), and the
-provider verifier's `requestFilter` injects the real JWT at verification time
-regardless of what's recorded in the contract. For `Content-Type`, the literal
-already includes the charset (`'application/json; charset=utf-8'`) — the
-brittleness runs the opposite way from what was first assumed here: it fails if
-the server ever _drops or changes_ the charset, not if one gets appended. Still
-a real trade-off accepted to work around the crash; the fix under consideration
-is dropping the header assertion entirely and relying on status + body shape
-instead.
+**Resolution.** Dropped regex matchers on headers. Response `Content-Type`
+assertions were later removed entirely, relying instead on status code and body
+shape. For request headers that matter, use plain literals. For
+`Authorization`, this is confirmed low-risk: every interaction uses the literal
+`Bearer placeholder.token.value` (never a real token, verified via a read-only
+check of the generated pact file), and the provider verifier's `requestFilter`
+injects the real JWT at verification time regardless of what's recorded in the
+contract.
 
 **Lesson for the User Guide.** A testing tool's coverage of "the same feature"
 (matchers) is not always uniform across surfaces (body vs. header) — a technique
 that's fully supported on one part of a request/response can be broken on
 another, and the failure mode may look like an environment problem rather than a
 documented tool limitation. Worth checking whether a header assertion is truly
-necessary before spending time debugging what looks like a setup issue.
+necessary before spending time debugging what looks like a setup issue; if the
+consumer does not depend on it, assert status and body shape instead.
 
 ---
 
@@ -190,7 +187,7 @@ provider verifier then reported `eshop-admin` as a 7-interaction consumer,
 which was wrong — the missing 9 interactions had never made it into the final
 pact file.
 
-**Where it showed up.** `frontend-admin/src/__tests__/pact/*.pact.test.js`.
+**Where it showed up.** `frontend-admin/tests/pact/*.pact.test.js`.
 Jest ran the Pact test files in parallel workers, and each worker used the same
 consumer/provider pair (`eshop-admin` → `eshop-backend`) and the same output
 file (`pacts/eshop-admin-eshop-backend.json`). The tests themselves passed; the
