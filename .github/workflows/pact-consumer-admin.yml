@@ -34,6 +34,24 @@ jobs:
             - name: Generate pact files
               run: npm run test:pact
 
+            - name: Install backend dependencies
+              working-directory: Sut/EShop/backend
+              run: npm ci
+
+            - name: Verify contract against provider
+              # No broker needed: this consumer's pact file was just generated
+              # above and both frontend and backend are already checked out in
+              # this same job/runner. continue-on-error is intentional: the
+              # documented baseline has known, tagged failures (see
+              # EShop_Pact_Plan.md / EShop_Defect.md) that are expected, not a
+              # regression signal -- read the step's own log output for the
+              # real pass/fail breakdown rather than the green/red job status.
+              working-directory: Sut/EShop/backend
+              continue-on-error: true
+              env:
+                  PACT_VERIFY_ONLY: eshop-admin
+              run: node pact/provider.verify.js
+
             - name: Publish pact to broker
               if: env.PACT_BROKER_BASE_URL != ''
               run: |

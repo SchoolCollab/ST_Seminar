@@ -3,6 +3,7 @@
  *
  * Usage:
  *   NODE_ENV=test node pact/provider.verify.js
+ *   PACT_VERIFY_ONLY=eshop-web NODE_ENV=test node pact/provider.verify.js
  *
  * Behaviour:
  *   - Starts the Express app on an ephemeral port.
@@ -11,6 +12,12 @@
  *     returns { token }, the verifier injects it as an Authorization header
  *     via requestFilter so protected endpoints work without hard-coded JWTs.
  *   - Publishes the verification result back to the broker when CI=true.
+ *   - PACT_VERIFY_ONLY restricts verification to a single named consumer
+ *     (e.g. 'eshop-web') instead of all three. Used by each consumer's own
+ *     CI job to verify its own just-generated local pact file against the
+ *     provider in the same job/runner, without needing a broker. Leave unset
+ *     for the full three-consumer run (this is what run_tests.sh and the
+ *     standalone Pact Provider workflow expect).
  */
 process.env.NODE_ENV = 'test'
 
@@ -65,6 +72,17 @@ function countInteractions(pactPath) {
     }
 }
 
+const consumersToVerify = process.env.PACT_VERIFY_ONLY
+    ? consumers.filter(c => c.name === process.env.PACT_VERIFY_ONLY)
+    : consumers
+
+if (process.env.PACT_VERIFY_ONLY && consumersToVerify.length === 0) {
+    console.error(
+        `PACT_VERIFY_ONLY was set to '${process.env.PACT_VERIFY_ONLY}', which does not match any known consumer (${consumers.map(c => c.name).join(', ')}).`
+    )
+    process.exit(1)
+}
+
 function buildOptions(port, consumer) {
     const options = {
         provider: 'eshop-backend',
@@ -104,7 +122,7 @@ const server = app.listen(0, async () => {
     const results = []
 
     try {
-        for (const consumer of consumers) {
+        for (const consumer of consumersToVerify) {
             stateToken = null
             const total = countInteractions(consumer.localPact)
             console.log(`Verifying ${consumer.name} against eshop-backend...`)

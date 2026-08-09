@@ -1,13 +1,12 @@
 name: Pact Provider (backend)
 
+# No push/pull_request trigger: without a broker, this workflow's fresh
+# checkout never has any consumer's pact file present (each consumer now
+# verifies its own contract in its own job -- see pact-consumer-*.yml), so a
+# push-triggered run here would always fail for a reason unrelated to any
+# real regression. Kept as workflow_dispatch (manual demo trigger) and
+# repository_dispatch (a real Pact Broker webhook, if one is ever configured).
 on:
-    push:
-        paths:
-            - 'Sut/EShop/backend/**'
-            - '.github/workflows/pact-provider-backend.yml'
-    pull_request:
-        paths:
-            - 'Sut/EShop/backend/**'
     workflow_dispatch:
     # Triggered by a Pact Broker webhook when any consumer publishes a new pact.
     repository_dispatch:
