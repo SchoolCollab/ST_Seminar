@@ -25,11 +25,11 @@ false today (FM-05, the reorganization).
       consumers) — this pass fixes those references directly, see below).
 - [x] Backend prerequisites, all three consumers' API-client extractions, full
       CI for all three consumers (web, admin, mobile).
-- [x] Pact CI made honest, not advisory-masked: `continue-on-error` removed
-      from each consumer's provider-verification step (it now fails the job
-      for real on a mismatch, with the failing consumer(s) named in the log),
-      the backend-only-push trigger gap fixed on all three consumer workflows,
-      and the `[EXPECTED TO FAIL...]` tags removed from the 3 Pact interaction
+- [x] Pact CI made honest, not advisory-masked: `continue-on-error` removed from
+      each consumer's provider-verification step (it now fails the job for real
+      on a mismatch, with the failing consumer(s) named in the log), the
+      backend-only-push trigger gap fixed on all three consumer workflows, and
+      the `[EXPECTED TO FAIL...]` tags removed from the 3 Pact interaction
       descriptions they were annotating (now redundant given the real red
       status). Re-verified 14/17, 20/21, 12/13 baseline unaffected via
       `run_tests.sh` on an `ubuntu-latest`-matching environment. Commits

@@ -118,9 +118,7 @@ describe('Cart & Checkout contract', () => {
 
             const orderRes = await apiClient.get('/api/orders/1')
             expect(orderRes.status).toBe(200)
-            expect(orderRes.data.shipping_address).toBe(
-                '123 Le Loi, Q1, HCMC'
-            )
+            expect(orderRes.data.shipping_address).toBe('123 Le Loi, Q1, HCMC')
         })
     })
 

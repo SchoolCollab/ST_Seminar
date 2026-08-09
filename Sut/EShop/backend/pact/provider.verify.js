@@ -128,8 +128,11 @@ const server = app.listen(0, async () => {
             console.log(`Verifying ${consumer.name} against eshop-backend...`)
 
             try {
-                await new Verifier(buildOptions(port, consumer)).verifyProvider()
-                const countLabel = total === null ? 'unknown' : `${total}/${total}`
+                await new Verifier(
+                    buildOptions(port, consumer)
+                ).verifyProvider()
+                const countLabel =
+                    total === null ? 'unknown' : `${total}/${total}`
                 console.log(
                     `Pact verification succeeded for ${consumer.name}: ${countLabel}.`
                 )

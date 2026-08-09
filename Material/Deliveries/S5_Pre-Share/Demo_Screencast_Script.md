@@ -1,10 +1,10 @@
 # Demo Screencast — Shot List + Narration
 
-**Target output:** `Material/Deliveries/S5_Pre-Share/Demo_Screencast.mp4`. **Constraints (S1
-rubric):** 5–8 minutes total, 1080p, ≤100 MB, English narration, **no background
-music**, no pre-recorded fakes. **Recording strategy:** capture clips **while
-doing Track A / B / F work**, not in a dedicated recording session. Editing is a
-single sit-down at the end of Week 09.
+**Target output:** `Material/Deliveries/S5_Pre-Share/Demo_Screencast.mp4`.
+**Constraints (S1 rubric):** 5–8 minutes total, 1080p, ≤100 MB, English
+narration, **no background music**, no pre-recorded fakes. **Recording
+strategy:** capture clips **while doing Track A / B / F work**, not in a
+dedicated recording session. Editing is a single sit-down at the end of Week 09.
 
 ## 1. Segment plan (target ~7:00 total)
 
@@ -90,17 +90,17 @@ order #5 in `Material/Document/Planning/W09_Action_Plan.md`).
 
 ### Segment 6 — Pact provider verifier: 46/51 baseline (0:45)
 
-- **On screen:** terminal in `Sut/EShop/backend/`, `npm run pact:verify`,
-  output showing 46/51 pass across `eshop-web`, `eshop-admin`, and
-  `eshop-mobile`, with the five documented failures visible.
+- **On screen:** terminal in `Sut/EShop/backend/`, `npm run pact:verify`, output
+  showing 46/51 pass across `eshop-web`, `eshop-admin`, and `eshop-mobile`, with
+  the five documented failures visible.
 - **Narration:**
 
-    > Forty-six of fifty-one interactions verified across three consumers.
-    > Five failures are teaching material, not surprises: checkout still returns
-    > `orderId` where the web contract expects `order_id`; a real checkout stores
-    > a null `shipping_address`; the coupon percent formula returns the wrong
-    > discount on both the web and mobile contracts; and the admin state machine
-    > still accepts canceled to delivered.
+    > Forty-six of fifty-one interactions verified across three consumers. Five
+    > failures are teaching material, not surprises: checkout still returns
+    > `orderId` where the web contract expects `order_id`; a real checkout
+    > stores a null `shipping_address`; the coupon percent formula returns the
+    > wrong discount on both the web and mobile contracts; and the admin state
+    > machine still accepts canceled to delivered.
 
 ### Segment 7 — Pact broken-provider demo (0:45)
 
@@ -151,5 +151,6 @@ order #5 in `Material/Document/Planning/W09_Action_Plan.md`).
 - Segment 4 (Apidog AI) depends on the hosted-LLM provider being reachable. If
   it flakes, record from a pre-generated screenshot with the same narration;
   note the substitution in `[AI-02]` §3.
-- Segment 7 (broken provider) is the softest cut per `Material/Document/Planning/W09_Action_Plan.md` cut
-  order #5. Drop it and walk through it live in S6 if editing runs long.
+- Segment 7 (broken provider) is the softest cut per
+  `Material/Document/Planning/W09_Action_Plan.md` cut order #5. Drop it and walk
+  through it live in S6 if editing runs long.

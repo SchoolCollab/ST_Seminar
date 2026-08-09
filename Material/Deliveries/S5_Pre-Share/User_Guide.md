@@ -34,7 +34,8 @@ spec has. Neither notices when the backend silently changes a field the frontend
 reads, as long as the spec stays in step. Pact inverts the direction — the
 client declares what it needs, and the backend must keep proving it. For an SUT
 like EShop, whose implementation diverges from its SRS in dozens of catalogued
-ways (see `Material/Document/SUT-Reference/EShop_Defect.md`), that distinction is the point.
+ways (see `Material/Document/SUT-Reference/EShop_Defect.md`), that distinction
+is the point.
 
 ## 2. Installation
 
@@ -138,7 +139,8 @@ walkthrough.
    the scheme-direct binding resolved `{{bearerToken}}` on its own, no manual
    header configured.
 
-Full step-by-step is in `Material/Document/Apidog/EShop_Apidog_Steps.md` (Steps 1–6).
+Full step-by-step is in `Material/Document/Apidog/EShop_Apidog_Steps.md` (Steps
+1–6).
 
 ### 3.3 Pact consumer "hello world"
 
@@ -191,9 +193,10 @@ categories: **Positive** (Success), **Security** (Invalid auth), **Boundary**
 mutates exactly one field — single-fault-mode.
 
 _[TABLE — Positive / Security / Boundary / Negative rows with body, auth,
-expected status, assertions. Grounded per `Material/Document/Apidog/W09_TrackA_Execution_Brief.md`; two
-of the four are defect-demo cases, since the SUT accepts any JSON shape on POST
-/api/cart. Filled from Track A on execution.]_
+expected status, assertions. Grounded per
+`Material/Document/Apidog/W09_TrackA_Execution_Brief.md`; two of the four are
+defect-demo cases, since the SUT accepts any JSON shape on POST /api/cart.
+Filled from Track A on execution.]_
 
 ### 4.2 AI diff table
 
@@ -235,10 +238,10 @@ on-disk dev DB and state contaminates between interactions.
 **Provider verification passes locally but fails in CI.** Each consumer's
 workflow generates and verifies its own pact file within the same job
 (`PACT_VERIFY_ONLY=<consumer>`), so there's no broker or separate publish step
-to go stale — confirm instead that the workflow's path filters actually
-include the change you pushed (each consumer workflow triggers on its own
-frontend directory **and** `Sut/EShop/backend/**`). This step is now a hard
-gate: a genuinely failing interaction fails the job, it isn't masked.
+to go stale — confirm instead that the workflow's path filters actually include
+the change you pushed (each consumer workflow triggers on its own frontend
+directory **and** `Sut/EShop/backend/**`). This step is now a hard gate: a
+genuinely failing interaction fails the job, it isn't masked.
 
 **Pact verifier reports a malformed pact file after a consumer crash.** Delete
 the truncated pact file and rerun before concluding a code regression happened;
@@ -296,10 +299,10 @@ status + body shape.
 
 ### FM-03 — A transient Pact FFI crash presented as a code regression
 
-**What happened.** One `npm run test:pact` invocation crashed with `PACT
-CRASHED` errors and truncated the pact file mid-write. The following provider
-verification failed with "Failed to parse Pact JSON", which was only a downstream
-symptom of the truncated file.
+**What happened.** One `npm run test:pact` invocation crashed with
+`PACT CRASHED` errors and truncated the pact file mid-write. The following
+provider verification failed with "Failed to parse Pact JSON", which was only a
+downstream symptom of the truncated file.
 
 **Why it's misleading.** The failure appeared immediately after an `apiClient`
 routing change, so the timing pointed at the wrong suspect. Reverting and
@@ -341,15 +344,15 @@ response shape.
 - `Material/Document/Apidog/EShop_Apidog_Setup.md` — full Apidog runtime
   configuration.
 - `Material/Document/Apidog/EShop_Apidog_Steps.md` — 13-step build recipe.
-- `Material/Document/Apidog/EShop_Apidog_TestCases.md` — per-endpoint case matrices
-  with the assertion shorthand.
+- `Material/Document/Apidog/EShop_Apidog_TestCases.md` — per-endpoint case
+  matrices with the assertion shorthand.
 - `Material/Document/Pact/EShop_Pact_Plan.md` — Pact build record, iteration
   scope, and the current 46/51 three-consumer verification baseline.
 - `Material/Document/SUT-Reference/EShop_Failure_Modes.md` — canonical FM log.
 - `Material/Document/SUT-Reference/EShop_Defect.md` — SUT defect catalogue
   (SEC-01, SEC-06, FR-07, FR-08, camelCase `orderId`, checkout
-  `shipping_address`, apply-coupon formula, admin STT-A-24, `{}`-on-404,
-  even-id price-type quirk).
+  `shipping_address`, apply-coupon formula, admin STT-A-24, `{}`-on-404, even-id
+  price-type quirk).
 - `Sut/EShop/EShop_OpenApi.yaml` — spec under test.
 - Apidog docs: <https://docs.apidog.com/>.
 - Pact docs: <https://docs.pact.io/>.

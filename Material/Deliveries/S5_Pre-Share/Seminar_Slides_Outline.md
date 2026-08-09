@@ -1,10 +1,10 @@
 # Seminar Slides — Outline
 
 **Format target:** 14 slides (1 under the ≤15 hard cap, held as buffer). **Deck
-file:** `Material/Deliveries/S5_Pre-Share/Seminar_Slides.pptx` — this markdown is the
-source-of-truth outline to build the PowerPoint from. Every bullet here becomes
-a slide bullet or a speaker note; no bullet is decorative. **Session budget:**
-45 min = \*\*10 min pitch + 10 min demo + 20 min activity
+file:** `Material/Deliveries/S5_Pre-Share/Seminar_Slides.pptx` — this markdown
+is the source-of-truth outline to build the PowerPoint from. Every bullet here
+becomes a slide bullet or a speaker note; no bullet is decorative. **Session
+budget:** 45 min = \*\*10 min pitch + 10 min demo + 20 min activity
 
 - 5 min Q&A\*\*. The pitch has to close inside 10 min including transitions.
 
@@ -80,8 +80,8 @@ a slide bullet or a speaker note; no bullet is decorative. **Session budget:**
       `shipping_address` as null.
     - `POST /api/apply-coupon` — percent discount formula returns the wrong
       `discount_amount` and `final_amount`.
-    - Admin STT-A-24 — `canceled → delivered` is accepted even though both states
-      should be terminal.
+    - Admin STT-A-24 — `canceled → delivered` is accepted even though both
+      states should be terminal.
 - **Speaker note:** land on _"chasing a Pact failure taught us more than either
   passing case."_
 - **Timing:** 2 min.
@@ -174,8 +174,8 @@ a slide bullet or a speaker note; no bullet is decorative. **Session budget:**
 
 ### Slide 14 — Q&A + references
 
-- Deliverables layout: `Material/Deliveries/S5_Pre-Share/` (User Guide, screencast,
-  worksheet, this deck).
+- Deliverables layout: `Material/Deliveries/S5_Pre-Share/` (User Guide,
+  screencast, worksheet, this deck).
 - FM log: `Material/Document/SUT-Reference/EShop_Failure_Modes.md`.
 - Repo path to the Apidog project export and the Pact tests.
 - Contact + timing buffer.
