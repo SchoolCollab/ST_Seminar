@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "pact:verify": "cross-env NODE_ENV=test node pact/provider.verify.js",
+    "db:reset": "bash reset-db.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
