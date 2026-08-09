@@ -45,7 +45,7 @@ S6's activity properly.
 | **M3-Pact**   | Done — FM-02 logged                                                                                       |
 | **M4**        | Outstanding — hosted-LLM route (local Ollama deferred out of scope for this cycle)                        |
 | **M5**        | Outstanding — setup time / run time / flake rate table                                                    |
-| **M6**        | Done — 8/10 interactions verified, 2 violations documented                                                |
+| **M6**        | Done — 51 Pact interactions across 3 consumers; 46/51 provider baseline, 5 violations documented          |
 
 ## Work groups — by kind
 
@@ -198,10 +198,11 @@ Editing is a single sit-down at the end of the week.
       pre-recorded fakes (auto-penalty).
 - [ ] While Track B's AI diff is being built: record one pass of AI generation
       producing cases, then one pass of the diff being walked through.
-- [ ] Record one pass of the Pact consumer test suite passing
-      (`npm run test:pact`) and one pass of the provider verifier (8/10 green
-      with the two documented failures visible — the failures are part of the
-      teaching material, don't hide them).
+- [ ] Record one pass of a Pact consumer test suite passing
+      (`npm run test:pact`) and one pass of the provider verifier (46/51 green
+      across `eshop-web`, `eshop-admin`, and `eshop-mobile`, with the five
+      documented failures visible — the failures are part of the teaching
+      material, don't hide them).
 - [ ] If arrangeable: record a deliberately-broken provider run so the failure
       is informative — e.g. rename `price` to `unitPrice` in `server.js` per the
       seminar activity script in `Material/Document/Pact/EShop_Pact_Plan.md` §12.

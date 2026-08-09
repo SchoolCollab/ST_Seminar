@@ -111,9 +111,10 @@ order #5 in `Material/Document/Planning/W09_Action_Plan.md`).
 - **Narration:**
 
     > This is the segment neither Apidog nor Apidog AI would catch. `price` is a
-    > real field that both frontend-web and frontend-admin depend on. One rename
-    > in the provider, two broken consumer contracts, caught before either
-    > consumer ships against it. Revert, verify back to the baseline.
+    > real field that frontend-web, frontend-admin, and frontend-mobile all
+    > depend on. One rename in the provider, three broken consumer contracts,
+    > caught before any consumer ships against it. Revert, verify back to the
+    > baseline.
 
 ### Segment 8 — Close (0:30)
 

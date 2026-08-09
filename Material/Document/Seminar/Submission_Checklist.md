@@ -20,9 +20,8 @@ false today (FM-05, the reorganization).
       consumers.
 - [x] `Material/Document/` reorganized by type — confirmed via real `git log`,
       `git show --stat`, and `ls` output.
-- [x] S5/S8 deliverable files refreshed to current Pact numbers (now stale again
-      re: the exact interaction counts — 34/38 (two consumers) → 46/51 (three
-      consumers) — this pass fixes those references directly, see below).
+- [x] S5/S8 deliverable files refreshed to current Pact numbers: 46/51 across
+      three consumers.
 - [x] Backend prerequisites, all three consumers' API-client extractions, full
       CI for all three consumers (web, admin, mobile).
 - [x] Pact CI made honest, not advisory-masked: `continue-on-error` removed from
@@ -37,10 +36,10 @@ false today (FM-05, the reorganization).
 
 ## Blocking submission — do these first
 
-- [x] **`run_all_tests.sh` fixed and verified** — three-state pass/
+- [x] **`run_tests.sh` fixed and verified** — three-state pass/
       mismatch/fail logic, real syntax check via a working bash binary, real
-      full execution matching the documented 14/17 + 20/21 baseline, clean
-      `git status`. Commit `f525acd`.
+      full execution matching the documented 14/17 + 20/21 + 12/13 baseline,
+      clean `git status`. Commit `f525acd`.
 - [ ] **M4 — Apidog AI generation, 2 endpoints** (`PUT /api/users/me`,
       `GET /api/products/:id`). Not started. Guide ready
       (`Apidog_AI_Generation_Guide.md`). This is the single most time-sensitive
@@ -79,7 +78,7 @@ false today (FM-05, the reorganization).
 
 1. M4 (both endpoints) — the actual bottleneck; everything else can proceed in
    parallel with it or after.
-2. `run_all_tests.sh` fix — five minutes, do it whenever convenient.
+2. `run_tests.sh` sanity check — five minutes, do it whenever convenient.
 3. M5 metrics table — fast once M4 exists.
 4. Weekly report — written last, once the real state is final.
 5. Screencast recording, slide deck build, disclosure signature — these are

@@ -221,10 +221,11 @@ resolves it automatically. Do not add a folder-level Bearer override as a
 workaround — the underlying cause is the naming mismatch (§6, FM-01).
 
 **`PactV3` crashes during test setup, opaque Rust FFI error.** A
-`MatchersV3.regex(...)` is applied to a header. Replace with a plain string
-literal on both `Content-Type` (response) and `Authorization` (request); the
-verifier's `requestFilter` injects the real JWT at verification time regardless
-of what's recorded in the contract (§6, FM-02).
+`MatchersV3.regex(...)` is applied to a header. Do not use regex header
+matchers. Omit response header assertions unless they are essential; where a
+request header must be present, use a plain literal. The verifier's
+`requestFilter` injects the real JWT at verification time regardless of the
+placeholder Authorization value recorded in the contract (§6, FM-02).
 
 **`import.meta.env` breaks Jest.** The frontend uses Vite, but Jest runs under
 Node with Babel. Add `babel-plugin-transform-vite-meta-env` (already present in
@@ -290,12 +291,12 @@ headers are affected.
 JavaScript — looks like an environment/installation problem rather than a narrow
 tool incompatibility.
 
-**Resolution.** Use plain string literals on both headers. For `Authorization`,
-low-risk: the contract literal is `Bearer placeholder.token.value` (never a real
-token), and the verifier's `requestFilter` injects the real JWT at verification
-time. For `Content-Type`, brittle if the server ever drops or changes the
-charset — consider dropping the header assertion entirely and relying on
-status + body shape.
+**Resolution.** Do not use regex header matchers. Response `Content-Type`
+assertions were dropped entirely and the contracts rely on status + body shape.
+For request headers that must be present, use plain literals. For
+`Authorization`, low-risk: the contract literal is
+`Bearer placeholder.token.value` (never a real token), and the verifier's
+`requestFilter` injects the real JWT at verification time.
 
 ### FM-03 — A transient Pact FFI crash presented as a code regression
 

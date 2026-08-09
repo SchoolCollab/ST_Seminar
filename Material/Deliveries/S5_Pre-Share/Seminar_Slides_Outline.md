@@ -72,18 +72,20 @@ budget:** 45 min = \*\*10 min pitch + 10 min demo + 20 min activity
 
 ### Slide 6 — M6 teaser (the finding)
 
-- **34 of 38 Pact interactions verified across two consumers.** Four failed.
+- **46 of 51 Pact interactions verified across three consumers.** Five failed.
     - `POST /api/checkout` — contract asserted `order_id`; server returns
       `orderId`. Surfaced a real, separate defect: EShop is internally
       inconsistent about identifier casing.
     - Checkout evidence probe — a real frontend-shaped checkout stores
       `shipping_address` as null.
-    - `POST /api/apply-coupon` — percent discount formula returns the wrong
+    - Web `POST /api/apply-coupon` — percent discount formula returns the wrong
       `discount_amount` and `final_amount`.
     - Admin STT-A-24 — `canceled → delivered` is accepted even though both
       states should be terminal.
-- **Speaker note:** land on _"chasing a Pact failure taught us more than either
-  passing case."_
+    - Mobile `POST /api/apply-coupon` — independently corroborates the same
+      percent-formula defect from another consumer.
+- **Speaker note:** land on _"chasing the Pact failures taught us more than the
+  passing cases."_
 - **Timing:** 2 min.
 
 ---
@@ -119,8 +121,8 @@ budget:** 45 min = \*\*10 min pitch + 10 min demo + 20 min activity
       prepared on a separate branch), re-run — Products interactions fail for
       `eshop-web`, `eshop-admin`, and `eshop-mobile`. Revert, re-run, baseline
       restored.
-- **Speaker note:** land on _"`price` is shared by two real consumers. One
-  backend rename breaks both contracts before either consumer ships against it;
+- **Speaker note:** land on _"`price` is shared by three real consumers. One
+  backend rename breaks all three contracts before any consumer ships against it;
   spec-based checks would only stay honest if the spec did not move with the
   code."_
 - **Timing:** 3 min.

@@ -104,9 +104,10 @@ Substantial Copilot involvement:
   replaced with a plain string literal after diagnosis.
 - Copilot's initial `POST /api/checkout` contract asserted `order_id`
   (snake_case, matching the rest of the API). The server returns `orderId`. This
-  remains one of the four stable failures in the current 34/38 two-consumer Pact
-  baseline — surfaced a real camelCase inconsistency defect in the SUT, logged
-  in `Material/Document/SUT-Reference/EShop_Defect.md` under "Response conventions."
+  remains one of the five stable failures in the current 46/51 three-consumer
+  Pact baseline — surfaced a real camelCase inconsistency defect in the SUT,
+  logged in `Material/Document/SUT-Reference/EShop_Defect.md` under "Response
+  conventions."
 
 ### 3.4 Where AI output was rejected outright
 
