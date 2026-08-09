@@ -13,25 +13,25 @@ running server matches an OpenAPI spec at a chosen moment. Pact verifies that
 headers, and the response fields the UI reads — remain valid across backend
 changes, without frontend and backend having to run together. For an SUT like
 EShop, whose implementation diverges from its SRS in dozens of catalogued ways
-(see `Material/Document/SUT-Reference/EShop_Defect.md`), that distinction is the point: contract tests pin the
-_lived_ contract, not the aspirational one.
+(see `Material/Document/SUT-Reference/EShop_Defect.md`), that distinction is the
+point: contract tests pin the _lived_ contract, not the aspirational one.
 
 **Status as of this submission: Iterations 1, 2, and 3 complete.** Three
 consumers (`eshop-web`, `eshop-admin`, and `eshop-mobile`), local
 broker-optional provider verification, and a consumer CI workflow for each of
-the three consumers, each of which now fails the job for real on a Pact
-mismatch (see §10). A hard deployment gate (`can-i-deploy` as a blocking check)
-remains deferred.
+the three consumers, each of which now fails the job for real on a Pact mismatch
+(see §10). A hard deployment gate (`can-i-deploy` as a blocking check) remains
+deferred.
 
 ## 1. Positioning within T06
 
-| Track           | Item                                     | Pact's role                                                                                          |
-| --------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| S1 proposal     | Third tool, alongside Apidog + Apidog AI | Justified against Spring Cloud Contract / Specmatic                                                  |
-| S3 milestone M5 | Metrics                                  | Setup time, verification duration, interaction count                                                 |
-| S3 milestone M6 | Contract violations                      | Primary source — the one failing interaction, cross-referenced to `Material/Document/SUT-Reference/EShop_Defect.md`                  |
-| S4 user guide   | Screencast segment                       | "When Apidog is not enough — CDC with Pact"                                                          |
-| S8 AI audit     | AI-02/03/04                              | Two AI tools in scope: Claude (documents, planning, review) and GitHub Copilot (Pact implementation) |
+| Track           | Item                                     | Pact's role                                                                                                         |
+| --------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| S1 proposal     | Third tool, alongside Apidog + Apidog AI | Justified against Spring Cloud Contract / Specmatic                                                                 |
+| S3 milestone M5 | Metrics                                  | Setup time, verification duration, interaction count                                                                |
+| S3 milestone M6 | Contract violations                      | Primary source — the one failing interaction, cross-referenced to `Material/Document/SUT-Reference/EShop_Defect.md` |
+| S4 user guide   | Screencast segment                       | "When Apidog is not enough — CDC with Pact"                                                                         |
+| S8 AI audit     | AI-02/03/04                              | Two AI tools in scope: Claude (documents, planning, review) and GitHub Copilot (Pact implementation)                |
 
 **What Pact adds that Apidog and Apidog AI do not.** Apidog manual mode confirms
 "server matches spec today"; Apidog AI generates cases from the same spec, so it
@@ -44,8 +44,9 @@ must keep proving it.
 
 **Provider:** `Sut/EShop/backend/` — Node.js, Express, SQLite. 31 operations
 across 24 paths (`EShop_OpenApi.yaml`). `SECRET_KEY` is hard-coded and JWTs
-never expire — a documented defect (`Material/Document/SUT-Reference/EShop_Defect.md`); Pact does not "fix" it,
-and provider states deliberately do not depend on this defect.
+never expire — a documented defect
+(`Material/Document/SUT-Reference/EShop_Defect.md`); Pact does not "fix" it, and
+provider states deliberately do not depend on this defect.
 
 **Consumer used:** `frontend-web` — React, `axios`. All hard-coded
 `http://localhost:3000` base URLs replaced with a single `apiClient`
@@ -93,9 +94,9 @@ can point at Pact's mock server.
 **What was built in Iteration 3 (complete):**
 
 - Consumer: `frontend-mobile` (`eshop-mobile`).
-- 2 interactions, deliberately scoped narrowly after investigation showed 10 of
-  12 mobile backend calls overlapped `frontend-web`'s existing contract coverage
-  without a meaningful request/response-shape difference.
+- 13 interactions across five areas: auth/password-reset flows, login/profile,
+  cart/checkout/coupon, orders, and products — see §6b for the full breakdown
+  and result.
 - Plain API-client extraction and Node/Jest Pact tests only. React Native
   component rendering, `jest-expo`, and Metro-specific test setup stayed out of
   scope.
@@ -226,7 +227,8 @@ failure surfaced a real, separate issue: EShop is internally inconsistent about
 camelCase vs snake_case for newly-created-row identifiers (`POST /api/register`
 and `POST /api/products` both return `id`; `POST /api/checkout` returns
 `orderId`; nearly every other field in the API is snake_case). Logged as a
-genuine defect in `Material/Document/SUT-Reference/EShop_Defect.md`, under **Response conventions**.
+genuine defect in `Material/Document/SUT-Reference/EShop_Defect.md`, under
+**Response conventions**.
 
 **Failure 2 — `GET /api/cart` (shape mismatch) — root-caused, category (a), same
 pattern as Failure 1.** The contract expects `M.like({ cart: [] })` — an object
@@ -238,7 +240,8 @@ implementation or the spec. Unlike Failure 1, chasing this one surfaced no
 secondary defect — EShop is otherwise consistent about returning collections as
 bare arrays (`GET /api/products`, `GET /api/categories` do the same), so this is
 a clean contract-authoring error with nothing behind it. **Not yet logged in
-`Material/Document/SUT-Reference/EShop_Defect.md`, and shouldn't be** — there's no SUT defect here to log.
+`Material/Document/SUT-Reference/EShop_Defect.md`, and shouldn't be** — there's
+no SUT defect here to log.
 
 **A limitation of the desired-shape contracts, stated honestly:** both
 `GET /api/users/me` (excluding `password`) and `PUT /api/users/me` (excluding
@@ -269,17 +272,17 @@ provider, `eshop-backend`. Its consumer suite passes **16/16** and produces a
 The full provider cycle was then run three consecutive times under the same
 execution path. All three runs matched:
 
-- `eshop-web`: **8/10** verified, with the same two deliberate contract-authoring
-  failures documented above.
+- `eshop-web`: **8/10** verified, with the same two deliberate
+  contract-authoring failures documented above.
 - `eshop-admin`: **15/16** verified, with one real provider failure.
 
-**Admin failure — `PUT /api/admin/orders/:id/status`
-(`canceled`→`delivered`).** The admin contract asserts the correct state-machine
-behavior: an already-canceled order should reject a transition to `delivered`
-with a `400` response and an error body. The provider instead returns `200` and
-updates the order. Unlike the two `eshop-web` failures, this is **not** a
-contract-authoring mistake; it is live provider-verification evidence of the
-known terminal-state defect documented in
+**Admin failure — `PUT /api/admin/orders/:id/status` (`canceled`→`delivered`).**
+The admin contract asserts the correct state-machine behavior: an
+already-canceled order should reject a transition to `delivered` with a `400`
+response and an error body. The provider instead returns `200` and updates the
+order. Unlike the two `eshop-web` failures, this is **not** a contract-authoring
+mistake; it is live provider-verification evidence of the known terminal-state
+defect documented in
 `Material/Document/Methodology/EShop_State_Transition_Testing.md` as `STT-A-24`.
 That entry now has both source-level analysis and independent Pact verification
 as corroborating evidence.
@@ -288,44 +291,70 @@ as corroborating evidence.
 `.github/workflows/pact-consumer-admin.yml`, mirroring the web workflow:
 install, generate pacts, install the backend, then verify this consumer's
 contract directly against the provider in the same job
-(`PACT_VERIFY_ONLY=eshop-admin`). That verification step is now a hard gate —
-a failing interaction fails the job (`continue-on-error` was removed from it;
-see §10). Broker publishing and `can-i-deploy` remain present but inert, since
-no broker secrets are configured; `can-i-deploy` itself stays advisory
+(`PACT_VERIFY_ONLY=eshop-admin`). That verification step is now a hard gate — a
+failing interaction fails the job (`continue-on-error` was removed from it; see
+§10). Broker publishing and `can-i-deploy` remain present but inert, since no
+broker secrets are configured; `can-i-deploy` itself stays advisory
 (`continue-on-error: true`) by design, independent of the broker question.
 
-## 6b. Iteration 3 result — `frontend-mobile`: 2/2 verified, confirmed clean
+## 6b. Iteration 3 result — `frontend-mobile`: 12/13 verified, one confirmed defect
 
 `frontend-mobile` adds a third consumer named `eshop-mobile`. The app is an Expo
 / React Native project, but the Pact work intentionally avoided component
 testing. Its direct `fetch` calls were extracted into a plain API module with an
 overridable base URL, then tested under Node/Jest against Pact's mock server.
 
-The interaction set is intentionally small:
+The consumer suite grew past its original 2-interaction MVP into 13
+interactions across five test files, grouped by area:
 
-- `POST /api/login` — asserts the mobile-specific fields read from login:
-  `user.phone` and `user.shipping_address`, which `frontend-web`'s login
-  contract did not need to assert.
-- `PUT /api/users/me` — asserts the real mobile request shape, including the
-  camelCase `shippingAddress` field the mobile app sends.
+- `auth-flows.consumer.pact.test.js` (3) — `POST /api/register`,
+  `POST /api/forgot-password`, `POST /api/reset-password`.
+- `auth-profile.consumer.pact.test.js` (2) — `POST /api/login` (asserting the
+  mobile-specific fields it reads that `frontend-web`'s login contract doesn't
+  need: `user.phone` and `user.shipping_address`), and `PUT /api/users/me`
+  (asserting the real mobile request shape, including the camelCase
+  `shippingAddress` field the mobile app sends).
+- `cart-checkout.consumer.pact.test.js` (3) — `POST /api/apply-coupon`,
+  `POST /api/checkout`, `POST /api/coupon-usage`.
+- `orders.consumer.pact.test.js` (2) — `GET /api/orders/my-orders`,
+  `PUT /api/orders/:id/cancel`.
+- `products.consumer.pact.test.js` (3) — `GET /api/products` (empty search),
+  `GET /api/products?search=` (a term), `GET /api/products/:id`.
 
-The mobile consumer suite passes **2/2**, and provider verification passes
-**2/2**. Combined with the existing baselines, the current full Pact result is:
+The mobile consumer suite passes **13/13**, and provider verification passes
+**12/13**. Combined with the existing baselines, the current full Pact result
+is:
 
 - `eshop-web`: **14/17** verified, with three documented expected failures.
 - `eshop-admin`: **20/21** verified, with one documented expected failure.
-- `eshop-mobile`: **2/2** verified, no provider failures.
+- `eshop-mobile`: **12/13** verified, with one documented expected failure.
 
-Iteration 3 also surfaced two defects now logged in
-`Material/Document/SUT-Reference/EShop_Defect.md`:
+**Mobile failure — `POST /api/apply-coupon`.** Same root cause as the
+`frontend-web` apply-coupon failure and the coupon percent-formula defect
+already logged in `Material/Document/SUT-Reference/EShop_Defect.md` (§Coupons):
+`server.js` computes `discount_amount = Math.floor(total_amount * (1 -
+coupon.discount_value))`, which is the inverse of the intended discount, not a
+contract-authoring mistake on the mobile side. This is live provider-verification
+evidence of the same defect from a second, independent consumer.
+
+Iteration 3 also surfaced two further defects, confirmed by reading
+`frontend-mobile/App.js` and `server.js` directly (not by a failing Pact
+assertion — see below), logged in `Material/Document/SUT-Reference/EShop_Defect.md`:
 
 - Mobile profile update sends `shippingAddress`, while `server.js` reads
   `shipping_address`. This is the second independent shipping-address
-  field-name failure found today, after the frontend-web checkout
-  `shipping_address` defect.
-- Mobile checkout sends
-  `items: cart.length > 1 ? cart.slice(0, -1) : cart`, silently dropping the
-  final cart item whenever the cart has more than one entry.
+  field-name mismatch found, after the frontend-web checkout
+  `shipping_address` defect. The `PUT /api/users/me` Pact interaction does not
+  catch this: it only asserts the request shape the mobile app actually sends
+  and a `200` response, not that the value round-trips correctly on a
+  subsequent read — the same `eachLike`-only-checks-presence limitation noted
+  in §6 for `frontend-web`.
+- Mobile checkout sends `items: cart.length > 1 ? cart.slice(0, -1) : cart`,
+  silently dropping the final cart item whenever the cart has more than one
+  entry. The `POST /api/checkout` Pact interaction's own description notes
+  this is "intentionally out of scope" — it asserts the API client's request
+  shape, not `App.js`'s cart-building logic, so this defect is real but sits
+  above the layer the contract test covers.
 
 No readback Pact interaction was added for the profile-update defect. The real
 mobile app does not call `GET /api/users/me`, and adding such an interaction
@@ -336,23 +365,24 @@ from source reading in `EShop_Defect.md`.
 
 ## 7. Failure modes logged
 
-**FM-02** (`Material/Document/SUT-Reference/EShop_Failure_Modes.md`): `PactV3`'s Rust FFI crashes when
-`MatchersV3.regex` is applied to a header value (`Content-Type` on responses,
-`Authorization` on requests), rather than failing gracefully. Worked around by
-using plain string literals on both headers. For `Authorization`, confirmed
-low-risk — the literal in the contract is `Bearer placeholder.token.value`,
-never a real token, and the verifier's `requestFilter` injects the real JWT at
-verification time regardless of what's recorded. For `Content-Type`, the literal
-(`'application/json; charset=utf-8'`, charset included) is brittle in the
-direction of the charset ever being _dropped or changed_ by the server — not
-appended, as an earlier version of this document stated before the discrepancy
-was caught during a read-only verification pass.
+**FM-02** (`Material/Document/SUT-Reference/EShop_Failure_Modes.md`): `PactV3`'s
+Rust FFI crashes when `MatchersV3.regex` is applied to a header value
+(`Content-Type` on responses, `Authorization` on requests), rather than failing
+gracefully. Worked around by using plain string literals on both headers. For
+`Authorization`, confirmed low-risk — the literal in the contract is
+`Bearer placeholder.token.value`, never a real token, and the verifier's
+`requestFilter` injects the real JWT at verification time regardless of what's
+recorded. For `Content-Type`, the literal (`'application/json; charset=utf-8'`,
+charset included) is brittle in the direction of the charset ever being _dropped
+or changed_ by the server — not appended, as an earlier version of this document
+stated before the discrepancy was caught during a read-only verification pass.
 
-**FM-04** (`Material/Document/SUT-Reference/EShop_Failure_Modes.md`): parallel Jest workers can race while
-writing the same Pact output file. This first appeared during `frontend-admin`
-Iteration 2: all 16 consumer tests passed, but the generated pact contained only
-7 interactions. Setting `maxWorkers: 1` fixed `frontend-admin`, and the same
-guard was added to `frontend-web` because it had the same latent risk.
+**FM-04** (`Material/Document/SUT-Reference/EShop_Failure_Modes.md`): parallel
+Jest workers can race while writing the same Pact output file. This first
+appeared during `frontend-admin` Iteration 2: all 16 consumer tests passed, but
+the generated pact contained only 7 interactions. Setting `maxWorkers: 1` fixed
+`frontend-admin`, and the same guard was added to `frontend-web` because it had
+the same latent risk.
 
 ## 8. Outstanding housekeeping — all three resolved
 
@@ -406,15 +436,15 @@ Four GitHub Actions workflows exist. Each of the three consumer workflows
 (`pact-consumer-web.yml`, `pact-consumer-admin.yml`, `pact-consumer-mobile.yml`)
 triggers on push/PR to its own frontend directory **and** to
 `Sut/EShop/backend/**` (a backend-only change must still trigger verification —
-an earlier gap where it didn't has been fixed). Each job installs the
-consumer, generates that consumer's pact file (`npm run test:pact`), installs
-the backend, then verifies that one consumer's contract directly against the
-provider in the same job/runner via `PACT_VERIFY_ONLY=<consumer>` — no broker
-involved, since the pact file was just generated in the same job.
-**That verification step's exit code is a hard gate**: `continue-on-error` was
-removed from it, so a failing interaction now fails the job for real, instead
-of the earlier design where it was masked as advisory. `provider.verify.js`'s
-summary output also now explicitly names which consumer(s) failed.
+an earlier gap where it didn't has been fixed). Each job installs the consumer,
+generates that consumer's pact file (`npm run test:pact`), installs the backend,
+then verifies that one consumer's contract directly against the provider in the
+same job/runner via `PACT_VERIFY_ONLY=<consumer>` — no broker involved, since
+the pact file was just generated in the same job. **That verification step's
+exit code is a hard gate**: `continue-on-error` was removed from it, so a
+failing interaction now fails the job for real, instead of the earlier design
+where it was masked as advisory. `provider.verify.js`'s summary output also now
+explicitly names which consumer(s) failed.
 
 `pact-provider-backend.yml` has no push/PR trigger — a bare backend push alone
 never has any consumer's pact file to verify against without a broker, so a
@@ -425,25 +455,28 @@ configured).
 
 Broker publishing and `can-i-deploy` steps remain in the workflows for
 completeness but are gated `if: env.PACT_BROKER_BASE_URL != ''` and currently
-no-op, since no broker secrets are configured. Where `can-i-deploy` does run,
-it keeps `continue-on-error: true` — that step is advisory by design,
-independent of whether a broker is even present; a hard deployment gate stays
-out of scope. This is a deliberate departure from an earlier "publish to
-broker, then verify separately" design, which never worked because the
-provider's own workflow had no consumer pact file to read — verifying inside
-each consumer's own job, right after generating its pact file, is what
-actually closes the loop without needing a broker at all.
+no-op, since no broker secrets are configured. Where `can-i-deploy` does run, it
+keeps `continue-on-error: true` — that step is advisory by design, independent
+of whether a broker is even present; a hard deployment gate stays out of scope.
+This is a deliberate departure from an earlier "publish to broker, then verify
+separately" design, which never worked because the provider's own workflow had
+no consumer pact file to read — verifying inside each consumer's own job, right
+after generating its pact file, is what actually closes the loop without needing
+a broker at all.
 
 ## 11. Cross-references
 
 **Reads from:** `EShop_OpenApi.yaml` (response shapes),
-`Material/Document/Apidog/EShop_Apidog_TestCases.md` (case-name overlap where relevant),
-`Material/Document/SUT-Reference/EShop_Defect.md` (every defect referenced here traces to an entry there).
+`Material/Document/Apidog/EShop_Apidog_TestCases.md` (case-name overlap where
+relevant), `Material/Document/SUT-Reference/EShop_Defect.md` (every defect
+referenced here traces to an entry there).
 
-**Updates:** `Material/Document/SUT-Reference/EShop_Failure_Modes.md` (FM-02 added here), `Material/Document/SUT-Reference/EShop_Defect.md` (the
-naming-convention entry added from §6), `Material/Document/Planning/W07_Action_Plan.md` /
-`Material/Document/Planning/W08_Action_Plan.md` (M6 marked done; Iterations 2–3 marked pending, not
-scheduled to a specific week yet).
+**Updates:** `Material/Document/SUT-Reference/EShop_Failure_Modes.md` (FM-02
+added here), `Material/Document/SUT-Reference/EShop_Defect.md` (the
+naming-convention entry added from §6),
+`Material/Document/Planning/W07_Action_Plan.md` /
+`Material/Document/Planning/W08_Action_Plan.md` (M6 marked done; Iterations 2–3
+marked pending, not scheduled to a specific week yet).
 
 ## 12. Seminar activity script (S6, ~7 minutes)
 
