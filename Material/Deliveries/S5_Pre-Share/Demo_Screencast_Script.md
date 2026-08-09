@@ -67,13 +67,16 @@ order #5 in `Material/Document/Planning/W09_Action_Plan.md`).
 
 - **On screen:** open `PUT /api/users/me`, click **Generate with AI**, wait,
   read the output, then open the saved report showing 25 requests, 9 passed, 16
-  failed.
+  failed. Briefly switch to the `GET /api/products/{id}` AI report showing 22
+  requests, 3 passed, 19 failed.
 - **What to show:** the AI generated both useful and noisy tests. Highlight the
   SEC-06 security case expecting 403, then the report line showing the SUT
   returned 200. Also show the contradictory role-enum/positive case where
   `role: "admin"` is treated as ordinary input and passes. Split-screen with our
   hand-authored **Self-promotion to admin** case categorized as Negative
-  (defect demo).
+  (defect demo). Then use the product-id report as the second cautionary
+  example: broad generated coverage, but many idealized `400`/`404` oracles and
+  a green `id=2` case that does not assert the known price-type defect.
 - **Narration:**
 
     > This is the best and worst of AI generation in one screen. Apidog AI
@@ -81,7 +84,10 @@ order #5 in `Material/Document/Planning/W09_Action_Plan.md`).
     > 403, actual 200. That independently confirms SEC-06. But the same
     > generated set also treats `role admin` as a positive enum case that passes.
     > Same field, two incompatible interpretations. The AI gives me leads; it
-    > does not give me an oracle I can trust without review.
+    > does not give me an oracle I can trust without review. The product-id run
+    > shows the same lesson from a different angle: 22 cases generated, but most
+    > failures are the AI assuming cleaner `400` or `404` behavior than this SUT
+    > actually has.
 
 ### Segment 5 — Pact consumer test passing (0:30)
 

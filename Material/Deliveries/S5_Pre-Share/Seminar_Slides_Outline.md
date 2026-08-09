@@ -110,8 +110,10 @@ budget:** 45 min = \*\*10 min pitch + 10 min demo + 20 min activity
     - The same generated set also includes a role-enum positive case where
       `role: "admin"` passes as ordinary input — useful output and noisy output
       side by side.
-- **Live action:** show the saved generation/report: 25 requests, 9 passed, 16
-  failed; explain why the 16 red cases are not all equally meaningful.
+- **Live action:** show the saved `PUT /api/users/me` report: 25 requests, 9
+  passed, 16 failed; then the `GET /api/products/{id}` report: 22 requests, 3
+  passed, 19 failed. Explain why red/green labels are not all equally
+  meaningful without human oracle review.
 - **Timing:** 4 min.
 
 ### Slide 9 — Demo anchor: Pact provider verifier

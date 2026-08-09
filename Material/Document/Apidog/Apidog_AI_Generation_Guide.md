@@ -38,23 +38,24 @@ generation directly.
    save it somewhere retrievable (paste into a scratch file, or directly to me
    if you want help building the diff table immediately).
 
-## Step 2 — `GET /api/products/:id` (the `{}`-on-404 example)
+## Step 2 — `GET /api/products/:id` (the product-id oracle example)
 
 Repeat steps 2–7 above on this endpoint instead. This endpoint was selected
 because it has two documented response quirks: a missing product returns
 `200 {}` rather than `404`, and even product ids return `price` as a string.
 
-The recorded partial generation did **not** make the predicted `404` mistake:
-it generated a missing-product case expecting `200` with an empty object. It did
-not finish the endpoint, though, so the even-id price-string quirk and Apidog's
-schema auto-validation behavior remain unconfirmed for this AI track.
+The final recorded generation completed for this endpoint. Apidog AI generated
+22 `GET /api/products/{id}` cases across positive, negative, and boundary
+categories, then executed them in the Local environment. The run is useful
+because it shows both breadth and noise: many invalid-id cases expected `400` or
+`404` while the SUT returned `200`, and the `id=2` boundary case passed without
+asserting the even-id `price` string quirk.
 
 ## Step 3 — Run the completed generated cases
 
 Once you've read the generated outputs without bias, run the completed set(s).
 Note the actual result for each — pass, fail, or "passed but shouldn't have."
-In the recorded run, only `PUT /api/users/me` reached execution; the product-id
-endpoint stopped during generation because of hosted-provider bandwidth/quota.
+In the recorded Week 09 evidence, both selected endpoints reached execution.
 
 ## Step 4 — Build the diff table
 
@@ -65,21 +66,25 @@ missed (business rules never captured in the spec — coupon reuse limits,
 cross-user access controls), and what it got wrong (the two specific findings
 above, plus anything else that surfaces).
 
-## Recorded Week 09 result — `PUT /api/users/me`
+## Recorded Week 09 result — Apidog AI on two endpoints
 
 Evidence files:
 
 - Generated checkpoint:
-  `Material/Checkpoint/AI/seminar.apidog.ai.checkpoint.1.json`
-- Executed report:
+  `Material/Config/Apidog/Checkpoint/AI/seminar.apidog.ai.checkpoint.2.json`
+- Combined checkpoint with suite references:
+  `Material/Config/Apidog/Checkpoint/seminar.apidog.checkpoint.1.json`
+- Executed report for `PUT /api/users/me`:
   `Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`
+- Executed report for `GET /api/products/{id}`:
+  `Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-23-48-02.html`
 
-The checkpoint contains **27 generated test-case definitions** total:
+The AI checkpoint contains **46 generated test-case definitions** total:
 
 | Endpoint | Generated definitions | Execution status |
 | --- | ---: | --- |
 | `PUT /api/users/me` | 24 | Executed |
-| `GET /api/products/{id}` | 3 | Not executed in the report; generation stopped early |
+| `GET /api/products/{id}` | 22 | Executed |
 
 The `PUT /api/users/me` report executed **25 HTTP requests** because the
 role-enum test case used a two-row dataset (`role=user`, `role=admin`).
@@ -116,18 +121,31 @@ The same generated set also demonstrates why raw AI output needs review:
 - Many `400` validation cases failed because the handler accepts weakly typed or
   malformed fields instead of validating them.
 
-`GET /api/products/{id}` generation was incomplete because the free-plan
-Google/Gemini key hit a bandwidth/quota limit. The partial checkpoint includes
-the `{}`-with-`200` missing-product case, but it does not yet include the
-even-id `price`-as-string case, and there is no execution report for this
-endpoint.
+The `GET /api/products/{id}` report executed **22 HTTP requests**. Apidog
+v2.8.41 reported:
+
+| Metric | Result |
+| --- | ---: |
+| HTTP requests | 22 |
+| Passed requests | 3 |
+| Failed requests | 19 |
+| Assertions | 18 |
+| Failed assertions | 18 |
+| Pass rate | 13.64% |
+| Duration | 1.66s |
+
+The product-id run is mostly cautionary evidence. The three green requests were
+simple valid-id checks (`id=5`, `id=2`, `id=1`), and some had no meaningful
+assertions beyond the request completing. Many invalid-id and high-id cases
+failed because the SUT returned `200` where the AI expected `400` or `404`.
+Apidog also raised response-schema failures for empty-object product lookups, so
+the earlier candidate concern that schema validation might silently accept the
+`{}`-on-404 quirk was not observed in this run.
 
 ## What "done" looks like for M4
 
 You don't need exhaustive AI coverage across all 31 endpoints for this to be a
-real, defensible M4. The recorded result now supports the `PUT /api/users/me`
-half strongly: AI generated cases, the run executed, and SEC-06 was confirmed
-live. The `GET /api/products/{id}` half remains explicitly partial because the
-hosted-provider quota stopped generation before the endpoint was fully covered.
-Do not describe the product endpoint as complete until a second checkpoint/report
-exists for it.
+real, defensible M4. The final Week 09 decision is to **freeze M4 at two
+executed AI endpoint sets**: `PUT /api/users/me` and
+`GET /api/products/{id}`. Describe M4 as a deliberately narrow two-endpoint AI
+comparison, not as full-project AI regression coverage.

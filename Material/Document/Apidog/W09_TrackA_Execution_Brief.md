@@ -141,9 +141,10 @@ standalone Test Case on `POST /api/checkout`.
 | Missing product returns `{}`+200   | Negative (defect demo) | `id=999999` | Public | `200`           | `Status=200`; `Body:$ Equals {}`                           | `Material/Document/SUT-Reference/EShop_Defect.md` — `{}`-on-404 quirk              |
 
 The two defect-demo cases here are also strong AI-diff candidates for Track B.
-The partial AI checkpoint generated the missing-product `{}`+`200` case, but
-generation stopped before the endpoint was complete, so the even-id price-type
-case still has no AI-generated counterpart or execution report.
+The completed AI checkpoint generated 22 `GET /api/products/{id}` cases and the
+report executed all 22. It produced broad malformed/boundary-id coverage, but
+the `id=2` boundary case passed without asserting the even-id price-type quirk,
+so that specific defect still needs human-authored oracle coverage.
 
 ## Happy Path Purchase scenario — concrete payloads
 

@@ -155,8 +155,9 @@ one; the multi-line answers below are for facilitator reference.
 
 ## Part 2 — canonical AI-generation failure modes
 
-One finding is now confirmed; the second remains partial because generation hit
-the free-plan Google/Gemini bandwidth limit.
+Both selected AI endpoints were generated and executed. The point of this part
+is not "count green tests"; it is to decide which generated oracles are useful,
+which are noisy, and which expose real defects.
 
 **Confirmed — `PUT /api/users/me` role handling.** The AI reads the OpenAPI
 schema, which still declares `role` as a settable field (kept in the spec
@@ -166,11 +167,12 @@ confirming SEC-06 live. It also generated a contradictory enum-positive case
 where `role: "admin"` passes as ordinary input. Same field, two incompatible
 oracles — exactly why the generated set needs human review.
 
-**Partial — `GET /api/products/:id` for a missing id.** The partial checkpoint
-does include a missing-product case expecting the SUT's documented
-`Status=200; Body:$ Equals {}` behavior. Generation did not finish, and no
-execution report exists yet, so this is not counted as a completed AI endpoint.
-The even-id `price` string case was not generated in the partial output.
+**Executed — `GET /api/products/:id` product-id oracle noise.** The completed
+AI checkpoint generated 22 cases and the report executed all 22: 3 passed and
+19 failed. Many invalid-id cases expected `400` or `404`, but the SUT returned
+`200`; the `id=2` boundary case passed without asserting the even-id
+`price`-as-string defect. This is completed AI coverage, but it still needs
+human review before any case becomes trusted regression coverage.
 
 **Third possible finding — `POST /api/cart` "Success" case ignores auth.** Some
 AI generations produce a "Success" case with no `Authorization` header. That

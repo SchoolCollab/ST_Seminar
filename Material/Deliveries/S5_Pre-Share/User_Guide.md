@@ -201,17 +201,21 @@ Filled from Track A on execution.]_
 ### 4.2 AI diff table
 
 Evidence files:
-`Material/Checkpoint/AI/seminar.apidog.ai.checkpoint.1.json` and
-`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`.
+`Material/Config/Apidog/Checkpoint/AI/seminar.apidog.ai.checkpoint.2.json`,
+`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`,
+and
+`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-23-48-02.html`.
 Apidog AI was run with all generation categories selected, `{{bearerToken}}` as
 the credential variable, Number of Cases = Auto, and Gemini 3.5 Flash as the
 hosted model. The executed `PUT /api/users/me` report ran 25 requests: 9 passed,
-16 failed, 35 assertions total, 23 failed assertions, 36% pass rate.
+16 failed, 35 assertions total, 23 failed assertions, 36% pass rate. The
+executed `GET /api/products/{id}` report ran 22 requests: 3 passed, 19 failed,
+18 assertions total, 18 failed assertions, 13.64% pass rate.
 
 | Endpoint | What the AI covered well | What it missed or blurred | Human review result |
 | --- | --- | --- | --- |
 | `PUT /api/users/me` | Generated broad positive, negative, boundary, and security coverage, including auth failures, phone/name type cases, SQL-injection text, and a specific SEC-06 privilege-escalation case expecting `403`. | It also generated a contradictory enum-coverage case that treated `role=user` and `role=admin` as ordinary positive inputs. Several `400` validation expectations reflect ideal validation, not the permissive SUT. One "GET method" case was malformed and still sent `PUT`. | Keep the SEC-06 failure as live defect evidence: Apidog expected `403`, SUT returned `200`. Quarantine the role-enum positive case and malformed/noisy assertions before using the set as a regression suite. |
-| `GET /api/products/{id}` | Partial generation produced the missing-product `{}` with `200` case from the documented response shape. | Generation stopped early because the free-plan Google/Gemini API key hit a bandwidth/quota limit. No execution report exists for this endpoint, and the even-id `price`-as-string case was not generated. | Treat this endpoint as incomplete AI coverage. It is useful as evidence of quota/network risk, not as completed M4 coverage. |
+| `GET /api/products/{id}` | Generated a full 22-case endpoint set across positive, negative, and boundary classes, including malformed IDs, empty path values, zero/overflow/underflow boundaries, and simple valid IDs. | It repeatedly expected `400`/`404` for inputs where the SUT actually returns `200`, and the valid `id=2` boundary case passed without asserting the even-id `price` string quirk. Several green cases had little oracle value because they asserted no meaningful body fields. | Keep this as AI-oracle review evidence: the endpoint is now generated and executed, but the raw red/green split needs human classification before being promoted into regression coverage. |
 
 Takeaway: Apidog AI accelerated exploration and independently confirmed SEC-06,
 but the generated tests are draft hypotheses. The pass/fail result only becomes
@@ -220,9 +224,26 @@ spec, SUT source, and existing defect log.
 
 ### 4.3 Metrics table (M5)
 
-_[Filled Thursday after Tracks A/B/C runs recorded. Rows: setup time, run time,
-flake rate (N ≥ 5 if achievable, else N = 3 noted honestly). Columns: Apidog
-manual, Apidog AI, Pact.]_
+M5 compares the testing tracks by the cost and reliability that a seminar
+participant would actually feel: setup time, run time, and repeated-run
+stability. M4 is frozen as two executed Apidog AI endpoint sets, so the Apidog
+AI numbers below must be read at that narrow scope rather than as a full-project
+AI run.
+
+| Metric | Apidog manual | Apidog AI | Pact |
+| --- | --- | --- | --- |
+| Setup time | **TODO:** measure from OpenAPI import / environment setup to first green manual request. | **TODO:** measure provider setup + first successful generation. Recorded provider: free-plan Google/Gemini, Gemini 3.5 Flash. | **TODO:** use the actual Pact setup/run notes if timed; otherwise mark as "not timed retrospectively" rather than estimating. |
+| Run time | **TODO:** run the Apidog Test Suite once built and record suite duration from the report. | `2.20s` for `PUT /api/users/me`: 25 requests, 9 passed, 16 failed, 35 assertions, 23 failed. `1.66s` for `GET /api/products/{id}`: 22 requests, 3 passed, 19 failed, 18 assertions, 18 failed. | **TODO:** record one full `run_tests.sh` duration for the three-consumer baseline: 51 interactions, 46/51 provider verification. |
+| Flake rate | **TODO:** run the final Apidog Test Suite N=3 if time allows; record mismatches honestly. | Not measured. Both AI endpoint reports were one-run evidence, useful for oracle review but not a repeated-run stability claim. | **TODO:** if using existing evidence, note the triple-run Pact discipline already established stable named failures; otherwise run `run_tests.sh` N=3 and record `0/3`, `1/3`, etc. |
+
+Questions to fill before this table is final:
+
+- What exact Apidog manual setup time do you want to report?
+- What exact Apidog AI setup/generation time do you want to report?
+- Should Pact setup time be timed from a fresh clone, or reported as "not
+  retrospectively measured" with only run time included?
+- For flake rate, are we doing N=3 for all three tracks, or marking Apidog AI as
+  one-run-only because these endpoint reports were recorded once each?
 
 ## 5. Troubleshooting
 

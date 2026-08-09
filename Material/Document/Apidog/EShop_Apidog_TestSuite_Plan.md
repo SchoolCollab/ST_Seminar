@@ -14,9 +14,17 @@ answers the three original questions (run-all-cases, DB reset, CI/CD
 integration) from real Apidog documentation, and turns them into a concrete,
 orderable build list.
 
-Do not treat this as a "checkpoint 4" — a real checkpoint is an export of an
-Apidog project that already contains these objects, which only the student can
-produce (Apidog → Export project, after building the scenarios/suite below).
+**Current next step (2026-08-10).** M4 Apidog AI generation is frozen at two
+executed endpoint sets: `PUT /api/users/me` and `GET /api/products/{id}`. The
+combined checkpoint now contains `EShop — Full Regression` with static
+references to 209 endpoint test cases (163 manual + 46 AI). The active work now
+moves here: import/confirm that suite in Apidog, run it, and use its report to
+help fill M5's metrics table.
+
+The current combined checkpoint is
+`Material/Config/Apidog/Checkpoint/seminar.apidog.checkpoint.1.json`. Treat it
+as the latest versioned snapshot, not as execution evidence; the suite still
+needs a real Apidog run/report.
 
 ## 1. What the three screenshots actually show
 

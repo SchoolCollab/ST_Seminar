@@ -138,15 +138,18 @@ SUT-under-test in its own right — every generated case is diffed against the
 corresponding hand-built case, and the diff itself is a seminar deliverable. See
 `User_Guide.md` §4.2 and the Activity Worksheet Part 2.
 
-The Week 09 checkpoint/report now give concrete evidence for this section.
-Apidog AI generated 24 `PUT /api/users/me` definitions and 3 partial
-`GET /api/products/{id}` definitions before the free-plan Google/Gemini quota
-stopped the second endpoint. The executed `PUT /api/users/me` report ran 25
-requests: 9 passed, 16 failed. Its strongest useful finding was SEC-06:
+The Week 09 checkpoints/reports now give concrete evidence for this section.
+Apidog AI generated 24 `PUT /api/users/me` definitions and 22
+`GET /api/products/{id}` definitions. The executed `PUT /api/users/me` report
+ran 25 requests: 9 passed, 16 failed. Its strongest useful finding was SEC-06:
 Apidog expected `403` for `role: "admin"`, while the SUT returned `200`.
 Its strongest cautionary finding was that the same generated set also treated
 `role: "admin"` as a passing positive enum case, proving that generated tests
-needed human oracle review before being trusted.
+needed human oracle review before being trusted. The executed product-id report
+ran 22 requests: 3 passed, 19 failed. Its useful lesson was different: the AI
+generated broad input coverage, but many oracles were idealized `400`/`404`
+expectations against a permissive SUT, and the green `id=2` case did not assert
+the known even-id `price` string quirk.
 
 ## 6. Cross-references
 

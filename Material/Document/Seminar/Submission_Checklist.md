@@ -34,6 +34,10 @@ false today (FM-05, the reorganization).
       status). Re-verified 14/17, 20/21, 12/13 baseline unaffected via
       `run_tests.sh` on an `ubuntu-latest`-matching environment. Commits
       `3f4f898`, `8afcf9b`.
+- [x] M4 Apidog AI scope frozen: `PUT /api/users/me` generated and executed
+      with SEC-06 confirmed live; `GET /api/products/:id` also generated and
+      executed. Final AI scope is two endpoint sets, 46 generated cases total,
+      with separate HTML reports for both endpoints.
 
 ## Blocking submission — do these first
 
@@ -41,22 +45,13 @@ false today (FM-05, the reorganization).
       mismatch/fail logic, real syntax check via a working bash binary, real
       full execution matching the documented 14/17 + 20/21 + 12/13 baseline,
       clean `git status`. Commit `f525acd`.
-- [ ] **M4 — Apidog AI generation, 2 endpoints** (`PUT /api/users/me`,
-      `GET /api/products/:id`). Partially complete. `PUT /api/users/me`
-      generated and executed: 25 requests, 9 passed, 16 failed, with SEC-06
-      confirmed live (`expected 403`, actual `200`). `GET /api/products/:id`
-      generation started but stopped early because the free-plan Google/Gemini
-      key hit a bandwidth/quota limit; no execution report exists yet.
-- [ ] **M5 — metrics table.** Blocked on deciding whether to retry the partial
-      `GET /api/products/:id` AI generation or explicitly freeze M4 as partial.
-      Apidog manual, Pact, and the `PUT /api/users/me` AI setup/run data are now
-      knowable; this is mostly transcription once M4's final scope is decided.
-- [ ] **Record `Demo_Screencast.mp4`** — the script exists and is current; the
-      actual video does not.
-- [ ] **Build `Seminar_Slides.pptx`** — the outline exists and is current; the
-      actual deck does not.
-- [ ] **Sign `AI_03_Disclosure_Form.md`** — needs your name, ID, and signature;
-      the form itself is ready.
+- [ ] **M5 — metrics table.** Scaffold exists in `User_Guide.md` §4.3. Needs
+      exact measured values or explicit "not measured" entries for Apidog
+      manual, Apidog AI, and Pact.
+- [ ] **Apidog TestSuite execution** — next active work item. Build/run the
+      `EShop — Full Regression` suite from
+      `Material/Document/Apidog/EShop_Apidog_TestSuite_Plan.md`; the current
+      combined checkpoint contains 209 suite references (163 manual + 46 AI).
 
 ## Not blocking today's submission — genuinely optional
 
@@ -64,6 +59,9 @@ false today (FM-05, the reorganization).
 
 ## Correctly waiting, not actually incomplete
 
+- [ ] **Record `Demo_Screencast.mp4`** — on hold by current instruction.
+- [ ] **Build `Seminar_Slides.pptx`** — on hold by current instruction.
+- [ ] **Sign `AI_03_Disclosure_Form.md`** — on hold by current instruction.
 - [ ] `AI_02_Audit_Report.md` §4 (live-seminar reflection) — cannot be written
       before the seminar happens. Don't try to fill this today.
 - [ ] `AI_04_Reflective_Statement.md` §2 — same reason.
@@ -72,16 +70,13 @@ false today (FM-05, the reorganization).
 
 ## This week's report
 
-- [ ] Write `Group12_09.md`/`.pdf` (Report Week 09, 2026-08-03–08-08) — the last
-      item, written once everything above that affects its content is settled.
-      Gap week (07-26–08-02) intentionally not mentioned, per your instruction.
+- [x] Weekly report for this week is obsolete by current instruction; do not
+      spend time producing `Group12_09.md`/`.pdf`.
 
 ## Recommended order for the rest of today
 
-1. Decide M4's final scope: retry `GET /api/products/:id` generation, or freeze
-   the AI track as one executed endpoint plus one documented partial endpoint.
-2. M5 metrics table — fast once M4's final scope is decided.
+1. Apidog TestSuite build/execution.
+2. M5 metrics values, using the TestSuite report once it exists.
 3. `run_tests.sh` sanity check — five minutes, do it whenever convenient.
-4. Weekly report — written last, once the real state is final.
-5. Screencast recording, slide deck build, disclosure signature — these are
-   yours alone; nothing I generate substitutes for them.
+4. Screencast recording, slide deck build, disclosure signature — explicitly on
+   hold for now.

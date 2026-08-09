@@ -43,8 +43,8 @@ S6's activity properly.
 | **M2**        | Outstanding — four-scenario matrix on `POST /api/cart`, plus Happy Path Purchase flow                     |
 | **M3-Apidog** | Partial — FM-01 logged; **2 more failure modes needed** (candidates in `Material/Document/SUT-Reference/EShop_Failure_Modes.md`)          |
 | **M3-Pact**   | Done — FM-02 logged                                                                                       |
-| **M4**        | Outstanding — hosted-LLM route (local Ollama deferred out of scope for this cycle)                        |
-| **M5**        | Outstanding — setup time / run time / flake rate table                                                    |
+| **M4**        | Frozen narrow scope — `PUT /api/users/me` and `GET /api/products/:id` generated + executed with reports |
+| **M5**        | Scaffolded — User Guide table ready, exact timing/flake values still need transcription                   |
 | **M6**        | Done — 51 Pact interactions across 3 consumers; 46/51 provider baseline, 5 violations documented          |
 
 ## Work groups — by kind
@@ -95,12 +95,15 @@ table (User Guide figure).
       AI Features → enable → +Add Provider → point at the hosted model. The
       recorded run used a free-plan Google/Gemini key with Gemini 3.5 Flash.
 - [ ] Verify with one throwaway generation on `GET /api/categories` before
-      committing.
-- [ ] For each endpoint already covered by hand-built cases (from Track A),
+      committing. **Skipped by current decision** — M4 is frozen at the recorded
+      `PUT /api/users/me` and `GET /api/products/:id` endpoint runs.
+- [x] For each endpoint already covered by hand-built cases (from Track A),
       **Test Cases → Generate with AI** and save as a separately-named
       collection so the two sets stay comparable. Current execution is scoped:
-      `PUT /api/users/me` generated and executed; `GET /api/products/:id`
-      started but generation stopped early on provider quota/bandwidth.
+      `PUT /api/users/me` generated/executed as 24 cases and
+      `GET /api/products/:id` generated/executed as 22 cases. This narrow
+      two-endpoint scope is now accepted as the final M4 scope for this
+      submission.
 - [x] Build the **diff table** — the centrepiece of the seminar pitch:
     - What the AI covered well — schema shape, declared types, status codes.
     - What the AI missed — business rules absent from the spec: coupon reuse,
@@ -109,15 +112,17 @@ table (User Guide figure).
       endpoints, overconfident "valid" cases, auth ignored on protected routes.
     - Coverage against the four-scenario matrix — does the AI generate
       invalid-auth and not-found cases at all?
-- [ ] Check the two AI-specific candidates already flagged in
+- [x] Check the two AI-specific candidates already flagged in
       `Material/Document/SUT-Reference/EShop_Failure_Modes.md`: (a) confirmed
-      on `PUT /api/users/me` and logged as FM-06; (b) still open because
-      `GET /api/products/:id` generation/reporting did not complete.
-- [ ] Screenshot the diff — evidence for M4 and a User Guide figure.
+      on `PUT /api/users/me` and logged as FM-06; (b) checked on
+      `GET /api/products/:id` after the second AI generation completed. The
+      product report did not show a silent schema-validation pass for `{}`; it
+      produced visible product-oracle failures instead.
+- [ ] Screenshot the diff/report — evidence for M4 and a User Guide figure.
 
-**Exit criterion:** diff table committed to the User Guide; AI collection saved
-in the exported Apidog project; both AI-specific failure-mode candidates
-resolved (confirmed or ruled out).
+**Exit criterion:** diff table committed to the User Guide; checkpoint/report
+paths recorded; `PUT /api/users/me` SEC-06 confirmation logged as FM-06; product
+endpoint AI execution summarized as cautionary oracle/noise evidence.
 
 ### Track C — Metrics (M5)
 
@@ -127,20 +132,22 @@ Piggybacks on Tracks A, B, and the existing Pact runs — no dedicated work
 session, but must be captured _while_ those runs happen or the numbers will be
 guesses.
 
-- [ ] Setup time: spec import → first green request (Apidog); npm install →
-      first passing consumer test (Pact); provider install → first AI generation
-      (hosted LLM through Apidog).
-- [ ] Run time: full hand-built collection; full AI-generated collection; Pact
-      consumer + provider verification.
-- [ ] Flake rate: run the full collection **N ≥ 5** times, record
-      non-deterministic failures. Expected sources: the in-memory cart, shared
-      SQLite state under `NODE_ENV` unset. If N ≥ 5 doesn't fit, drop to N = 3
-      and mark the number honestly rather than fake wider runs.
-- [ ] Record all three in a single markdown table in the User Guide's Advanced
-      Usage section.
+- [ ] Setup time: spec import → first green request (Apidog); provider setup →
+      first successful AI generation (hosted Google/Gemini through Apidog);
+      Pact setup → first passing consumer test or mark "not timed
+      retrospectively" if no honest number exists.
+- [ ] Run time: full hand-built Apidog Test Suite once built; executed AI report
+      (`PUT /api/users/me`, 2.20s, 25 requests; `GET /api/products/:id`, 1.66s,
+      22 requests); Pact `run_tests.sh` full three-consumer run.
+- [ ] Flake rate: run the final Apidog Test Suite **N = 3** if time allows;
+      Apidog AI can be marked one-run-only because the two generated endpoint
+      reports were each executed once; Pact can use the established repeated-run
+      discipline or a fresh N=3 `run_tests.sh` pass.
+- [x] Record all three in a single markdown table scaffold in the User Guide's
+      Advanced Usage section.
 
-**Exit criterion:** single table with three rows (setup, run, flake) × three
-columns (Apidog manual, Apidog AI, Pact) committed to the User Guide.
+**Exit criterion:** the scaffolded table in the User Guide has real values or
+explicit "not measured" entries for every cell, with scope caveats preserved.
 
 ### Track D — Failure modes (M3-Apidog completion)
 
@@ -196,7 +203,8 @@ Editing is a single sit-down at the end of the week.
       pass of the scenario running green in Apidog. Real terminal only, no
       pre-recorded fakes (auto-penalty).
 - [ ] While Track B's AI diff is being built: record one pass of AI generation
-      producing cases, then one pass of the diff being walked through.
+      producing cases, then one pass of the two endpoint reports/diff being
+      walked through.
 - [ ] Record one pass of a Pact consumer test suite passing
       (`npm run test:pact`) and one pass of the provider verifier (46/51 green
       across `eshop-web`, `eshop-admin`, and `eshop-mobile`, with the five

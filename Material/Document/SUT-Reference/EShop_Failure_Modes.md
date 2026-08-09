@@ -294,7 +294,8 @@ same raw AI output simultaneously treated `role: "admin"` as a security defect
 and as a normal valid input.
 
 **Where it showed up.** Checkpoint:
-`Material/Checkpoint/AI/seminar.apidog.ai.checkpoint.1.json`. Executed report:
+`Material/Config/Apidog/Checkpoint/AI/seminar.apidog.ai.checkpoint.1.json`.
+Executed report:
 `Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`.
 The report ran in Apidog v2.8.41 against the Local environment at
 `2026-08-09 18:35:01`: 25 HTTP requests, 9 passed, 16 failed, 35 assertions, 23
@@ -317,10 +318,16 @@ must be reviewed against implementation and requirements.
 
 **Resolution.** Keep the SEC-06 failure as live AI-generated defect evidence.
 Quarantine or rewrite the role-enum positive case and the malformed/noisy cases
-before using the generated set as a regression suite. The second target endpoint,
-`GET /api/products/{id}`, remains partial: generation stopped when the free-plan
-Google/Gemini key hit a bandwidth/quota limit, leaving only three generated
-definitions and no execution report.
+before using the generated set as a regression suite. The second target
+endpoint, `GET /api/products/{id}`, was later completed in
+`Material/Config/Apidog/Checkpoint/AI/seminar.apidog.ai.checkpoint.2.json` and
+executed in
+`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-23-48-02.html`
+(22 requests, 3 passed, 19 failed). That run reinforces the same lesson:
+generated cases are hypotheses. It produced broad boundary/negative input
+coverage, but many oracles were idealized `400`/`404` expectations against a
+SUT that returns `200`, and the green `id=2` case did not assert the known
+even-id `price` string quirk.
 
 **Lesson.** Apidog AI output is a strong exploration aid, not an oracle. Treat
 each generated case as a hypothesis, then classify it manually as true defect
@@ -328,16 +335,17 @@ evidence, useful regression coverage, or generated noise.
 
 ---
 
-## Remaining candidates to watch for
+## Checked and Remaining Candidates
 
-Things flagged during setup as _possible_ future failure modes, worth
-deliberately testing for rather than waiting to stumble on:
+Things flagged during setup as _possible_ future failure modes. Move an item out
+of this list once it becomes a full numbered entry, or keep a short checked note
+when the result is useful but does not justify a new FM entry.
 
-- **Apidog's schema auto-validation passing on the `{}`-on-404 quirk.** Since
-  `Product` schema uses `oneOf` to accommodate both a real product and an empty
-  object, Apidog's auto-schema-check may report "valid" on a response that a
-  stricter test would flag as wrong. Confirm whether Apidog's pass/fail
-  correctly distinguishes these two cases or blurs them.
+- **Apidog's schema auto-validation on the `{}`-on-404 quirk.** Checked once in
+  the `GET /api/products/{id}` AI report above. The run did not show a silent
+  pass: empty/high-id product responses produced visible "Response data differs
+  from endpoint spec" failures. Keep this as observed evidence, not a remaining
+  candidate, unless a later report contradicts it.
 - **Test Scenario chaining silently continuing after a step fails.** Not yet
   confirmed either way — verify whether a failed assertion in an early scenario
   step (e.g. login) actually halts the scenario, or whether later steps run
