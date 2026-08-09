@@ -1,5 +1,18 @@
 # Pact Iteration 2 — frontend-admin — Plan and Prompts
 
+## Status: superseded — all three Pact iterations are now complete
+
+This document was the prospective execution plan for Iteration 2
+(`frontend-admin`) only, written when `frontend-mobile` (Iteration 3) was still
+deferred. Both Iteration 2 and Iteration 3 have since been executed and
+verified. `Material/Document/Pact/EShop_Pact_Plan.md` is the current source of
+truth for what was actually built (three consumers — `eshop-web`,
+`eshop-admin`, `eshop-mobile` — 51 interactions, 46/51 baseline) and for
+current CI/CD behavior. Kept below as-written for the historical record of the
+phase-by-phase prompts used to drive Iteration 2; do not follow it as current
+instructions for scope (it still describes mobile as deferred, which is no
+longer true).
+
 ## Overview
 
 Extends Pact from one consumer to two: `frontend-admin` alongside the existing
