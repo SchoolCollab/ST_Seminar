@@ -155,23 +155,22 @@ one; the multi-line answers below are for facilitator reference.
 
 ## Part 2 — canonical AI-generation failure modes
 
-Two specific candidates are pre-flagged; either counts.
+One finding is now confirmed; the second remains partial because generation hit
+the free-plan Google/Gemini bandwidth limit.
 
-**Candidate A — `PUT /api/users/me` valid case includes `role`.** The AI reads
-the OpenAPI schema, which still declares `role` as a settable field (kept in the
-spec deliberately to document SEC-06). The AI dutifully generates a "valid" case
-with `role: "admin"` in the body. That case runs green against the SUT — because
-the defect is real — but the case is logically wrong: it's asserting the
-security hole as if it were a feature. No human familiar with the SRS would
-write this case.
+**Confirmed — `PUT /api/users/me` role handling.** The AI reads the OpenAPI
+schema, which still declares `role` as a settable field (kept in the spec
+deliberately to document SEC-06). It generated a useful security case expecting
+`403` when a regular user sends `role: "admin"`; the SUT returned `200`,
+confirming SEC-06 live. It also generated a contradictory enum-positive case
+where `role: "admin"` passes as ordinary input. Same field, two incompatible
+oracles — exactly why the generated set needs human review.
 
-**Candidate B — `GET /api/products/:id` for a missing id.** The AI's most likely
-generated assertion is `Status=404` — the spec-implied behavior. The SUT
-actually returns `Status=200` with `{}`. The case runs **red** for the wrong
-reason: the assertion is right by the spec but the SUT is quirky. A human
-writing the case with `Material/Document/SUT-Reference/EShop_Defect.md` in view would either write the
-defect-demo case (`Status=200; Body:$ Equals {}`) or add a comment
-distinguishing spec-conformance from SUT-observed behavior.
+**Partial — `GET /api/products/:id` for a missing id.** The partial checkpoint
+does include a missing-product case expecting the SUT's documented
+`Status=200; Body:$ Equals {}` behavior. Generation did not finish, and no
+execution report exists yet, so this is not counted as a completed AI endpoint.
+The even-id `price` string case was not generated in the partial output.
 
 **Third possible finding — `POST /api/cart` "Success" case ignores auth.** Some
 AI generations produce a "Success" case with no `Authorization` header. That

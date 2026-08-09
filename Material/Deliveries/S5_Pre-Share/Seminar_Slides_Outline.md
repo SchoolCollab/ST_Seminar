@@ -105,11 +105,13 @@ budget:** 45 min = \*\*10 min pitch + 10 min demo + 20 min activity
 
 - Screenshot: Apidog **Generate with AI** on `PUT /api/users/me`.
 - Two callouts:
-    - AI-generated "Success" case includes `role: "admin"` in the body (SEC-06
-      as a feature).
-    - Human-authored **Self-promotion to admin** case categorized as **Negative
-      (defect demo)** with the same body — same assertion, opposite meaning.
-- **Live action:** trigger the AI generation live, walk the diff.
+    - AI-generated security case expects `403` for `role: "admin"` but the SUT
+      returns `200` — live confirmation of SEC-06.
+    - The same generated set also includes a role-enum positive case where
+      `role: "admin"` passes as ordinary input — useful output and noisy output
+      side by side.
+- **Live action:** show the saved generation/report: 25 requests, 9 passed, 16
+  failed; explain why the 16 red cases are not all equally meaningful.
 - **Timing:** 4 min.
 
 ### Slide 9 — Demo anchor: Pact provider verifier

@@ -13,9 +13,10 @@ false today (FM-05, the reorganization).
       14/17, eshop-admin 20/21, eshop-mobile 12/13) — confirmed via one single,
       complete `run_tests.sh` execution, exit 0, clean `git status`. Commit
       `a8628f0`.
-- [x] Five documented failure modes (FM-01 through FM-05), FM-05 now documenting
+- [x] Six documented failure modes (FM-01 through FM-06), FM-05 now documenting
       two independent occurrences with a precise distinction between the
-      assert-around-it fix and the verified-safe production-code cleanup.
+      assert-around-it fix and the verified-safe production-code cleanup, and
+      FM-06 documenting the Apidog AI role-field contradiction.
 - [x] Seven confirmed EShop defects surfaced through Pact work across all three
       consumers.
 - [x] `Material/Document/` reorganized by type — confirmed via real `git log`,
@@ -41,14 +42,15 @@ false today (FM-05, the reorganization).
       full execution matching the documented 14/17 + 20/21 + 12/13 baseline,
       clean `git status`. Commit `f525acd`.
 - [ ] **M4 — Apidog AI generation, 2 endpoints** (`PUT /api/users/me`,
-      `GET /api/products/:id`). Not started. Guide ready
-      (`Apidog_AI_Generation_Guide.md`). This is the single most time-sensitive
-      item — the seminar's own auto-penalty rule requires demoing both a
-      traditional AND an AI feature live.
-- [ ] **M5 — metrics table.** Blocked on M4 existing (needs AI setup time as one
-      of the three data points). Apidog manual and Pact setup/run times are
-      already knowable from today's real work; once M4 runs, this is mostly
-      transcription, not new work.
+      `GET /api/products/:id`). Partially complete. `PUT /api/users/me`
+      generated and executed: 25 requests, 9 passed, 16 failed, with SEC-06
+      confirmed live (`expected 403`, actual `200`). `GET /api/products/:id`
+      generation started but stopped early because the free-plan Google/Gemini
+      key hit a bandwidth/quota limit; no execution report exists yet.
+- [ ] **M5 — metrics table.** Blocked on deciding whether to retry the partial
+      `GET /api/products/:id` AI generation or explicitly freeze M4 as partial.
+      Apidog manual, Pact, and the `PUT /api/users/me` AI setup/run data are now
+      knowable; this is mostly transcription once M4's final scope is decided.
 - [ ] **Record `Demo_Screencast.mp4`** — the script exists and is current; the
       actual video does not.
 - [ ] **Build `Seminar_Slides.pptx`** — the outline exists and is current; the
@@ -76,10 +78,10 @@ false today (FM-05, the reorganization).
 
 ## Recommended order for the rest of today
 
-1. M4 (both endpoints) — the actual bottleneck; everything else can proceed in
-   parallel with it or after.
-2. `run_tests.sh` sanity check — five minutes, do it whenever convenient.
-3. M5 metrics table — fast once M4 exists.
+1. Decide M4's final scope: retry `GET /api/products/:id` generation, or freeze
+   the AI track as one executed endpoint plus one documented partial endpoint.
+2. M5 metrics table — fast once M4's final scope is decided.
+3. `run_tests.sh` sanity check — five minutes, do it whenever convenient.
 4. Weekly report — written last, once the real state is final.
 5. Screencast recording, slide deck build, disclosure signature — these are
    yours alone; nothing I generate substitutes for them.

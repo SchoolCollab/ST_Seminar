@@ -66,18 +66,22 @@ order #5 in `Material/Document/Planning/W09_Action_Plan.md`).
 ### Segment 4 — Apidog AI generation + diff (1:30)
 
 - **On screen:** open `PUT /api/users/me`, click **Generate with AI**, wait,
-  read the output.
-- **What to show:** the AI's "Success" case includes `role: "admin"` in the
-  body. Cursor should highlight the offending field. Then split-screen with our
-  hand-authored **Self-promotion to admin** case categorized as Negative (defect
-  demo).
+  read the output, then open the saved report showing 25 requests, 9 passed, 16
+  failed.
+- **What to show:** the AI generated both useful and noisy tests. Highlight the
+  SEC-06 security case expecting 403, then the report line showing the SUT
+  returned 200. Also show the contradictory role-enum/positive case where
+  `role: "admin"` is treated as ordinary input and passes. Split-screen with our
+  hand-authored **Self-promotion to admin** case categorized as Negative
+  (defect demo).
 - **Narration:**
 
-    > The AI reads the OpenAPI schema. The schema still declares `role` as a
-    > settable field — that's deliberate, so the SEC-06 defect stays documented.
-    > The AI dutifully generates a "valid" case with `role admin`. It runs
-    > green, because SEC-06 is real. Same body, opposite meaning. The AI is
-    > validating a security hole as if it were a feature.
+    > This is the best and worst of AI generation in one screen. Apidog AI
+    > created a real security test: regular user sends `role admin`, expected
+    > 403, actual 200. That independently confirms SEC-06. But the same
+    > generated set also treats `role admin` as a positive enum case that passes.
+    > Same field, two incompatible interpretations. The AI gives me leads; it
+    > does not give me an oracle I can trust without review.
 
 ### Segment 5 — Pact consumer test passing (0:30)
 

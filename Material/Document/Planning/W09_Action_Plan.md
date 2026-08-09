@@ -91,16 +91,17 @@ Feeds: M3-Apidog completion (two of the remaining failure modes are expected to
 fall out here), Screencast (needs one live AI feature per S6 requirements), Diff
 table (User Guide figure).
 
-- [ ] Provision the hosted-LLM route into Apidog: Organization/Team Settings →
-      AI Features → enable → +Add Provider → point at the hosted model. Use the
-      reserved $100 Anthropic credit sparingly — this is one of two demo moments
-      in S6 that also needs to survive network flakes.
+- [x] Provision the hosted-LLM route into Apidog: Organization/Team Settings →
+      AI Features → enable → +Add Provider → point at the hosted model. The
+      recorded run used a free-plan Google/Gemini key with Gemini 3.5 Flash.
 - [ ] Verify with one throwaway generation on `GET /api/categories` before
       committing.
 - [ ] For each endpoint already covered by hand-built cases (from Track A),
       **Test Cases → Generate with AI** and save as a separately-named
-      collection so the two sets stay comparable.
-- [ ] Build the **diff table** — the centrepiece of the seminar pitch:
+      collection so the two sets stay comparable. Current execution is scoped:
+      `PUT /api/users/me` generated and executed; `GET /api/products/:id`
+      started but generation stopped early on provider quota/bandwidth.
+- [x] Build the **diff table** — the centrepiece of the seminar pitch:
     - What the AI covered well — schema shape, declared types, status codes.
     - What the AI missed — business rules absent from the spec: coupon reuse,
       ordering beyond stock, cross-user cart access, expired sessions.
@@ -109,11 +110,9 @@ table (User Guide figure).
     - Coverage against the four-scenario matrix — does the AI generate
       invalid-auth and not-found cases at all?
 - [ ] Check the two AI-specific candidates already flagged in
-      `Material/Document/SUT-Reference/EShop_Failure_Modes.md`: (a) does the AI generate a "valid" case
-      including `role` on `PUT /api/users/me` (SEC-06 as a feature)? (b) does
-      Apidog's schema auto-validation pass on `{}`-with-200 from
-      `GET /api/products/:id`? Either confirmation becomes a numbered failure
-      mode.
+      `Material/Document/SUT-Reference/EShop_Failure_Modes.md`: (a) confirmed
+      on `PUT /api/users/me` and logged as FM-06; (b) still open because
+      `GET /api/products/:id` generation/reporting did not complete.
 - [ ] Screenshot the diff — evidence for M4 and a User Guide figure.
 
 **Exit criterion:** diff table committed to the User Guide; AI collection saved

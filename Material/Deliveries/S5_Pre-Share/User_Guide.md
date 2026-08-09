@@ -200,12 +200,23 @@ Filled from Track A on execution.]_
 
 ### 4.2 AI diff table
 
-_[Filled Wednesday after Track B AI generation runs. Columns: what the AI
-covered well (schema shape, declared types, status codes), what it missed
-(business rules absent from the spec: coupon reuse, cross-user cart access,
-expired sessions), what it got wrong (assertions on non-existent fields,
-invented endpoints, overconfident "valid" cases including SEC-06's `role`
-field). One row per compared endpoint.]_
+Evidence files:
+`Material/Checkpoint/AI/seminar.apidog.ai.checkpoint.1.json` and
+`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`.
+Apidog AI was run with all generation categories selected, `{{bearerToken}}` as
+the credential variable, Number of Cases = Auto, and Gemini 3.5 Flash as the
+hosted model. The executed `PUT /api/users/me` report ran 25 requests: 9 passed,
+16 failed, 35 assertions total, 23 failed assertions, 36% pass rate.
+
+| Endpoint | What the AI covered well | What it missed or blurred | Human review result |
+| --- | --- | --- | --- |
+| `PUT /api/users/me` | Generated broad positive, negative, boundary, and security coverage, including auth failures, phone/name type cases, SQL-injection text, and a specific SEC-06 privilege-escalation case expecting `403`. | It also generated a contradictory enum-coverage case that treated `role=user` and `role=admin` as ordinary positive inputs. Several `400` validation expectations reflect ideal validation, not the permissive SUT. One "GET method" case was malformed and still sent `PUT`. | Keep the SEC-06 failure as live defect evidence: Apidog expected `403`, SUT returned `200`. Quarantine the role-enum positive case and malformed/noisy assertions before using the set as a regression suite. |
+| `GET /api/products/{id}` | Partial generation produced the missing-product `{}` with `200` case from the documented response shape. | Generation stopped early because the free-plan Google/Gemini API key hit a bandwidth/quota limit. No execution report exists for this endpoint, and the even-id `price`-as-string case was not generated. | Treat this endpoint as incomplete AI coverage. It is useful as evidence of quota/network risk, not as completed M4 coverage. |
+
+Takeaway: Apidog AI accelerated exploration and independently confirmed SEC-06,
+but the generated tests are draft hypotheses. The pass/fail result only becomes
+evidence after a human compares the generated oracle against the SRS, OpenAPI
+spec, SUT source, and existing defect log.
 
 ### 4.3 Metrics table (M5)
 

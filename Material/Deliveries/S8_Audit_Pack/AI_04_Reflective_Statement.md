@@ -26,8 +26,8 @@ contract asserted `order_id` on `POST /api/checkout`. The server returns
 `orderId`. Chasing that failure surfaced a real, separate inconsistency
 in the SUT and became one of two documented M6 findings. Claude, given
 the OpenAPI spec, produced an early prose paragraph that treated `role`
-as a normal client-settable field — the same failure mode we predicted
-Apidog AI would exhibit against `PUT /api/users/me`. Both incidents
+as a normal client-settable field — the same failure mode Apidog AI
+later did exhibit against `PUT /api/users/me`. Both incidents
 reinforced the rule that made the audit tractable: every AI-produced
 claim about the SUT gets cross-checked against `server.js` or the SRS,
 not against the OpenAPI spec.

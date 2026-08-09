@@ -51,7 +51,9 @@ user's token, including admin.
 **Client can promote itself to admin (SEC-06).** `server.js:159–171`:
 `PUT /api/users/me` accepts `role` from the request body and, if present,
 updates it. Sending `{"role":"admin"}` grants administrator privileges
-immediately.
+immediately. This now has live Apidog AI confirmation:
+`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`
+ran the generated SEC-06 case expecting `403`; the backend returned `200`.
 
 **`GET /api/users/me` returns plaintext password.** `server.js:153–155`:
 `SELECT * FROM users` is returned verbatim, `password` column included.

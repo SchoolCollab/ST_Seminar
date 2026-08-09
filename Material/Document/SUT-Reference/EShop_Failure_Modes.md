@@ -278,16 +278,61 @@ method, auth, status, and response shape.
 
 ---
 
-## Candidates to watch for (not yet confirmed)
+### FM-06 — Apidog AI can generate both useful defect evidence and contradictory oracles from the same schema
+
+**What happened.** Running Apidog's **Generate Test Cases with AI** on
+`PUT /api/users/me` produced a broad generated set: positive, negative,
+boundary, and security cases. The useful part was a security test named
+`Privilege escalation via role parameter (SEC-06)`, which expected `403` for a
+regular user sending `role: "admin"`. The executed report returned `200`,
+confirming the known SEC-06 defect live.
+
+The misleading part was in the same generated set. Apidog AI also generated an
+enum-coverage positive case with dataset rows `role=user` and `role=admin`,
+asserting only that `$.message` was present. Both rows returned `200`, so the
+same raw AI output simultaneously treated `role: "admin"` as a security defect
+and as a normal valid input.
+
+**Where it showed up.** Checkpoint:
+`Material/Checkpoint/AI/seminar.apidog.ai.checkpoint.1.json`. Executed report:
+`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`.
+The report ran in Apidog v2.8.41 against the Local environment at
+`2026-08-09 18:35:01`: 25 HTTP requests, 9 passed, 16 failed, 35 assertions, 23
+failed assertions, 36% pass rate.
+
+**Why it's misleading.** The red/green labels are not the truth by themselves.
+One red case is valuable defect evidence (`expected 403`, actual `200`). One
+green role-enum case is actively misleading because it validates the same
+security hole as if it were a supported feature. Other generated failures are
+ordinary oracle noise: expecting `Profile updated.` with a period, expecting
+`405` from a malformed "GET" case that actually sent `PUT`, or expecting `400`
+validation from a handler that the current SUT simply does not validate.
+
+**Root cause.** The AI reads the OpenAPI schema and selected generation
+categories, not the SRS or the project's defect catalogue. The schema keeps
+`role` in `UpdateProfileRequest` to document the real SUT and SEC-06, but that
+does not mean `role` is a valid business input. Broadly selecting every
+generation category also encourages validation and security cases whose oracles
+must be reviewed against implementation and requirements.
+
+**Resolution.** Keep the SEC-06 failure as live AI-generated defect evidence.
+Quarantine or rewrite the role-enum positive case and the malformed/noisy cases
+before using the generated set as a regression suite. The second target endpoint,
+`GET /api/products/{id}`, remains partial: generation stopped when the free-plan
+Google/Gemini key hit a bandwidth/quota limit, leaving only three generated
+definitions and no execution report.
+
+**Lesson.** Apidog AI output is a strong exploration aid, not an oracle. Treat
+each generated case as a hypothesis, then classify it manually as true defect
+evidence, useful regression coverage, or generated noise.
+
+---
+
+## Remaining candidates to watch for
 
 Things flagged during setup as _possible_ future failure modes, worth
 deliberately testing for rather than waiting to stumble on:
 
-- **AI-generated tests asserting on documented-but-invalid fields.** The
-  `UpdateProfileRequest` schema keeps `role` for accuracy (SEC-06 defect), but
-  if Apidog AI generates a "valid" test case that includes `role` in the body,
-  that test is validating a security hole as if it were a feature. Watch for
-  this specifically when running AI generation (Fri, Week 06).
 - **Apidog's schema auto-validation passing on the `{}`-on-404 quirk.** Since
   `Product` schema uses `oneOf` to accommodate both a real product and an empty
   object, Apidog's auto-schema-check may report "valid" on a response that a

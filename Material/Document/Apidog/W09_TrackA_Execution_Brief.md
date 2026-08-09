@@ -126,11 +126,11 @@ standalone Test Case on `POST /api/checkout`.
 
 ### GET /api/products/:id (`{}`-on-404 + odd/even price-type quirk)
 
-**Server:** `server.js:183–193`. Two defects in one endpoint:
+**Server:** `server.js:200–207`. Two defects in one endpoint:
 
-- Line 188: `if (!row) return res.status(200).json({})` — missing product still
+- Line 205: `if (!row) return res.status(200).json({})` — missing product still
   returns 200 with an empty object body, not 404.
-- Line 189: `if (row.id % 2 === 0) row.price = row.price.toString()` — the
+- Line 206: `if (row.id % 2 === 0) row.price = row.price.toString()` — the
   `price` field's _type_ depends on whether the id is even. Even → string. Odd →
   integer.
 
@@ -140,10 +140,10 @@ standalone Test Case on `POST /api/checkout`.
 | Even id — price returned as string | Boundary (defect demo) | `id=2`      | Public | `200`           | `Status=200`; `Script: assert typeof price === 'string'`   | `Material/Document/SUT-Reference/EShop_Defect.md` — even-id price-to-string defect |
 | Missing product returns `{}`+200   | Negative (defect demo) | `id=999999` | Public | `200`           | `Status=200`; `Body:$ Equals {}`                           | `Material/Document/SUT-Reference/EShop_Defect.md` — `{}`-on-404 quirk              |
 
-The two defect-demo cases here are also strong AI-diff candidates for Track B —
-the AI generation is very likely to produce a `404` assertion for the missing
-product case (per the spec's implication), which will fail against the actual
-server. Note them for Track B's failure-mode candidates.
+The two defect-demo cases here are also strong AI-diff candidates for Track B.
+The partial AI checkpoint generated the missing-product `{}`+`200` case, but
+generation stopped before the endpoint was complete, so the even-id price-type
+case still has no AI-generated counterpart or execution report.
 
 ## Happy Path Purchase scenario — concrete payloads
 

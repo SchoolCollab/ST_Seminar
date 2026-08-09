@@ -9,9 +9,12 @@ existing reference true, without needing to run this across all 31 endpoints.
 
 ## Before you start
 
-Confirm the AI provider is connected: **Settings → AI Features** → your Claude
-API key should show as configured. If not, add it there first — Apidog is
-bring-your-own-model, so this is a one-time setup, not a per-generation step.
+Confirm the AI provider is connected: **Settings → AI Features** → the hosted
+provider should show as configured. In the recorded Week 09 run, Apidog used a
+free-plan Google/Gemini API key, **Gemini 3.5 Flash**, **Number of Cases:
+Auto**, and the endpoint-level credential field was set to `{{bearerToken}}`.
+Apidog is bring-your-own-model, so provider quota and bandwidth limits affect
+generation directly.
 
 ## Step 1 — `PUT /api/users/me` (the SEC-06 example)
 
@@ -37,20 +40,21 @@ bring-your-own-model, so this is a one-time setup, not a per-generation step.
 
 ## Step 2 — `GET /api/products/:id` (the `{}`-on-404 example)
 
-Repeat steps 2–7 above on this endpoint instead. This one's predicted finding is
-different: the AI most likely generates a `404` expectation for a
-missing-product case, following the spec's implied behavior — but the real
-server returns `200` with an empty object body. So this generated case is likely
-to run **red for the wrong reason**: the assertion is spec-correct, the server
-is quirky, and the case doesn't distinguish "the SUT is broken" from "my test is
-wrong."
+Repeat steps 2–7 above on this endpoint instead. This endpoint was selected
+because it has two documented response quirks: a missing product returns
+`200 {}` rather than `404`, and even product ids return `price` as a string.
 
-## Step 3 — Run both sets of generated cases
+The recorded partial generation did **not** make the predicted `404` mistake:
+it generated a missing-product case expecting `200` with an empty object. It did
+not finish the endpoint, though, so the even-id price-string quirk and Apidog's
+schema auto-validation behavior remain unconfirmed for this AI track.
 
-Once you've read both outputs without bias, run them. Note the actual result for
-each — pass, fail, or "passed but shouldn't have" (the SEC-06 role case running
-green is exactly this: it passes because the defect is real, not because the
-case is correct).
+## Step 3 — Run the completed generated cases
+
+Once you've read the generated outputs without bias, run the completed set(s).
+Note the actual result for each — pass, fail, or "passed but shouldn't have."
+In the recorded run, only `PUT /api/users/me` reached execution; the product-id
+endpoint stopped during generation because of hosted-provider bandwidth/quota.
 
 ## Step 4 — Build the diff table
 
@@ -61,11 +65,69 @@ missed (business rules never captured in the spec — coupon reuse limits,
 cross-user access controls), and what it got wrong (the two specific findings
 above, plus anything else that surfaces).
 
+## Recorded Week 09 result — `PUT /api/users/me`
+
+Evidence files:
+
+- Generated checkpoint:
+  `Material/Checkpoint/AI/seminar.apidog.ai.checkpoint.1.json`
+- Executed report:
+  `Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`
+
+The checkpoint contains **27 generated test-case definitions** total:
+
+| Endpoint | Generated definitions | Execution status |
+| --- | ---: | --- |
+| `PUT /api/users/me` | 24 | Executed |
+| `GET /api/products/{id}` | 3 | Not executed in the report; generation stopped early |
+
+The `PUT /api/users/me` report executed **25 HTTP requests** because the
+role-enum test case used a two-row dataset (`role=user`, `role=admin`).
+Apidog v2.8.41 reported:
+
+| Metric | Result |
+| --- | ---: |
+| HTTP requests | 25 |
+| Passed requests | 9 |
+| Failed requests | 16 |
+| Assertions | 35 |
+| Failed assertions | 23 |
+| Pass rate | 36% |
+| Duration | 2.20s |
+
+Most important result: the generated security case
+`Privilege escalation via role parameter (SEC-06) – Regular user attempts to
+update role to admin – Expect 403 forbidden` failed with:
+
+```text
+HTTP Code Error: Returned 200 while expected 403.
+```
+
+That is live Apidog AI execution evidence for the already-known SEC-06 defect.
+
+The same generated set also demonstrates why raw AI output needs review:
+
+- The AI generated a contradictory role-enum case that treated `role=user` and
+  `role=admin` as normal positive inputs; both rows returned `200`.
+- The "Unsupported HTTP method GET" case was malformed in the exported report:
+  it still sent `PUT /api/users/me`, then expected `405`.
+- One positive case failed only because the assertion expected
+  `Profile updated.` with a period, while the server returns `Profile updated`.
+- Many `400` validation cases failed because the handler accepts weakly typed or
+  malformed fields instead of validating them.
+
+`GET /api/products/{id}` generation was incomplete because the free-plan
+Google/Gemini key hit a bandwidth/quota limit. The partial checkpoint includes
+the `{}`-with-`200` missing-product case, but it does not yet include the
+even-id `price`-as-string case, and there is no execution report for this
+endpoint.
+
 ## What "done" looks like for M4
 
 You don't need exhaustive AI coverage across all 31 endpoints for this to be a
-real, defensible M4. Two endpoints, both already central to your existing
-narrative, actually generated and actually diffed — that's complete. Everything
-else in your deliverables already assumes exactly this scope; running more than
-this doesn't strengthen the seminar's argument, it just spends time you may not
-have today.
+real, defensible M4. The recorded result now supports the `PUT /api/users/me`
+half strongly: AI generated cases, the run executed, and SEC-06 was confirmed
+live. The `GET /api/products/{id}` half remains explicitly partial because the
+hosted-provider quota stopped generation before the endpoint was fully covered.
+Do not describe the product endpoint as complete until a second checkpoint/report
+exists for it.
