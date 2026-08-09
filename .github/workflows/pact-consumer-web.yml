@@ -4,10 +4,12 @@ on:
     push:
         paths:
             - 'Sut/EShop/frontend-web/**'
+            - 'Sut/EShop/backend/**'
             - '.github/workflows/pact-consumer-web.yml'
     pull_request:
         paths:
             - 'Sut/EShop/frontend-web/**'
+            - 'Sut/EShop/backend/**'
 
 jobs:
     consumer:
