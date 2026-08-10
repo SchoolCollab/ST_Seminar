@@ -21,7 +21,6 @@ jobs:
     apidog-suite:
         runs-on: ubuntu-latest
         env:
-            APIDOG_PROJECT_ID: ${{ vars.APIDOG_PROJECT_ID || '1355389' }}
             APIDOG_TEST_SUITE_ID: ${{ vars.APIDOG_TEST_SUITE_ID || '5021' }}
             APIDOG_ENVIRONMENT_ID: ${{ vars.APIDOG_ENVIRONMENT_ID || '6596143' }}
             APIDOG_ACCESS_TOKEN: ${{ secrets.APIDOG_ACCESS_TOKEN }}
@@ -71,11 +70,9 @@ jobs:
                   set +e
                   apidog run \
                     --access-token "$APIDOG_ACCESS_TOKEN" \
-                    --project "$APIDOG_PROJECT_ID" \
                     --test-suite "$APIDOG_TEST_SUITE_ID" \
-                    --environment "$APIDOG_ENVIRONMENT_ID" \
-                    --branch main \
-                    --reporters cli,html \
+                    -e "$APIDOG_ENVIRONMENT_ID" \
+                    -r html,cli \
                     --out-dir apidog-reports \
                     --out-file "apidog-full-regression-${{ github.run_number }}" \
                     --on-error continue \
