@@ -41,7 +41,7 @@ S6's activity properly.
 | ------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **M1**        | Partial — spec imported, environment + auth configured; "hello world" green request not formally captured        |
 | **M2**        | In progress — `EShop — Full Regression` now has Reset, Workflow, Auth, Manual, and AI sections in the checkpoint |
-| **M3-Apidog** | Done for current scope — FM-01, FM-06, FM-07, FM-08, and FM-09 are logged and cross-referenced                   |
+| **M3-Apidog** | Done for current scope — FM-01, FM-06, FM-07, FM-08, FM-09, and FM-10 are logged and cross-referenced           |
 | **M3-Pact**   | Done — FM-02 through FM-05 logged                                                                                |
 | **M4**        | Frozen narrow scope — `PUT /api/users/me` and `GET /api/products/:id` generated + executed with reports          |
 | **M5**        | Scaffolded — User Guide table ready, exact timing/flake values still need transcription                          |
@@ -161,14 +161,14 @@ Feeds: User Guide's Failure Modes section (mandatory — skipping = auto-penalty
       `Material/Document/SUT-Reference/EShop_Failure_Modes.md` (FM-02 through
       FM-05).
 - [x] Log the Apidog-side failure modes with the same six-field structure:
-      FM-01, FM-06, FM-07, FM-08, and FM-09.
+      FM-01, FM-06, FM-07, FM-08, FM-09, and FM-10.
 - [ ] Keep watching the final Apidog TestSuite run for any new tooling-only
       failure mode, but do not invent one if remaining failures are SUT defects
       or expected AI-oracle noise.
 
 **Exit criterion:** `Material/Document/SUT-Reference/EShop_Failure_Modes.md`
 contains ≥ 3 Apidog entries and ≥ 1 Pact entry, each with the six-field
-structure filled in. Current state exceeds that threshold: 4 Apidog entries and
+structure filled in. Current state exceeds that threshold: 6 Apidog entries and
 4 Pact entries.
 
 ### Track E — User Guide (S4 core)

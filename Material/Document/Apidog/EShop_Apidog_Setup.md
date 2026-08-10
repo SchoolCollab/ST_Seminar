@@ -265,6 +265,40 @@ Naming what is _not_ here matters for the seminar's honesty:
   (`EShop_Pact_Setup.md`, deferred to Week 07); the split keeps Apidog and Pact
   concerns independent.
 
+## CI/CD integration
+
+The saved Test Suite is also wired into GitHub Actions through
+`.github/workflows/apidog-suite.yml`. The workflow starts the local backend,
+installs `apidog-cli`, runs the Apidog suite with the command shape generated
+from Apidog's own CI/CD tab, and then checks the exported HTML report.
+
+Repository configuration required by the workflow:
+
+| GitHub setting            | Type     | Purpose                                                |
+| ------------------------- | -------- | ------------------------------------------------------ |
+| `APIDOG_ACCESS_TOKEN`     | Secret   | Token generated from the Apidog Test Suite CI/CD tab.  |
+| `APIDOG_TEST_SUITE_ID`    | Variable | Optional override for the current suite id (`5021`).   |
+| `APIDOG_ENVIRONMENT_ID`   | Variable | Optional override for the current environment id (`6596143`). |
+
+`APIDOG_PROJECT_ID` is not used by the committed workflow. The working Apidog
+CLI command follows the generated template:
+
+```sh
+apidog run --access-token "$APIDOG_ACCESS_TOKEN" --test-suite "$APIDOG_TEST_SUITE_ID" -e "$APIDOG_ENVIRONMENT_ID" -r html,cli
+```
+
+The workflow adds the seeded EShop environment values with `--env-var` flags, so
+CI does not depend on Apidog desktop preserving Local Values after re-import
+(FM-07). It also captures Apidog's raw exit code and parses the generated report
+dynamically: all tests must execute (`Untested` = `0.00%`) and both failed HTTP
+requests and failed assertions must be zero. Current red demo cases are not
+accepted as a CI baseline.
+
+CI-generated reports are uploaded as the GitHub Actions artifact
+`apidog-reports` together with `apidog-cli.log` and `apidog-exit-code.txt`.
+They are not automatically committed into `Material/Config/Apidog/Report/`;
+that folder remains for manually exported local reports.
+
 ## Verification
 
 After configuring the above, run the full collection from a fresh environment

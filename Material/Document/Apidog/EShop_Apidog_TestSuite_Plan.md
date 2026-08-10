@@ -221,21 +221,28 @@ specifically wants a recurring-schedule demo.
       one Suite run covers both raw endpoint cases and multi-step flows.
 3. **GitHub Actions integration** — `.github/workflows/apidog-suite.yml` now
    installs `apidog-cli`, starts the local backend, runs Test Suite `5021`
-   (`EShop — Full Regression`) in project `1355389` against environment
-   `6596143` (`Local`), seeds the required environment variables with
-   `--env-var`, parses the generated HTML report, and uploads the generated
-   Apidog HTML reports as workflow artifacts. Add `APIDOG_ACCESS_TOKEN` as a
-   GitHub Actions repository secret before expecting this workflow to run, and
-   optionally add `APIDOG_PROJECT_ID`, `APIDOG_TEST_SUITE_ID`, and
-   `APIDOG_ENVIRONMENT_ID` as GitHub Actions repository variables if a future
-   re-import changes those IDs.
+   (`EShop — Full Regression`) against environment `6596143` (`Local`), seeds
+   the required environment variables with `--env-var`, parses the generated
+   HTML report, and uploads the generated Apidog HTML reports as workflow
+   artifacts. Add `APIDOG_ACCESS_TOKEN` as a GitHub Actions repository secret
+   before expecting this workflow to run, and optionally add
+   `APIDOG_TEST_SUITE_ID` and `APIDOG_ENVIRONMENT_ID` as GitHub Actions
+   repository variables if a future re-import changes those IDs. The workflow
+   deliberately follows Apidog's generated CLI template (`apidog run
+   --access-token ... --test-suite ... -e ... -r html,cli`) and does not pass a
+   separate project id, because adding `--project` caused a misleading
+   `403010 No project guest privilege` failure even when the access token was
+   valid.
 
    The CI checker is intentionally not pinned to the current failing demo
    numbers. It reads the generated report at runtime and requires: non-zero
    executed requests/assertions, `Untested` = `0.00%`, `Http Requests` failed =
    `0`, and `Assertions` failed = `0`. The current known failures are preserved
    for the live demo/report evidence, but CI treats them as failures rather than
-   as an acceptable baseline.
+   as an acceptable baseline. In GitHub Actions, the exported report is not
+   written into `Material/Config/Apidog/Report/`; it is uploaded as the
+   `apidog-reports` workflow artifact alongside `apidog-cli.log` and
+   `apidog-exit-code.txt`.
 4. **Done, already available (§2/Q2 above)** — run
    `Sut/EShop/backend/reset-db.sh` (or `npm run db:reset` from `backend/`)
    before each manual Apidog pass to reset the database without restarting the
@@ -246,8 +253,8 @@ specifically wants a recurring-schedule demo.
 - The exact access token value still cannot be captured by an AI agent. Generate
   it in Apidog's Test Suite CI/CD tab, then store it as the GitHub Actions
   repository secret `APIDOG_ACCESS_TOKEN`.
-- If the Apidog project is re-imported and receives new IDs, update the GitHub
-  Actions repository variables `APIDOG_PROJECT_ID`, `APIDOG_TEST_SUITE_ID`, and
+- If the Apidog project is re-imported and receives new suite/environment IDs,
+  update the GitHub Actions repository variables `APIDOG_TEST_SUITE_ID` and
   `APIDOG_ENVIRONMENT_ID`. The workflow has fallback values from the current
   checkpoint, but repository variables are the intended future-edit point.
 - Whether "Run exported data" (offline CLI mode, no live Apidog account needed

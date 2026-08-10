@@ -120,8 +120,9 @@ Substantial Copilot involvement:
   phrase "in this comprehensive guide" and similar filler. Removed by hand.
 - Claude proposed writing a failure-mode entry based on a candidate that had not
   yet been confirmed. Rejected — FM entries require observed evidence, not
-  extrapolation. The FM log now includes confirmed FM-03 through FM-09 entries,
-  including the later Apidog AI and Apidog TestSuite setup failure modes.
+  extrapolation. The FM log now includes confirmed FM-03 through FM-10 entries,
+  including the later Apidog AI, Apidog TestSuite setup, and Apidog CI command
+  failure modes.
 - Claude proposed adding a "Best Practices" section to the User Guide. Rejected
   — the S1 rubric does not ask for it, and pre-cutting scope for the sake of a
   section header is a bad habit.

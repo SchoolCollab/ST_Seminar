@@ -13,13 +13,14 @@ false today (FM-05, the reorganization).
       14/17, eshop-admin 20/21, eshop-mobile 12/13) — confirmed via one single,
       complete `run_tests.sh` execution, exit 0, clean `git status`. Commit
       `a8628f0`.
-- [x] Nine documented failure modes (FM-01 through FM-09), FM-05 now
+- [x] Ten documented failure modes (FM-01 through FM-10), FM-05 now
       documenting two independent occurrences with a precise distinction between
       the assert-around-it fix and the verified-safe production-code cleanup,
       FM-06 documenting the Apidog AI role-field contradiction, and FM-07/FM-08
       covering the Apidog environment-value wipe and endpoint-level token
       extractor overwrite. FM-09 records the reset-hook gap where SQLite reset
-      passed but in-memory cart state still polluted later Apidog cases.
+      passed but in-memory cart state still polluted later Apidog cases. FM-10
+      records the Apidog CLI `--project` permission-error trap from CI setup.
 - [x] Seven confirmed EShop defects surfaced through Pact work across all three
       consumers.
 - [x] `Material/Document/` reorganized by type — confirmed via real `git log`,
@@ -46,13 +47,15 @@ false today (FM-05, the reorganization).
 - [x] Apidog CI workflow scaffolded:
       `.github/workflows/apidog-suite.yml` starts the backend, installs
       `apidog-cli`, runs the `EShop — Full Regression` suite by exported
-      project/suite/environment IDs, seeds environment variables via
-      `--env-var`, checks the generated report dynamically for all-tests-run
-      and zero failures, and uploads Apidog/backend logs as artifacts. It still
-      needs the GitHub Actions secret `APIDOG_ACCESS_TOKEN` to run, and the
-      GitHub Actions variables `APIDOG_PROJECT_ID`, `APIDOG_TEST_SUITE_ID`, and
-      `APIDOG_ENVIRONMENT_ID` should be updated if a future Apidog re-import
-      changes those IDs.
+      suite/environment IDs, seeds environment variables via `--env-var`,
+      checks the generated report dynamically for all-tests-run and zero
+      failures, and uploads Apidog/backend logs as artifacts. The workflow
+      follows Apidog's generated CLI command shape and does not use
+      `APIDOG_PROJECT_ID`; passing a separate project id caused the misleading
+      `403010 No project guest privilege` error. It needs the GitHub Actions
+      secret `APIDOG_ACCESS_TOKEN` to run, and the GitHub Actions variables
+      `APIDOG_TEST_SUITE_ID` and `APIDOG_ENVIRONMENT_ID` should be updated if a
+      future Apidog re-import changes those IDs.
 
 ## Blocking submission — do these first
 
@@ -97,9 +100,8 @@ false today (FM-05, the reorganization).
 ## Recommended order for the rest of today
 
 1. Add the `APIDOG_ACCESS_TOKEN` GitHub Actions secret; optionally add/update
-   the `APIDOG_PROJECT_ID`, `APIDOG_TEST_SUITE_ID`, and
-   `APIDOG_ENVIRONMENT_ID` GitHub Actions variables; then run the new Apidog
-   workflow once from `workflow_dispatch`.
+   the `APIDOG_TEST_SUITE_ID` and `APIDOG_ENVIRONMENT_ID` GitHub Actions
+   variables; then run the Apidog workflow once from `workflow_dispatch`.
 2. Finish classifying the latest Apidog TestSuite failures.
 3. M5 metrics values, using the TestSuite report once it exists.
 4. `run_tests.sh` sanity check — five minutes, do it whenever convenient.

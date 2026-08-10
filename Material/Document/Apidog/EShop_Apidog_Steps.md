@@ -448,6 +448,34 @@ session ends.
 3. Keep a second copy of just the environment variables (`Local.json`)
    separately — Apidog exports sometimes strip these.
 
+## Step 14 — Connect the suite to GitHub Actions
+
+The committed CI workflow is `.github/workflows/apidog-suite.yml`. It is a
+live-online Apidog CLI run, not an offline execution of the exported checkpoint.
+
+1. In Apidog, open the `EShop — Full Regression` Test Suite → **CI/CD** tab.
+2. Generate an access token and add it to GitHub as the Actions secret
+   `APIDOG_ACCESS_TOKEN`.
+3. If a future re-import changes the suite or environment ids, update the GitHub
+   Actions repository variables `APIDOG_TEST_SUITE_ID` and
+   `APIDOG_ENVIRONMENT_ID`. The current fallback values are `5021` and
+   `6596143`.
+4. Trigger **Apidog Test Suite** from the GitHub Actions UI, or push a change
+   under `Sut/EShop/backend/**`, `Material/Config/Apidog/**`,
+   `Material/Document/Apidog/**`, or the workflow file itself.
+5. Download the `apidog-reports` artifact from the workflow run to inspect the
+   generated HTML report, CLI log, and captured `apidog-exit-code.txt`.
+
+The workflow follows Apidog's generated CLI shape:
+
+```sh
+apidog run --access-token "$APIDOG_ACCESS_TOKEN" --test-suite "$APIDOG_TEST_SUITE_ID" -e "$APIDOG_ENVIRONMENT_ID" -r html,cli
+```
+
+It then adds the seeded environment values via `--env-var` flags, parses the
+generated HTML report, and requires all tests to run with zero failed HTTP
+requests and zero failed assertions. Current known red cases are demo evidence,
+not an accepted CI baseline.
+
 This concludes the Apidog manual setup. The next work group in the action plan
-is Step 14 onward — Apidog AI generation from the same YAML, followed by the
-hand-vs-AI diff.
+is Apidog AI generation from the same YAML, followed by the hand-vs-AI diff.
