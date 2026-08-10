@@ -1,26 +1,31 @@
 name: Pact Provider (backend)
 
-# No push/pull_request trigger: without a broker, this workflow's fresh
-# checkout never has any consumer's pact file present (each consumer now
-# verifies its own contract in its own job -- see pact-consumer-*.yml), so a
-# push-triggered run here would always fail for a reason unrelated to any
-# real regression. Kept as workflow_dispatch (manual demo trigger) and
-# repository_dispatch (a real Pact Broker webhook, if one is ever configured).
+# Self-contained local provider verification: this workflow installs all three
+# consumers, generates their pact files in the runner, then verifies the backend
+# against the documented baseline. No Pact Broker is required for the seminar.
 on:
     workflow_dispatch:
-    # Triggered by a Pact Broker webhook when any consumer publishes a new pact.
-    repository_dispatch:
-        types: [contract_requiring_verification_published]
+    push:
+        paths:
+            - 'Sut/EShop/backend/**'
+            - 'Sut/EShop/frontend-web/**'
+            - 'Sut/EShop/frontend-admin/**'
+            - 'Sut/EShop/frontend-mobile/**'
+            - 'Sut/EShop/run_tests.sh'
+            - '.github/workflows/pact-provider-backend.yml'
+    pull_request:
+        paths:
+            - 'Sut/EShop/backend/**'
+            - 'Sut/EShop/frontend-web/**'
+            - 'Sut/EShop/frontend-admin/**'
+            - 'Sut/EShop/frontend-mobile/**'
+            - 'Sut/EShop/run_tests.sh'
+            - '.github/workflows/pact-provider-backend.yml'
 
 jobs:
     verify:
         runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: Sut/EShop/backend
         env:
-            PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
-            PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
             GIT_SHA: ${{ github.sha }}
             GIT_BRANCH: ${{ github.ref_name }}
             CI: 'true'
@@ -31,20 +36,28 @@ jobs:
               with:
                   node-version: '20'
                   cache: npm
-                  cache-dependency-path: Sut/EShop/backend/package-lock.json
+                  cache-dependency-path: |
+                      Sut/EShop/backend/package-lock.json
+                      Sut/EShop/frontend-web/package-lock.json
+                      Sut/EShop/frontend-admin/package-lock.json
+                      Sut/EShop/frontend-mobile/package-lock.json
 
-            - run: npm ci
+            - name: Install backend dependencies
+              working-directory: Sut/EShop/backend
+              run: npm ci
 
-            - name: Verify pacts
-              run: npm run pact:verify
+            - name: Install frontend-web dependencies
+              working-directory: Sut/EShop/frontend-web
+              run: npm ci
 
-            - name: can-i-deploy
-              if: env.PACT_BROKER_BASE_URL != ''
-              run: |
-                  npx --yes @pact-foundation/pact-cli \
-                    pact-broker can-i-deploy \
-                    --pacticipant eshop-backend \
-                    --version "$GIT_SHA" \
-                    --to-environment production \
-                    --broker-base-url="$PACT_BROKER_BASE_URL" \
-                    --broker-token="$PACT_BROKER_TOKEN"
+            - name: Install frontend-admin dependencies
+              working-directory: Sut/EShop/frontend-admin
+              run: npm ci
+
+            - name: Install frontend-mobile dependencies
+              working-directory: Sut/EShop/frontend-mobile
+              run: npm ci
+
+            - name: Generate local pacts and verify provider baseline
+              working-directory: Sut/EShop
+              run: bash ./run_tests.sh
