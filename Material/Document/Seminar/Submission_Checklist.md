@@ -56,6 +56,11 @@ false today (FM-05, the reorganization).
       secret `APIDOG_ACCESS_TOKEN` to run, and the GitHub Actions variables
       `APIDOG_TEST_SUITE_ID` and `APIDOG_ENVIRONMENT_ID` should be updated if a
       future Apidog re-import changes those IDs.
+- [x] Apidog TestSuite failure classification completed for
+      `apidog-reports-2026-08-10-15-59-56.html`. The red suite results are now
+      split in `Material/Document/Apidog/EShop_Apidog_TestSuite_Classification.md`
+      into known SUT defect evidence, broad validation/permissiveness gaps,
+      test-design leftovers, and AI-generated oracle/noise.
 
 ## Blocking submission — do these first
 
@@ -66,16 +71,13 @@ false today (FM-05, the reorganization).
 - [ ] **M5 — metrics table.** Scaffold exists in `User_Guide.md` §4.3. Needs
       exact measured values or explicit "not measured" entries for Apidog
       manual, Apidog AI, and Pact.
-- [ ] **Apidog TestSuite execution/classification** — active work item. The
-      `EShop — Full Regression` suite exists and has been run; the latest
-      non-final cleanup report is
+- [ ] **Apidog green-suite decision.** The `EShop — Full Regression` suite
+      exists and has been run; the latest classified report is
       `Material/Config/Apidog/Report/apidog-reports-2026-08-10-15-59-56.html`
       (263 HTTP requests, 109 failed requests, 282 assertions, 115 failed
-      assertions, 58.56% passed). The current combined checkpoint contains 214
-      endpoint-case references plus 5 workflow scenario references: 166
-      reset/manual endpoint refs, 48 AI-section endpoint refs, and 5 workflow
-      scenarios. Remaining work is classifying the
-      failures, not building the suite from scratch.
+      assertions, 58.56% passed). Classification is complete; remaining work is
+      deciding whether to fix the SUT, quarantine known-red/demo cases, or split
+      Apidog into separate green CI and defect-demo/AI-review suites.
 
 ## Not blocking today's submission — genuinely optional
 
@@ -102,8 +104,9 @@ false today (FM-05, the reorganization).
 1. Add the `APIDOG_ACCESS_TOKEN` GitHub Actions secret; optionally add/update
    the `APIDOG_TEST_SUITE_ID` and `APIDOG_ENVIRONMENT_ID` GitHub Actions
    variables; then run the Apidog workflow once from `workflow_dispatch`.
-2. Finish classifying the latest Apidog TestSuite failures.
-3. M5 metrics values, using the TestSuite report once it exists.
+2. Decide the Apidog green-suite strategy now that the latest failures are
+   classified.
+3. M5 metrics values, using the classified TestSuite report once it exists.
 4. `run_tests.sh` sanity check — five minutes, do it whenever convenient.
 5. Screencast recording, slide deck build, disclosure signature — explicitly on
    hold for now.

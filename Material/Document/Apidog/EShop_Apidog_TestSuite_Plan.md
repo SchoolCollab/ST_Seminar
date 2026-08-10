@@ -33,8 +33,12 @@ HTTP requests, 109 failed requests, 282 assertions, 115 failed assertions,
 the brittle static admin transition duplicates are no longer in the saved suite
 run, the role/status transition probes now execute through Workflow setup, and
 the cart retrieval success case no longer fails from stale in-memory cart state.
-Remaining red results still need classification into SUT defects, expected
-AI-oracle noise, and any remaining test-design issues before M5 is final.
+The remaining red results have been classified in
+`Material/Document/Apidog/EShop_Apidog_TestSuite_Classification.md`: 20 failed
+request cards are useful known-SUT-defect evidence, 50 are broader SUT
+validation/permissiveness gaps, 3 are test-design leftovers to fix or remove,
+and 31 are AI-generated oracle/noise cases that should not be promoted into
+regression coverage without human review.
 
 The checkpoint has now been patched into Reset, Workflow, Auth, regular-user,
 admin, and AI sections. Each Reset block restores the Apidog `Local`
