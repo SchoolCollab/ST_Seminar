@@ -61,6 +61,10 @@ false today (FM-05, the reorganization).
       split in `Material/Document/Apidog/EShop_Apidog_TestSuite_Classification.md`
       into known SUT defect evidence, broad validation/permissiveness gaps,
       test-design leftovers, and AI-generated oracle/noise.
+- [x] M5 metrics table completed in `Material/Deliveries/S5_Pre-Share/User_Guide.md`
+      §4.3 using recorded Apidog/AI report runtimes where available and explicit
+      "not retrospectively timed/measured" entries where no controlled stopwatch
+      evidence exists.
 
 ## Blocking submission — do these first
 
@@ -68,9 +72,6 @@ false today (FM-05, the reorganization).
       logic, real syntax check via a working bash binary, real full execution
       matching the documented 14/17 + 20/21 + 12/13 baseline, clean
       `git status`. Commit `f525acd`.
-- [ ] **M5 — metrics table.** Scaffold exists in `User_Guide.md` §4.3. Needs
-      exact measured values or explicit "not measured" entries for Apidog
-      manual, Apidog AI, and Pact.
 - [ ] **Apidog green-suite decision.** The `EShop — Full Regression` suite
       exists and has been run; the latest classified report is
       `Material/Config/Apidog/Report/apidog-reports-2026-08-10-15-59-56.html`
@@ -106,7 +107,6 @@ false today (FM-05, the reorganization).
    variables; then run the Apidog workflow once from `workflow_dispatch`.
 2. Decide the Apidog green-suite strategy now that the latest failures are
    classified.
-3. M5 metrics values, using the classified TestSuite report once it exists.
-4. `run_tests.sh` sanity check — five minutes, do it whenever convenient.
-5. Screencast recording, slide deck build, disclosure signature — explicitly on
+3. `run_tests.sh` sanity check — five minutes, do it whenever convenient.
+4. Screencast recording, slide deck build, disclosure signature — explicitly on
    hold for now.

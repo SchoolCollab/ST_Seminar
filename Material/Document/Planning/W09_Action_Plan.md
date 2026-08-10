@@ -133,20 +133,23 @@ Piggybacks on Tracks A, B, and the existing Pact runs — no dedicated work
 session, but must be captured _while_ those runs happen or the numbers will be
 guesses.
 
-- [ ] Setup time: spec import → first green request (Apidog); provider setup →
+- [x] Setup time: spec import → first green request (Apidog); provider setup →
       first successful AI generation (hosted Google/Gemini through Apidog); Pact
       setup → first passing consumer test or mark "not timed retrospectively" if
       no honest number exists.
-- [ ] Run time: final stabilized full Apidog Test Suite report. Latest non-final
-      cleanup run: `apidog-reports-2026-08-10-15-59-56.html`, 263 HTTP requests,
-      109 failed requests, 282 assertions, 115 failed assertions, 58.56% passed.
-      Executed AI report (`PUT /api/users/me`, 2.20s, 25
-      requests; `GET /api/products/:id`, 1.66s, 22 requests); Pact
-      `run_tests.sh` full three-consumer run.
-- [ ] Flake rate: run the final Apidog Test Suite **N = 3** if time allows;
-      Apidog AI can be marked one-run-only because the two generated endpoint
-      reports were each executed once; Pact can use the established repeated-run
-      discipline or a fresh N=3 `run_tests.sh` pass.
+- [x] Run time: final classified full Apidog Test Suite report
+      `apidog-reports-2026-08-10-15-59-56.html`, 263 HTTP requests,
+      109 failed requests, 282 assertions, 115 failed assertions, 58.56% passed,
+      with summed HTTP time of 29.473s. Executed AI report (`PUT /api/users/me`,
+      2.20s, 25 requests; `GET /api/products/:id`, 1.66s, 22 requests); Pact
+      result recorded as 51 interactions / 46 verified, with wall-clock runtime
+      not captured in a reusable log.
+- [x] Flake rate: completed with explicit caveats rather than invented numbers:
+      Apidog manual was not measured as a stabilized N=3/N=5 baseline, Apidog AI
+      is one-run-only because the two generated endpoint reports were each
+      executed once, and Pact uses the established repeated-run verification
+      discipline qualitatively rather than a fresh timed N=3 `run_tests.sh`
+      pass.
 - [x] Record all three in a single markdown table scaffold in the User Guide's
       Advanced Usage section.
 

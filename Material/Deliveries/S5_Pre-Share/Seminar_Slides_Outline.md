@@ -66,8 +66,9 @@ budget:** 45 min = \*\*10 min pitch + 10 min demo + 20 min activity
 
 - The three-row × three-column table from `User_Guide.md` §4.3: setup time, run
   time, flake rate × Apidog manual / Apidog AI / Pact.
-- **Speaker note:** flake N is 5 if achievable, 3 if not — announce which you
-  got.
+- **Speaker note:** only report measured durations where the project actually
+  has report/log evidence. Say plainly that setup time and final flake rate were
+  not retrospectively measured under controlled conditions.
 - **Timing:** 1.5 min.
 
 ### Slide 6 — M6 teaser (the finding)
