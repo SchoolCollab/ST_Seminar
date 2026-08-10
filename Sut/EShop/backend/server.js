@@ -33,15 +33,18 @@ if (process.env.NODE_ENV === 'test') {
 }
 
 // Dev-only reset hook for manual testers (Apidog, etc.): wipes and re-seeds
-// the on-disk dev database to its baseline without restarting the server
-// process. Reuses the same resetDatabase() already used by the Pact state
-// handlers above. Guarded so it can never be reachable if this app were ever
-// deployed with NODE_ENV=production (no such deployment currently exists for
-// this seminar) — separate from /_pact/setup, which stays test-only.
+// the dev database and clears process-local cart state without restarting the
+// server process. Reuses the same resetDatabase() already used by the Pact
+// state handlers above. Guarded so it can never be reachable if this app were
+// ever deployed with NODE_ENV=production (no such deployment currently exists
+// for this seminar) — separate from /_pact/setup, which stays test-only.
 if (process.env.NODE_ENV !== 'production') {
     app.post('/_dev/reset-db', async (req, res) => {
         try {
             await db.resetDatabase()
+            Object.keys(userCarts).forEach(userId => {
+                delete userCarts[userId]
+            })
             res.json({ ok: true })
         } catch (err) {
             res.status(500).json({ error: err.message })
