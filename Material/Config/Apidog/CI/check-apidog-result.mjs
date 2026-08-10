@@ -26,14 +26,19 @@ function getPair(html, label) {
 }
 
 function getValue(html, label) {
+    const value = getOptionalValue(html, label)
+    if (value === null) fail(`Could not find Apidog report summary value: ${label}`)
+    return value
+}
+
+function getOptionalValue(html, label) {
     const pattern = new RegExp(
         `<div class="col-md-4 text-label">${label}</div>\\s*` +
             '<div class="col-md-8">([^<]+)</div>',
         'm',
     )
     const match = html.match(pattern)
-    if (!match) fail(`Could not find Apidog report summary value: ${label}`)
-    return normalize(match[1])
+    return match ? normalize(match[1]) : null
 }
 
 function getPercent(html, label) {
@@ -79,8 +84,8 @@ const latest = reports[0]
 const html = fs.readFileSync(latest.fullPath, 'utf8')
 const [httpRequestsExecuted, httpRequestsFailed] = getPair(html, 'Http Requests')
 const [assertionsExecuted, assertionsFailed] = getPair(html, 'Assertions')
-const runContent = getValue(html, 'Run Content')
-const environment = getValue(html, 'Environment')
+const runContent = getOptionalValue(html, 'Run Content') || 'not reported'
+const environment = getOptionalValue(html, 'Environment') || 'not reported'
 const untestedPercent = getPercent(html, 'Untested')
 
 console.log(`Apidog CLI exit code: ${apidogExitCode}`)
