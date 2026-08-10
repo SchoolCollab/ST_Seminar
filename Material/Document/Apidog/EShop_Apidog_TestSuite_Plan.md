@@ -2,35 +2,93 @@
 
 ## Status of this document
 
-**This is a plan for the student to execute inside the Apidog desktop app.** No
-AI agent in this workflow has API/CLI access to the student's live Apidog
-workspace — there is no Apidog MCP server or CLI tool available in this
-environment, and the two screenshots provided (New Test Scenario dialog, an
-empty scenario named `aa`, a Test Suite named `a` with the Orchestration tab
-open, and the Scheduled Tasks tab blocked on "No Runner has been deployed")
-confirm the workspace currently has no scenarios or suites actually built out.
-**Nothing below has been created in the live project** — this document only
-answers the three original questions (run-all-cases, DB reset, CI/CD
-integration) from real Apidog documentation, and turns them into a concrete,
-orderable build list.
+**This began as a plan for the student to execute inside the Apidog desktop
+app.** No AI agent in this workflow has API/CLI access to the student's live
+Apidog workspace — there is no Apidog MCP server or CLI tool available in this
+environment — so the live UI still has to be imported/run manually by the
+student. The project checkpoint, however, now contains the suite/scenario
+configuration described below.
 
 **Current next step (2026-08-10).** M4 Apidog AI generation is frozen at two
 executed endpoint sets: `PUT /api/users/me` and `GET /api/products/{id}`. The
-combined checkpoint now contains `EShop — Full Regression` with static
-references to 209 endpoint test cases (163 manual + 46 AI) plus four workflow
-test scenarios. The suite has been run once, producing
-`Material/Config/Apidog/Report/apidog-reports-2026-08-10-00-36-09.html`, but
-that report is not a clean M5 baseline: Apidog preserved the environment
-variable names on re-import while clearing their Local Values, so login failed
-with blank credentials and many downstream failures were cascade noise. Before
-the next run, set `userEmail=test@eshop.com`, `userPassword=Test1234!`,
-`adminEmail=admin@eshop.com`, and `adminPassword=Admin123!`; leave
-`bearerToken`, `adminToken`, `productId`, and `orderId` blank.
-
-The current combined checkpoint is
+current combined checkpoint is
 `Material/Config/Apidog/Checkpoint/seminar.apidog.checkpoint.2.json`. Treat it
-as the latest versioned snapshot; the first suite report is import-validation
-evidence, not final pass/fail evidence.
+as the latest versioned snapshot.
+
+The suite has been run multiple times during setup. The first exported report,
+`Material/Config/Apidog/Report/apidog-reports-2026-08-10-00-36-09.html`, was not
+a clean M5 baseline: Apidog preserved environment variable names on re-import
+while clearing their Local Values, so login failed with blank credentials and
+many downstream failures were cascade noise (FM-07). A later run after
+re-entering credentials still showed `bearerToken=undefined` because the
+`POST /api/login` token extractor was attached at endpoint level and negative
+login cases overwrote the successful token extraction (FM-08). The newer
+`apidog-reports-2026-08-10-08-23-31.html` run showed real progress: valid
+customer/admin/scenario logins worked, but blank `productId`/`orderId`
+substitution and obsolete admin-token wiring still left avoidable failures.
+After the later suite/workflow cleanup, the latest exported run is
+`Material/Config/Apidog/Report/apidog-reports-2026-08-10-15-59-56.html`: 263
+HTTP requests, 109 failed requests, 282 assertions, 115 failed assertions,
+58.56% passed / 41.44% failed. This is the current pre-CI checkpoint evidence:
+the brittle static admin transition duplicates are no longer in the saved suite
+run, the role/status transition probes now execute through Workflow setup, and
+the cart retrieval success case no longer fails from stale in-memory cart state.
+Remaining red results still need classification into SUT defects, expected
+AI-oracle noise, and any remaining test-design issues before M5 is final.
+
+The checkpoint has now been patched into Reset, Workflow, Auth, regular-user,
+admin, and AI sections. Each Reset block restores the Apidog `Local`
+environment values to the seeded defaults (`test@eshop.com` / `Test1234!`,
+`admin@eshop.com` / `Admin123!`) and clears runtime variables (`bearerToken`,
+`productId`, `orderId`, `resetToken`). The top-level Reset section runs
+`POST /_dev/reset-db` before the rest of the suite, and additional Reset blocks
+separate the major Auth / regular-user / admin / AI phases. Regular-user
+sections start with a regular `POST /api/login` producer; admin sections start
+with an admin login producer. Regular-token security probes against admin paths
+stay in the regular-user/workflow path, so they still run under a non-admin
+token.
+
+Auth flow cases carry `resetToken` from forgot-password into reset-password, and
+the reset-password success case copies `newUserPassword` into `userPassword`
+after it succeeds. `adminToken` is obsolete and has been removed because
+Apidog's imported Auth binding reads `{{bearerToken}}` only. Before the next
+run, reset the DB, set `userEmail=test@eshop.com`, `userPassword=Test1234!`,
+`newUserPassword=Test1234!`, `adminEmail=admin@eshop.com`, and
+`adminPassword=Admin123!`; leave `bearerToken`, `productId`, `orderId`, and
+`resetToken` blank.
+
+Current suite grouping:
+
+| Suite section                                 | Request/case references |
+| --------------------------------------------- | ----------------------- |
+| Reset                                         | 1 endpoint case         |
+| Workflow                                      | 5 scenarios             |
+| Reset                                         | 1 endpoint case         |
+| Manual - Auth                                 | 36 endpoint cases       |
+| Reset                                         | 1 endpoint case         |
+| Manual - Regular user profile/product cases   | 23 endpoint cases       |
+| Reset                                         | 1 endpoint case         |
+| Manual - Regular user cart/order/coupon cases | 45 endpoint cases       |
+| Reset                                         | 1 endpoint case         |
+| Manual - Admin cases                          | 56 endpoint cases       |
+| Reset                                         | 1 endpoint case         |
+| AI - Regular user cases                       | 48 endpoint cases       |
+
+Current total: 214 endpoint-case references plus 5 workflow scenario references.
+The 48 AI-section endpoint references are 46 generated AI cases plus a regular
+login producer and a product-list producer that supplies `productId` before the
+AI product-detail cases. The current AI export contains regular-user endpoint
+cases only, so separate AI Auth and AI Admin suite blocks were removed instead
+of keeping empty placeholders.
+
+Latest manual-suite design cleanup: the non-admin order-status role-check case
+now runs after checkout has produced a valid pending `orderId`, and the static
+admin transition negative cases were removed from the Manual Admin suite run.
+The Workflow section is the current source of truth for those state-dependent
+checks, including the additional `Admin order-status negative cases` scenario.
+The static endpoint-case definitions may still exist in the endpoint catalogue,
+but they are no longer part of the full-suite orchestration because they were
+state/order dependent.
 
 ## 1. What the three screenshots actually show
 
@@ -68,7 +126,7 @@ Two real mechanisms exist, and they solve different scales of the problem:
 
 **Recommendation:** build one Test Suite (`EShop — Full Regression`) containing
 all 31 endpoint cases directly, rather than routing everything through Test
-Scenarios first. Keep the 4 workflow-shaped Test Scenarios (checkout flow, admin
+Scenarios first. Keep the 5 workflow-shaped Test Scenarios (checkout flow, admin
 order-status flow, etc. — already partially designed in
 `EShop_Apidog_Setup.md`'s scenario matrix) as separate, additional Test
 Scenarios for demoing multi-step flows, and add those to the Test Suite too via
@@ -83,15 +141,18 @@ deployment, so this is available in every normal dev/demo run, but stays absent
 if that ever changes). It calls the existing `resetDatabase()` in `database.js`
 — the same function already used by the Pact provider's test-only `/_pact/setup`
 route — which drops, recreates, and re-seeds every table to the fixed baseline.
+It now also clears the backend's in-memory `userCarts` object; that second step
+matters because cart state is not stored in SQLite.
 `Sut/EShop/backend/reset-db.sh` wraps this as a one-line command:
 `./reset-db.sh` (or `npm run db:reset` from `backend/`).
 
 **Verified working**, not assumed: started the backend locally, called
 `POST /_dev/reset-db` directly, got back `{"ok":true}` and confirmed via a
-follow-up `GET /api/products` that the seeded baseline was intact. Run before
-each manual Apidog pass (or wire it into a Test Suite/Scenario as a pre-run step
-if Apidog's own pre-request scripting can invoke an arbitrary URL — not yet
-confirmed, low priority since running it by hand takes one command).
+follow-up `GET /api/products` that the seeded baseline was intact. Later
+full-suite runs also confirmed why clearing `userCarts` is required: without it,
+negative cart-add cases polluted the next cart-read success assertion even after
+the DB reset step. Run before each manual Apidog pass, and keep it as the first
+Reset block in the full suite.
 
 The existing test-only `POST /_pact/setup` route (`NODE_ENV=test` only) is
 unchanged and untouched — the new route is separate, so Pact's deliberate

@@ -38,12 +38,15 @@ explicitly logged as unverified in this document.
 Full transcripts are not committed. Representative categories of prompts, in
 order of frequency:
 
-1. **Document synthesis.** _"Read `Material/Document/Apidog/EShop_Apidog_Setup.md`, `EShop_Apidog_
+1. **Document synthesis.** _"Read
+   `Material/Document/Apidog/EShop_Apidog_Setup.md`, `EShop_Apidog_
    Steps.md`, `EShop*Pact_Plan.md`, and draft the User Guide's Installation
    section transcribed from them — no new claims, no filler."*
-2. **Cross-document consistency review.** _"Reread `Material/Document/SUT-Reference/EShop_Defect.md` and
-   `Material/Document/Apidog/EShop_Apidog_TestCases.md` — for every defect in the former, does the latter
-   have a defect-demo case that pins the observed outcome?"_
+2. **Cross-document consistency review.** _"Reread
+   `Material/Document/SUT-Reference/EShop_Defect.md` and
+   `Material/Document/Apidog/EShop_Apidog_TestCases.md` — for every defect in
+   the former, does the latter have a defect-demo case that pins the observed
+   outcome?"_
 3. **Code reading + expected-outcome derivation.** _"Read `backend/server. js`
    lines 322–341 and tell me, per case in the POST /api/cart matrix, what the
    server actually returns — not what the OpenAPI spec says."_
@@ -63,21 +66,23 @@ verification step (see §3.3).
 
 Sections drafted with substantial Claude assistance:
 
-- `Material/Document/Planning/W09_Action_Plan.md` — draft written by Claude after
-  conversation-time context loading; edited by hand for calendar correction
-  ("actually, this is Week 9") and tone.
+- `Material/Document/Planning/W09_Action_Plan.md` — draft written by Claude
+  after conversation-time context loading; edited by hand for calendar
+  correction ("actually, this is Week 9") and tone.
 - `Material/Document/Apidog/W09_TrackA_Execution_Brief.md` — draft written by
   Claude from a directed reading of `server.js`; every line reference in the
   brief was cross-checked against the actual file.
-- `Material/Deliveries/S5_Pre-Share/User_Guide.md` — draft written by Claude from the
-  source-document map in `Material/Document/Planning/W09_Action_Plan.md` §Track E. Each transcribed passage
-  traces to a specific source paragraph.
+- `Material/Deliveries/S5_Pre-Share/User_Guide.md` — draft written by Claude
+  from the source-document map in
+  `Material/Document/Planning/W09_Action_Plan.md` §Track E. Each transcribed
+  passage traces to a specific source paragraph.
 
 **Verification steps.** For each of the above: (a) every claim about `server.js`
 behavior was checked against the file at the cited line range; (b) every claim
-about Apidog UI behavior was checked against `Material/Document/Apidog/EShop_Apidog_Setup.md` and
-`Material/Document/Apidog/EShop_Apidog_Steps.md`; (c) every claim about the Pact runs was checked against
-`Material/Document/Pact/EShop_Pact_Plan.md` §6 and §7.
+about Apidog UI behavior was checked against
+`Material/Document/Apidog/EShop_Apidog_Setup.md` and
+`Material/Document/Apidog/EShop_Apidog_Steps.md`; (c) every claim about the Pact
+runs was checked against `Material/Document/Pact/EShop_Pact_Plan.md` §6 and §7.
 
 ### 3.2 Claude — read-only analysis
 
@@ -115,8 +120,8 @@ Substantial Copilot involvement:
   phrase "in this comprehensive guide" and similar filler. Removed by hand.
 - Claude proposed writing a failure-mode entry based on a candidate that had not
   yet been confirmed. Rejected — FM entries require observed evidence, not
-  extrapolation. The FM log now includes confirmed FM-03, FM-04, and FM-05
-  entries.
+  extrapolation. The FM log now includes confirmed FM-03 through FM-09 entries,
+  including the later Apidog AI and Apidog TestSuite setup failure modes.
 - Claude proposed adding a "Best Practices" section to the User Guide. Rejected
   — the S1 rubric does not ask for it, and pre-cutting scope for the sake of a
   section header is a bad habit.
@@ -142,8 +147,8 @@ The Week 09 checkpoints/reports now give concrete evidence for this section.
 Apidog AI generated 24 `PUT /api/users/me` definitions and 22
 `GET /api/products/{id}` definitions. The executed `PUT /api/users/me` report
 ran 25 requests: 9 passed, 16 failed. Its strongest useful finding was SEC-06:
-Apidog expected `403` for `role: "admin"`, while the SUT returned `200`.
-Its strongest cautionary finding was that the same generated set also treated
+Apidog expected `403` for `role: "admin"`, while the SUT returned `200`. Its
+strongest cautionary finding was that the same generated set also treated
 `role: "admin"` as a passing positive enum case, proving that generated tests
 needed human oracle review before being trusted. The executed product-id report
 ran 22 requests: 3 passed, 19 failed. Its useful lesson was different: the AI
@@ -157,7 +162,10 @@ the known even-id `price` string quirk.
 - `[AI-04]` reflective statement (300 words) — draft complete except for the
   live-seminar reflection sub-section.
 - Primary sources verified against: `Sut/EShop/backend/server.js`,
-  `Sut/EShop/EShop_OpenApi.yaml`, `Material/Document/SUT-Reference/EShop_Defect.md`,
+  `Sut/EShop/EShop_OpenApi.yaml`,
+  `Material/Document/SUT-Reference/EShop_Defect.md`,
   `Material/Document/SUT-Reference/EShop_Failure_Modes.md`,
-  `Material/Document/Apidog/EShop_Apidog_Setup.md`, `Material/Document/Apidog/EShop_Apidog_Steps.md`, `Material/Document/Apidog/EShop_Apidog_TestCases.md`,
+  `Material/Document/Apidog/EShop_Apidog_Setup.md`,
+  `Material/Document/Apidog/EShop_Apidog_Steps.md`,
+  `Material/Document/Apidog/EShop_Apidog_TestCases.md`,
   `Material/Document/Pact/EShop_Pact_Plan.md`.

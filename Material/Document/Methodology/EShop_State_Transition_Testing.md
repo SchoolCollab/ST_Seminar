@@ -9,22 +9,23 @@ measure coverage. This closes the single largest gap identified in
 `T06_Coursework_Alignment_Audit.md` — a documented state machine that had never
 actually been tested with the technique built for it.
 
-**Assertion principle.** Every case below asserts the state machine's _intended_
-behavior, never a prediction of what a known bug currently does. Concretely:
-`STT-A-24` (`canceled→delivered`) and `STT-B-03` (`shipping`-order cancel) are
-both confirmed or high-confidence-predicted defects — but their assertions are
-`400` (the correct, terminal-state-respecting behavior), not `200` (what the bug
-actually returns). This means both cases are **expected to currently fail**, and
-that failure is the defect's live evidence. If either case ever unexpectedly
-passes, that means the defect was fixed — a result worth noticing, not a broken
-test to "fix" back to asserting the bug.
+**Assertion principle.** Cases in this methodology document describe the state
+machine's _intended_ behavior, never a prediction of what a known bug currently
+does. `STT-A-24` (`canceled→delivered`) is the cleanest example: the correct
+assertion is `400`, while the live backend returns `200`, so the Pact/admin
+failure is defect evidence. `STT-B-03` (`shipping`-order cancel) is also a
+documented FR-10 defect, but the current Pact/web interaction asserts the
+consumer-visible implementation behavior (`200`) rather than acting as a
+correct-oracle failure probe. If STT-B-03 is run as a pure S06.1/SRS assertion,
+it should still expect `400`.
 
 **Read the "Be careful about this" section before running anything** — several
 things here are genuinely different from a textbook single-mechanism state
 machine, and most cells in both tables below are hypotheses inferred from the
-admin transition logic already documented in `Material/Document/SUT-Reference/EShop_Defect.md`, not freshly
-re-verified. Building the table is step 2 of 4; actually running the cells is
-what turns hypotheses into results.
+admin transition logic already documented in
+`Material/Document/SUT-Reference/EShop_Defect.md`, not freshly re-verified.
+Building the table is step 2 of 4; actually running the cells is what turns
+hypotheses into results.
 
 ## States and events
 
@@ -64,33 +65,34 @@ the cancel endpoint (Table B) — both violate the diagram above.
 
 Rows = current state, columns = requested target state. **Confirmed** = actually
 executed in this project so far. **Hypothesis** = inferred from the admin
-handler's documented allow-list (`Material/Document/SUT-Reference/EShop_Defect.md`), not yet independently
+handler's documented allow-list
+(`Material/Document/SUT-Reference/EShop_Defect.md`), not yet independently
 re-run — treat these as the thing this table exists to verify, not as settled
 fact.
 
 | From ↓ / To → | pending                           | confirmed                         | shipping                          | delivered                                                                                      | canceled                          |
 | ------------- | --------------------------------- | --------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------- |
-| **pending**   | _(self)_ Hypothesis: invalid, 400 | ✅ **Confirmed valid**, 200       | Hypothesis: invalid, 400          | **Confirmed invalid**, 400 (tested as the "illegal transition" case)                           | Hypothesis: valid, 200            |
-| **confirmed** | Hypothesis: invalid, 400          | _(self)_ Hypothesis: invalid, 400 | Hypothesis: valid, 200            | Hypothesis: invalid, 400                                                                       | Hypothesis: valid, 200            |
-| **shipping**  | Hypothesis: invalid, 400          | Hypothesis: invalid, 400          | _(self)_ Hypothesis: invalid, 400 | Hypothesis: valid, 200                                                                         | Hypothesis: invalid, 400          |
+| **pending**   | _(self)_ Hypothesis: invalid, 400 | ✅ **Confirmed valid**, 200       | Hypothesis: invalid, 400          | ✅ **Confirmed invalid**, 400 (tested as the "illegal transition" case)                        | ✅ **Confirmed valid**, 200       |
+| **confirmed** | Hypothesis: invalid, 400          | _(self)_ Hypothesis: invalid, 400 | ✅ **Confirmed valid**, 200       | Hypothesis: invalid, 400                                                                       | ✅ **Confirmed valid**, 200       |
+| **shipping**  | Hypothesis: invalid, 400          | Hypothesis: invalid, 400          | _(self)_ Hypothesis: invalid, 400 | ✅ **Confirmed valid**, 200                                                                    | Hypothesis: invalid, 400          |
 | **delivered** | Hypothesis: invalid, 400          | Hypothesis: invalid, 400          | Hypothesis: invalid, 400          | _(self)_ Hypothesis: invalid, 400                                                              | Hypothesis: invalid, 400          |
 | **canceled**  | Hypothesis: invalid, 400          | Hypothesis: invalid, 400          | Hypothesis: invalid, 400          | ⚠️ **Confirmed BUG — actually valid**, 200 (should be 400; `canceled` is meant to be terminal) | _(self)_ Hypothesis: invalid, 400 |
 
-**3 of 25 cells confirmed by prior work. 22 are untested hypotheses.** The five
-`delivered`-row cells and the `canceled`-row cells other than `→delivered` are
-the least examined and, given this SUT's track record, the most likely to hide
-something — nothing has ever probed whether `delivered` is _actually_ terminal,
-only assumed it from the SRS.
+**7 of 25 cells are now confirmed by Pact and/or the Apidog workflow. 18 remain
+untested hypotheses.** The five `delivered`-row cells and the `canceled`-row
+cells other than `→delivered` are the least examined and, given this SUT's track
+record, the most likely to hide something — nothing has ever probed whether
+`delivered` is _actually_ terminal, only assumed it from the SRS.
 
 ## Table B — `PUT /api/orders/{id}/cancel` (5 starting states, single target: `canceled`)
 
-| From state  | Valid?                                                                                                                                               | Confirmed or hypothesis                                                                                       |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `pending`   | Valid, 200                                                                                                                                           | ✅ Confirmed (existing "Success (pending)" case)                                                              |
-| `confirmed` | Valid, 200                                                                                                                                           | Hypothesis — not yet explicitly tested from this starting state                                               |
-| `shipping`  | ⚠️ **Valid, 200 — this is FR-10's known defect.** Should be rejected; the guard only checks for `delivered`/`canceled`, so `shipping` slips through. | Hypothesis, but strongly supported by the documented guard logic — high-confidence prediction, not yet re-run |
-| `delivered` | Invalid, 400                                                                                                                                         | ✅ Confirmed (existing "already delivered/canceled" case)                                                     |
-| `canceled`  | Invalid, 400                                                                                                                                         | ✅ Confirmed (existing "already delivered/canceled" case, same guard covers both)                             |
+| From state  | Valid?                                                                                                                                                                           | Confirmed or hypothesis                                                                                                                                                                             |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pending`   | Valid, 200                                                                                                                                                                       | ✅ Confirmed (existing "Success (pending)" case)                                                                                                                                                    |
+| `confirmed` | Valid, 200                                                                                                                                                                       | ✅ Confirmed by the `eshop-web` Pact STT-B-02 interaction                                                                                                                                           |
+| `shipping`  | ⚠️ **Invalid by SRS; current implementation accepts it with 200 — this is FR-10's known defect.** The guard only checks for `delivered`/`canceled`, so `shipping` slips through. | ✅ Current `200` behavior confirmed by source reading and the `eshop-web` Pact STT-B-03 interaction, which asserts the current consumer-visible behavior rather than a failing correct-oracle probe |
+| `delivered` | Invalid, 400                                                                                                                                                                     | ✅ Confirmed (existing "already delivered/canceled" case)                                                                                                                                           |
+| `canceled`  | Invalid, 400                                                                                                                                                                     | ✅ Confirmed (existing "already delivered/canceled" case, same guard covers both)                                                                                                                   |
 
 ---
 
@@ -138,18 +140,19 @@ verification independently exercised this same transition through
 `PUT /api/admin/orders/1/status` with `{"status":"delivered"}` from a seeded
 `canceled` order. The contract asserted the intended `400`/error response, while
 the live backend returned `200`; this was the single `eshop-admin` verification
-failure in the confirmed 15/16 baseline. That gives STT-A-24 both source-level
-evidence and live contract-verification evidence.
+failure in the confirmed 20/21 admin baseline (part of the full 46/51
+three-consumer Pact baseline). That gives STT-A-24 both source-level evidence
+and live contract-verification evidence.
 
 ### Table B test cases (user cancel)
 
-| TC ID    | Description                                               | Pre-condition        | Steps            | Expected Result                           | Observed Result | Status |
-| -------- | --------------------------------------------------------- | -------------------- | ---------------- | ----------------------------------------- | --------------- | ------ |
-| STT-B-01 | Verify cancel accepts request from pending order          | Order in `pending`   | `PUT .../cancel` | 200                                       |                 |        |
-| STT-B-02 | Verify cancel accepts request from confirmed order        | Order in `confirmed` | `PUT .../cancel` | 200 (hypothesis)                          |                 |        |
-| STT-B-03 | Verify cancel rejects request from a shipping order       | Order in `shipping`  | `PUT .../cancel` | **400** [EXPECTED TO FAIL — tracks FR-10] |                 |        |
-| STT-B-04 | Verify cancel rejects request from delivered order        | Order in `delivered` | `PUT .../cancel` | 400                                       |                 |        |
-| STT-B-05 | Verify cancel rejects request from already-canceled order | Order in `canceled`  | `PUT .../cancel` | 400                                       |                 |        |
+| TC ID    | Description                                               | Pre-condition        | Steps            | Expected Result                                                | Observed Result                           | Status                                              |
+| -------- | --------------------------------------------------------- | -------------------- | ---------------- | -------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------- |
+| STT-B-01 | Verify cancel accepts request from pending order          | Order in `pending`   | `PUT .../cancel` | 200                                                            |                                           |                                                     |
+| STT-B-02 | Verify cancel accepts request from confirmed order        | Order in `confirmed` | `PUT .../cancel` | 200 (hypothesis)                                               |                                           |                                                     |
+| STT-B-03 | Verify cancel rejects request from a shipping order       | Order in `shipping`  | `PUT .../cancel` | **400** [EXPECTED TO FAIL if run as SRS oracle — tracks FR-10] | 200 via current-behavior Pact interaction | Defect confirmed, but current Pact does not fail it |
+| STT-B-04 | Verify cancel rejects request from delivered order        | Order in `delivered` | `PUT .../cancel` | 400                                                            |                                           |                                                     |
+| STT-B-05 | Verify cancel rejects request from already-canceled order | Order in `canceled`  | `PUT .../cancel` | 400                                                            |                                           |                                                     |
 
 ---
 
@@ -167,26 +170,28 @@ covered by a case (STT-A-01, STT-A-05, STT-A-08, STT-A-10, STT-A-14).
 **Full state table coverage:** 30 of 30 possible current-state × target-state
 combinations across both endpoints now have a designed case (25 in Table A, 5 in
 Table B) — **100% of the table**, versus 3 confirmed cells before this document
-existed. What changed is _design_ coverage, not _execution_ coverage — 27 of
-those 30 cases have never actually been run.
+existed. What changed most is _design_ coverage, not full execution coverage: 12
+of 30 cells now have live/source-backed confirmation, while 18 of 30 remain
+hypotheses.
 
 **1-switch coverage:** not attempted. A 1-switch case would walk two consecutive
 real transitions in one test (e.g. `pending→confirmed→shipping` as a single case
 checking both steps succeed in sequence) rather than treating each as
 independent. None of the cases above do this; Scenario B in
-`Material/Document/Apidog/EShop_Apidog_Steps.md` does walk a real multi-step sequence but wasn't designed
-as 1-switch coverage and doesn't systematically cover pairs.
+`Material/Document/Apidog/EShop_Apidog_Steps.md` does walk a real multi-step
+sequence but wasn't designed as 1-switch coverage and doesn't systematically
+cover pairs.
 
 ---
 
 ## Be careful about this
 
-**Most of this table is unexecuted.** 27 of 30 designed cases are hypotheses,
-not results. Do not describe this document to your instructor as "test cases
-covering the state machine" without the qualifier that only 3 have actually been
-run — the honest framing is "full design coverage, partial execution coverage,"
-and that distinction is itself something S06.1 cares about (design vs.
-execution).
+**Much of this table is still unexecuted.** 18 of 30 designed cases remain
+hypotheses, not results. Do not describe this document to your instructor as
+"test cases covering the whole state machine" without the qualifier that current
+execution is partial — the honest framing is "full design coverage, partial
+execution coverage," and that distinction is itself something S06.1 cares about
+(design vs. execution).
 
 **Two transition mechanisms, not one.** If asked to explain this technique's
 application, be ready to say explicitly that EShop has two endpoints capable of
@@ -220,14 +225,15 @@ the state you need), this will meaningfully grow the SQLite file. Worth deciding
 now whether that's acceptable or whether a teardown pass belongs in the same
 session.
 
-**Only STT-A-24 (`canceled→delivered`) is a confirmed defect.** STT-B-03
-(`shipping` cancel) is a _high-confidence prediction_ based on the documented
-guard logic, not yet independently re-run — say "predicted" or "expected," not
-"confirmed," until it's actually executed. Every other "Hypothesis: invalid,
-400" cell could just as easily turn out to be another undiscovered bug if the
-admin handler's allow-list has a gap nobody's read closely enough to notice.
-That possibility is the entire reason this table exists — don't let the
-hypotheses quietly become treated as known-good just because they're the
+**Two cells now have confirmed defect evidence, but by different mechanisms.**
+STT-A-24 (`canceled→delivered`) is confirmed by source reading and by a failing
+correct-oracle Pact/admin interaction. STT-B-03 (`shipping` cancel) is confirmed
+by source reading and by live Pact/web verification of the current `200`
+behavior, but that Pact interaction is not a failing correct-oracle probe. Every
+other "Hypothesis: invalid, 400" cell could still turn out to be another
+undiscovered bug if the admin handler's allow-list has a gap nobody has examined
+closely enough. That possibility is the entire reason this table exists — don't
+let the hypotheses quietly become treated as known-good just because they're the
 "expected" default.
 
 **Self-transitions (`pending→pending`, etc.) are a genuine unknown**, not just a
@@ -259,12 +265,12 @@ that branches to `canceled` from `confirmed`.
 **Before running any of this as a one-click Apidog Test Scenario:** it's
 unconfirmed whether a failed assertion in an Apidog scenario halts the remaining
 steps or lets them run anyway (this is one of the open candidates already
-flagged in `Material/Document/SUT-Reference/EShop_Failure_Modes.md`). Given that a wrongly-succeeding "invalid"
-transition here would silently corrupt every downstream step's precondition,
-**run each scenario step-by-step manually the first time**, checking the actual
-status after every request before sending the next one. Only convert it into an
-automated one-click scenario once a full manual pass confirms every step behaves
-as hypothesized.
+flagged in `Material/Document/SUT-Reference/EShop_Failure_Modes.md`). Given that
+a wrongly-succeeding "invalid" transition here would silently corrupt every
+downstream step's precondition, **run each scenario step-by-step manually the
+first time**, checking the actual status after every request before sending the
+next one. Only convert it into an automated one-click scenario once a full
+manual pass confirms every step behaves as hypothesized.
 
 ### Scenario 1 — Forward chain walk (18 cells: `pending`→`confirmed`→`shipping`→`delivered`)
 

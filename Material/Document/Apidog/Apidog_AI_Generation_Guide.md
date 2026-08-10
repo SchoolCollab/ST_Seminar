@@ -54,8 +54,8 @@ asserting the even-id `price` string quirk.
 ## Step 3 — Run the completed generated cases
 
 Once you've read the generated outputs without bias, run the completed set(s).
-Note the actual result for each — pass, fail, or "passed but shouldn't have."
-In the recorded Week 09 evidence, both selected endpoints reached execution.
+Note the actual result for each — pass, fail, or "passed but shouldn't have." In
+the recorded Week 09 evidence, both selected endpoints reached execution.
 
 ## Step 4 — Build the diff table
 
@@ -73,7 +73,7 @@ Evidence files:
 - Generated checkpoint:
   `Material/Config/Apidog/Checkpoint/AI/seminar.apidog.ai.checkpoint.2.json`
 - Combined checkpoint with suite references:
-  `Material/Config/Apidog/Checkpoint/seminar.apidog.checkpoint.1.json`
+  `Material/Config/Apidog/Checkpoint/seminar.apidog.checkpoint.2.json`
 - Executed report for `PUT /api/users/me`:
   `Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`
 - Executed report for `GET /api/products/{id}`:
@@ -81,28 +81,28 @@ Evidence files:
 
 The AI checkpoint contains **46 generated test-case definitions** total:
 
-| Endpoint | Generated definitions | Execution status |
-| --- | ---: | --- |
-| `PUT /api/users/me` | 24 | Executed |
-| `GET /api/products/{id}` | 22 | Executed |
+| Endpoint                 | Generated definitions | Execution status |
+| ------------------------ | --------------------: | ---------------- |
+| `PUT /api/users/me`      |                    24 | Executed         |
+| `GET /api/products/{id}` |                    22 | Executed         |
 
 The `PUT /api/users/me` report executed **25 HTTP requests** because the
-role-enum test case used a two-row dataset (`role=user`, `role=admin`).
-Apidog v2.8.41 reported:
+role-enum test case used a two-row dataset (`role=user`, `role=admin`). Apidog
+v2.8.41 reported:
 
-| Metric | Result |
-| --- | ---: |
-| HTTP requests | 25 |
-| Passed requests | 9 |
-| Failed requests | 16 |
-| Assertions | 35 |
-| Failed assertions | 23 |
-| Pass rate | 36% |
-| Duration | 2.20s |
+| Metric            | Result |
+| ----------------- | -----: |
+| HTTP requests     |     25 |
+| Passed requests   |      9 |
+| Failed requests   |     16 |
+| Assertions        |     35 |
+| Failed assertions |     23 |
+| Pass rate         |    36% |
+| Duration          |  2.20s |
 
 Most important result: the generated security case
-`Privilege escalation via role parameter (SEC-06) – Regular user attempts to
-update role to admin – Expect 403 forbidden` failed with:
+`Privilege escalation via role parameter (SEC-06) – Regular user attempts to update role to admin – Expect 403 forbidden`
+failed with:
 
 ```text
 HTTP Code Error: Returned 200 while expected 403.
@@ -124,15 +124,15 @@ The same generated set also demonstrates why raw AI output needs review:
 The `GET /api/products/{id}` report executed **22 HTTP requests**. Apidog
 v2.8.41 reported:
 
-| Metric | Result |
-| --- | ---: |
-| HTTP requests | 22 |
-| Passed requests | 3 |
-| Failed requests | 19 |
-| Assertions | 18 |
-| Failed assertions | 18 |
-| Pass rate | 13.64% |
-| Duration | 1.66s |
+| Metric            | Result |
+| ----------------- | -----: |
+| HTTP requests     |     22 |
+| Passed requests   |      3 |
+| Failed requests   |     19 |
+| Assertions        |     18 |
+| Failed assertions |     18 |
+| Pass rate         | 13.64% |
+| Duration          |  1.66s |
 
 The product-id run is mostly cautionary evidence. The three green requests were
 simple valid-id checks (`id=5`, `id=2`, `id=1`), and some had no meaningful
@@ -142,10 +142,17 @@ Apidog also raised response-schema failures for empty-object product lookups, so
 the earlier candidate concern that schema validation might silently accept the
 `{}`-on-404 quirk was not observed in this run.
 
+The later full-suite review kept these AI cases unchanged and classified the
+remaining bad oracles as AI-design defects, not manual-suite defects. In
+particular, the malformed "GET" case above is still a `PUT`, and several
+generated product-detail cases do not line up their titles, expected status
+classes, and concrete paths. They are useful evidence about AI review risk, but
+should not be treated as regression-ready cases without human rewriting.
+
 ## What "done" looks like for M4
 
 You don't need exhaustive AI coverage across all 31 endpoints for this to be a
 real, defensible M4. The final Week 09 decision is to **freeze M4 at two
-executed AI endpoint sets**: `PUT /api/users/me` and
-`GET /api/products/{id}`. Describe M4 as a deliberately narrow two-endpoint AI
-comparison, not as full-project AI regression coverage.
+executed AI endpoint sets**: `PUT /api/users/me` and `GET /api/products/{id}`.
+Describe M4 as a deliberately narrow two-endpoint AI comparison, not as
+full-project AI regression coverage.

@@ -6,8 +6,9 @@ This document is the runtime companion to `EShop_OpenApi.yaml`. The YAML
 describes the API surface; this file describes how the Apidog project on top of
 that spec is configured — environment variables, chained-token hook,
 per-endpoint assertion scripts, and multi-step scenarios.
-`Material/Document/Apidog/EShop_Apidog_TestCases.md` carries the per-endpoint case pattern established
-here through all 31 operations, with concrete bodies and expected outcomes.
+`Material/Document/Apidog/EShop_Apidog_TestCases.md` carries the per-endpoint
+case pattern established here through all 31 operations, with concrete bodies
+and expected outcomes.
 
 It has two audiences. During Week 06 it is a **setup recipe** — follow it
 top-to-bottom to configure a fresh Apidog project after importing the YAML.
@@ -37,22 +38,34 @@ the column an active `Local` environment actually reads. The **Shared Value**
 column is a separate, environment-independent default; leave it empty unless you
 deliberately want the same value across multiple environments.
 
-| Variable        | Local Value                                             | Purpose                                                                                                                             |
-| --------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `userEmail`     | `test@eshop.com`                                        | Seeded regular-user login body (`Sut/EShop/backend/database.js`).                                                                    |
-| `userPassword`  | `Test1234!`                                             | Seeded regular-user login body.                                                                                                     |
-| `bearerToken`   | _(empty)_                                               | Written by the login post-processor; resolved automatically by every protected request's scheme-direct Auth binding.                |
-| `adminEmail`    | `admin@eshop.com`                                      | Seeded admin login body (`Sut/EShop/backend/database.js`).                                                                          |
-| `adminPassword` | `Admin123!`                                             | Seeded admin login body.                                                                                                            |
-| `adminToken`    | _(empty)_                                               | Written by a separate admin-login post-processor; used only where a request's Auth is explicitly overridden to it (see Scenario B). |
-| `productId`     | _(empty)_                                               | Written by cart/checkout scenarios so downstream requests reuse a known-good product id.                                            |
-| `orderId`       | _(empty)_                                               | Written by the checkout scenario so cancel/status-update scenarios reference a real order.                                          |
+| Variable          | Local Value       | Purpose                                                                                                                                                                                        |
+| ----------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `userEmail`       | `test@eshop.com`  | Seeded regular-user login body (`Sut/EShop/backend/database.js`).                                                                                                                              |
+| `userPassword`    | `Test1234!`       | Seeded regular-user login body.                                                                                                                                                                |
+| `newUserPassword` | `Test1234!`       | Password used by the reset-password success case; keep equal to the seeded password for a stable full-suite run, or choose a new value and let the post-processor copy it into `userPassword`. |
+| `bearerToken`     | _(empty)_         | Written by the login post-processor; resolved automatically by every protected request's scheme-direct Auth binding.                                                                           |
+| `adminEmail`      | `admin@eshop.com` | Seeded admin login body (`Sut/EShop/backend/database.js`).                                                                                                                                     |
+| `adminPassword`   | `Admin123!`       | Seeded admin login body.                                                                                                                                                                       |
+| `productId`       | _(empty)_         | Written by cart/checkout scenarios so downstream requests reuse a known-good product id.                                                                                                       |
+| `orderId`         | _(empty)_         | Written by the checkout scenario so cancel/status-update scenarios reference a real order.                                                                                                     |
+| `resetToken`      | _(empty)_         | Written by the forgot-password success case and consumed by reset-password cases.                                                                                                              |
 
 After re-importing a project checkpoint, re-check these **Local Value** cells
 before running the suite. Apidog has been observed preserving the variable names
 while blanking the values, which makes login return `401` and then cascades into
 protected-request `401`s and blank-id `404`s. See
 `Material/Document/SUT-Reference/EShop_Failure_Modes.md`, FM-07.
+
+The current full-regression suite also contains explicit Reset blocks between
+the major suite phases. Those blocks restore these default values and clear the
+runtime variables before the next group runs. That makes full-suite runs more
+repeatable, but it does not replace checking the `Local` environment when
+sending standalone requests by hand.
+
+Those Reset blocks call `POST /_dev/reset-db`, which resets the SQLite seed data
+and clears the backend's process-local `userCarts` object. The cart cleanup is
+important because cart state is stored in memory, not in SQLite; see
+`Material/Document/SUT-Reference/EShop_Failure_Modes.md`, FM-09.
 
 All variables — regular user and admin — live in this one `Local` environment,
 since a scenario needing both tokens in the same run (see Scenario B) requires
@@ -64,8 +77,8 @@ The hook eliminates manual token copy-paste and makes the whole collection
 runnable in one shot. It must be configured **before** the login request is ever
 sent — configure it first, then send, not the other way around.
 
-**On `POST /api/login`, add a Post Processor.** Its name in the Apidog UI is
-**Store Variable** (not "Extract Variable"). Configure it:
+**On the positive `POST /api/login` test case, add a Post Processor.** Its name
+in the Apidog UI is **Store Variable** (not "Extract Variable"). Configure it:
 
 | Field          | Value                     |
 | -------------- | ------------------------- |
@@ -77,7 +90,24 @@ sent — configure it first, then send, not the other way around.
 
 This writes the extracted value into `bearerToken`'s **Local Value** cell in the
 active (`Local`) environment — the same cell you set up above, now populated
-automatically on every login.
+automatically when a successful customer login runs.
+
+Do **not** put this extractor on the endpoint-level `POST /api/login` Post
+Processors tab. Endpoint-level post-processors are inherited by the negative
+login cases too; those responses do not contain `$.token`, so they can overwrite
+a valid `bearerToken` with `undefined`. See
+`Material/Document/SUT-Reference/EShop_Failure_Modes.md`, FM-08.
+
+Scenario login steps follow the same rule: customer-login steps extract
+`bearerToken <- $.token`; the admin-login step also extracts
+`bearerToken <- $.token`, overwriting the regular-user token before the Admin
+section. This is intentional: Apidog's imported Auth binding reads
+`{{bearerToken}}`, so the obsolete `adminToken` variable is not used.
+
+The forgot-password success case extracts `resetToken <- $.resetToken`; the
+reset-password success case uses `{{newUserPassword}}` and then copies that
+value into `userPassword` so later login producers stay aligned if you choose a
+different post-reset password.
 
 **No manual header configuration is needed on other requests.** Every endpoint
 that declares `security: [{ bearerAuth: [] }]` in the OpenAPI spec binds
@@ -87,15 +117,17 @@ scheme" setting), which resolves `{{bearerToken}}` automatically — because
 scheme. This only works because the variable name matches; naming it something
 else (e.g. `accessToken`) silently breaks every protected request with a `403`,
 since the scheme then resolves an empty variable instead. See
-`Material/Document/SUT-Reference/EShop_Failure_Modes.md`, FM-01, for the full diagnosis.
+`Material/Document/SUT-Reference/EShop_Failure_Modes.md`, FM-01, for the full
+diagnosis.
 
 Do **not** set a Bearer Token override on the top-level project folder — it
 isn't needed and can cause public endpoints to inherit an auth header they
 shouldn't send if introduced later.
 
 Verify by running the whole collection in one shot from a fresh environment
-(empty `bearerToken`); the token should never be typed by hand, and no request
-should need a manually-set `Authorization` header.
+(empty `bearerToken`, `productId`, `orderId`, and `resetToken`); the token
+should never be typed by hand, and no request should need a manually-set
+`Authorization` header.
 
 ## Per-endpoint scenario matrix
 
@@ -134,9 +166,10 @@ the others follow.
 
 The full set — every endpoint, all 31 operations, with concrete bodies, auth,
 and expected status (including which "wrong-looking" results are actually
-documented defects) — is in `Material/Document/Apidog/EShop_Apidog_TestCases.md`. Work through that file
-for every endpoint beyond this one; save each case as its own Test Case inside
-the endpoint's folder.
+documented defects) — is in
+`Material/Document/Apidog/EShop_Apidog_TestCases.md`. Work through that file for
+every endpoint beyond this one; save each case as its own Test Case inside the
+endpoint's folder.
 
 ## Assertion scripts
 
@@ -149,7 +182,8 @@ operator and expected value). A third option, **Script** post-processors, takes
 raw JavaScript for checks the UI can't express — arithmetic invariants,
 cross-field relationships. Prefer Response validation + Assertion where they
 suffice; drop to Script only when the check is genuinely non-trivial. Full
-field-by-field walkthrough is in `Material/Document/Apidog/EShop_Apidog_Steps.md`, Step 6a.
+field-by-field walkthrough is in
+`Material/Document/Apidog/EShop_Apidog_Steps.md`, Step 6a.
 
 **Assertions to configure on every case:**
 
@@ -182,7 +216,7 @@ Individual requests test one endpoint at a time. Scenarios chain them to
 exercise real user flows and to catch bugs that only appear across requests
 (e.g. checkout not clearing the cart).
 
-Configure three scenarios under Apidog **Test Scenarios**:
+Configure four scenarios under Apidog **Test Scenarios**:
 
 **Scenario A — Happy-path purchase.** `POST /api/register` → `POST /api/login` →
 `GET /api/products` (capture one `productId`) → `POST /api/cart` →
@@ -190,22 +224,28 @@ Configure three scenarios under Apidog **Test Scenarios**:
 assertion: the new order appears in the list, and its `total_amount` matches
 what the checkout returned.
 
-**Scenario B — Order state machine.** Log in as admin first (a separate login
-step targeting `adminToken`, not `bearerToken`) → create an order via Scenario A
-(regular user) → `PUT /api/admin/orders/{orderId}/status` walking
-`pending → confirmed → shipping → delivered`, with each status-update request's
-Auth explicitly overridden to `{{adminToken}}` rather than the scheme-direct
-default. This demonstrates the intended admin flow — functionally the regular
-user's token would also work here, since the SUT does not check role on admin
-endpoints (a documented defect), but overriding to the admin token shows the
-flow as designed rather than relying on the bug. Assert each transition returns
-200; assert the illegal `pending → delivered` transition returns 400.
+**Scenario B — Order state machine.** Log in as admin first, extracting the
+admin JWT into `bearerToken` (overwriting any regular-user token) → create an
+order via Scenario A if needed → `PUT /api/admin/orders/{orderId}/status`
+walking `pending → confirmed → shipping → delivered`. Each status-update request
+stays on the imported bearerAuth scheme, which resolves `{{bearerToken}}`. This
+demonstrates the intended admin flow — functionally a regular user's token would
+also work here, since the SUT does not check role on admin endpoints (a
+documented defect), but the separate admin login keeps the suite honest about
+the role it meant to exercise. Assert each transition returns 200; assert the
+illegal `pending → delivered` transition returns 400.
 
 **Scenario C — Coupon flow.** Log in → `POST /api/apply-coupon` with a
 known-good code → assert `final_amount` matches the expected math. This scenario
 is where the buggy percent formula is most visible; document the actual
 `final_amount` returned so the User Guide's Failure Modes section can cite it
 verbatim.
+
+**Scenario D — Auth + profile flow.** Register a scenario-only user → log in and
+capture `bearerToken` → `GET /api/users/me` → `PUT /api/users/me` for a normal
+profile update → send the SEC-06 role-field probe. The token extractor belongs
+on the successful scenario login step, not on the endpoint-level login
+processor.
 
 Each scenario runs in Apidog with a single click and produces a linear log —
 ideal source material for the S6 live demo.
@@ -228,18 +268,18 @@ Naming what is _not_ here matters for the seminar's honesty:
 ## Verification
 
 After configuring the above, run the full collection from a fresh environment
-(empty `bearerToken`, empty `adminToken`, empty `productId`, empty `orderId`).
+(empty `bearerToken`, empty `productId`, empty `orderId`, empty `resetToken`).
 Expected outcome:
 
 - Every Scenario-1 (success) request returns 2xx.
 - Every Scenario-2 (invalid auth) request returns 401.
 - Every Scenario-3/4 (invalid param, not found) request returns 4xx with a
   schema-matching error body.
-- The three multi-step scenarios (A, B, C) complete end-to-end without human
-  intervention.
-- The chained-token hook fires exactly once per account (on each login) and
-  every subsequent request resolves the correct token — `bearerToken` by default
-  via scheme-direct binding, `adminToken` only where explicitly overridden.
+- The four multi-step scenarios complete end-to-end without human intervention.
+- The chained-token hook fires exactly once per successful login step and every
+  subsequent request resolves the current `bearerToken`. The Normal-user section
+  starts with a regular login; the Admin section starts with an admin login that
+  overwrites `bearerToken`.
 
 Any deviation from the above is either an Apidog misconfiguration (fix here) or
 a SUT defect (log it in `Material/Document/SUT-Reference/EShop_Defect.md`).

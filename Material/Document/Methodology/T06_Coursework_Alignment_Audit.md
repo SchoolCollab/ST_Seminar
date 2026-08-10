@@ -194,40 +194,45 @@ EShop has a textbook state machine, and it is already documented in
 `pending` and `confirmed`, and both `delivered` and `canceled` intended as
 terminal.
 
-S06.1 requires three artefacts. **We have none of them:**
+S06.1 requires three artefacts. **Current update:** this original audit gap has
+now been partially closed in
+`Material/Document/Methodology/EShop_State_Transition_Testing.md`. The project
+now has:
 
-1. **A state transition diagram** — not drawn anywhere.
-2. **State/transition coverage measurement** — never computed.
+1. **A state transition diagram** — drawn for the intended SRS state machine.
+2. **State/transition coverage measurement** — design coverage and execution
+   coverage are tracked separately.
 3. **A state transition table enumerating all combinations, valid and invalid**
-   — not built.
+   — 25 admin status cells plus 5 user-cancel cells.
 
-Coverage as it stands: 5 states means a full state table has **25
-combinations**. Across `PUT /api/admin/orders/{id}/status` and
-`PUT /api/orders/{id}/cancel` we test roughly 6. **[verified — 4 transition rows
-in the admin endpoint, plus the cancel cases]**
+Coverage as it stands now: 30 state/input cells are designed across
+`PUT /api/admin/orders/{id}/status` and `PUT /api/orders/{id}/cancel`. 12 of
+those 30 cells have source-backed or live execution evidence; 18 remain
+hypotheses.
 
 The valid transitions are: `pending→confirmed`, `pending→canceled`,
 `confirmed→shipping`, `confirmed→canceled`, `shipping→delivered`. **0-switch
 coverage** (S06.1: every single transition tested) requires all five. We
 explicitly test `pending→confirmed` and, on the user side, cancellation from
-`pending`. **`confirmed→shipping` and `shipping→delivered` are never tested as
-standalone transitions** — they only occur incidentally inside the multi-step
-Scenario B walk. That is not 0-switch coverage; it's one path through the
-machine.
+`pending`. `confirmed→shipping` and `shipping→delivered` have since been added
+as standalone Pact/admin interactions and as part of the Apidog Workflow
+scenario, so the original 0-switch gap for the five intended admin transitions
+is no longer accurate. The remaining S06.1 gap is the unexecuted invalid,
+self-transition, and terminal-state cells, not the forward happy-path cells.
 
 Why this matters beyond marks: S06.1's stated advantage of the state _table_ is
 that it "catches implementation defects that allow invalid paths between
 states." EShop has exactly such a defect — `canceled → delivered` is wrongly
-permitted. We found it, but by inspection of the source, not by the technique
-designed to find it. Building the table would very likely surface more: nothing
-currently tests `delivered → pending`, `shipping → confirmed`, or
-`canceled → confirmed`, and given this SUT's track record, at least one is
-probably allowed.
+permitted. That cell now has source-level evidence and live Pact/admin
+provider-verification evidence. The table could still surface more: nothing
+currently tests many delivered-row, canceled-row, and self-transition cells such
+as `delivered → pending`, `shipping → confirmed`, or `canceled → confirmed`, and
+given this SUT's track record, at least one may still surprise us.
 
-**This is the highest-value work available right now.** A 5×5 state table with a
-test case per cell is a well-bounded task, directly applies a technique the
-course taught, and is likely to yield new defects — which is exactly what the
-seminar's "depth of study" is graded on.
+**Remaining high-value work:** execute the still-hypothetical cells in the
+existing state table, especially self-transitions and terminal-state rows. The
+design artefact now exists; what remains valuable is turning the unexecuted
+hypotheses into observed results.
 
 ### Use Case Testing (S06.2) — applied implicitly, not by the technique
 

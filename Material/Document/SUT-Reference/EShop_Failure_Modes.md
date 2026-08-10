@@ -112,8 +112,8 @@ workaround-free fix was found for in the time available.
 
 **Resolution.** Dropped regex matchers on headers. Response `Content-Type`
 assertions were later removed entirely, relying instead on status code and body
-shape. For request headers that matter, use plain literals. For
-`Authorization`, this is confirmed low-risk: every interaction uses the literal
+shape. For request headers that matter, use plain literals. For `Authorization`,
+this is confirmed low-risk: every interaction uses the literal
 `Bearer placeholder.token.value` (never a real token, verified via a read-only
 check of the generated pact file), and the provider verifier's `requestFilter`
 injects the real JWT at verification time regardless of what's recorded in the
@@ -183,12 +183,12 @@ nothing if the original failure was never reproducible in the first place.
 **What happened.** Adding Pact tests for `frontend-admin` split the 16
 interactions across four Jest files. The first consumer run reported all 16
 tests passing, but the generated pact file contained only 7 interactions. The
-provider verifier then reported `eshop-admin` as a 7-interaction consumer,
-which was wrong — the missing 9 interactions had never made it into the final
-pact file.
+provider verifier then reported `eshop-admin` as a 7-interaction consumer, which
+was wrong — the missing 9 interactions had never made it into the final pact
+file.
 
-**Where it showed up.** `frontend-admin/tests/pact/*.pact.test.js`.
-Jest ran the Pact test files in parallel workers, and each worker used the same
+**Where it showed up.** `frontend-admin/tests/pact/*.pact.test.js`. Jest ran the
+Pact test files in parallel workers, and each worker used the same
 consumer/provider pair (`eshop-admin` → `eshop-backend`) and the same output
 file (`pacts/eshop-admin-eshop-backend.json`). The tests themselves passed; the
 bad artifact only became obvious when counting interactions in the generated
@@ -223,11 +223,11 @@ run serially unless each worker writes a distinct pact file.
 
 **What happened.** During the frontend-web Pact rebuild, provider verification
 timed out on a `PUT /api/orders/1/cancel` interaction that asserted an explicit
-empty request body. The same symptom later appeared independently while expanding
-`eshop-mobile`'s cancel-order contract, where the extracted mobile API client
-sent `JSON.stringify({})` even though the endpoint has no business request
-payload. In both cases, the body assertion was not protecting a meaningful
-consumer dependency.
+empty request body. The same symptom later appeared independently while
+expanding `eshop-mobile`'s cancel-order contract, where the extracted mobile API
+client sent `JSON.stringify({})` even though the endpoint has no business
+request payload. In both cases, the body assertion was not protecting a
+meaningful consumer dependency.
 
 **Where it showed up.** First in the corrected `eshop-web` order-cancel contract
 for `PUT /api/orders/{id}/cancel`, then independently in the `eshop-mobile`
@@ -235,18 +235,19 @@ cancel-order interaction for the same endpoint. The consumer tests themselves
 could be made to pass against Pact's mock server, but provider verification hung
 instead of returning a clean body-mismatch failure.
 
-**Why it's misleading.** The signal looked like Pact or the provider had stalled,
-not like an over-specified contract. Because the request body was `{}` rather
-than a business field the UI reads or sends intentionally, the timeout pushed the
-debugging path toward transport/tooling behavior instead of the simpler question:
-"does this body assertion represent a real consumer dependency?"
+**Why it's misleading.** The signal looked like Pact or the provider had
+stalled, not like an over-specified contract. Because the request body was `{}`
+rather than a business field the UI reads or sends intentionally, the timeout
+pushed the debugging path toward transport/tooling behavior instead of the
+simpler question: "does this body assertion represent a real consumer
+dependency?"
 
-**Root cause.** The contract asserted a request-body detail for an endpoint where
-the consumers send no meaningful payload. That over-specified the interaction
-around an implementation-neutral empty body and made provider verification
-brittle in a way that did not correspond to user-visible behavior. The second
-mobile occurrence confirmed this is a general empty-body `PUT` assertion hazard,
-not a one-off quirk of the original web test file.
+**Root cause.** The contract asserted a request-body detail for an endpoint
+where the consumers send no meaningful payload. That over-specified the
+interaction around an implementation-neutral empty body and made provider
+verification brittle in a way that did not correspond to user-visible behavior.
+The second mobile occurrence confirmed this is a general empty-body `PUT`
+assertion hazard, not a one-off quirk of the original web test file.
 
 **Resolution.** Removed the empty-body and content-type assertions from the
 cancel-order interactions. For `eshop-web`, the request is routed as
@@ -296,8 +297,8 @@ and as a normal valid input.
 **Where it showed up.** Checkpoint:
 `Material/Config/Apidog/Checkpoint/AI/seminar.apidog.ai.checkpoint.1.json`.
 Executed report:
-`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`.
-The report ran in Apidog v2.8.41 against the Local environment at
+`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`. The
+report ran in Apidog v2.8.41 against the Local environment at
 `2026-08-09 18:35:01`: 25 HTTP requests, 9 passed, 16 failed, 35 assertions, 23
 failed assertions, 36% pass rate.
 
@@ -322,12 +323,23 @@ before using the generated set as a regression suite. The second target
 endpoint, `GET /api/products/{id}`, was later completed in
 `Material/Config/Apidog/Checkpoint/AI/seminar.apidog.ai.checkpoint.2.json` and
 executed in
-`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-23-48-02.html`
-(22 requests, 3 passed, 19 failed). That run reinforces the same lesson:
-generated cases are hypotheses. It produced broad boundary/negative input
-coverage, but many oracles were idealized `400`/`404` expectations against a
-SUT that returns `200`, and the green `id=2` case did not assert the known
-even-id `price` string quirk.
+`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-23-48-02.html` (22
+requests, 3 passed, 19 failed). That run reinforces the same lesson: generated
+cases are hypotheses. It produced broad boundary/negative input coverage, but
+many oracles were idealized `400`/`404` expectations against a SUT that returns
+`200`, and the green `id=2` case did not assert the known even-id `price` string
+quirk.
+
+The later full-suite review in
+`Material/Config/Apidog/Report/apidog-reports-2026-08-10-13-18-06.html` found
+two more AI design issues that should stay quarantined rather than be silently
+"fixed" into manual coverage. The generated "Unsupported HTTP method GET"
+profile-update case still sent `PUT /api/users/me`, so its expected `405` oracle
+could never prove unsupported-method handling. Several generated
+`GET /api/products/{id}` cases also had labels and expected classes that did not
+match the concrete URL Apidog executed, collapsing distinct boundary and
+missing-path ideas into requests such as `/api/products/`, `/api/products/abc`,
+or `/api/products/999999`.
 
 **Lesson.** Apidog AI output is a strong exploration aid, not an oracle. Treat
 each generated case as a hypothesis, then classify it manually as true defect
@@ -355,9 +367,8 @@ credential values used by that environment.
 **Why it's misleading.** The test suite can produce a very large red report even
 though the SUT, endpoint cases, and suite orchestration are not the first-order
 cause. The report showed 235 HTTP requests with 183 failed and 242 assertions
-with 174 failed, but many failures were downstream symptoms of blank
-credentials and blank chained variables rather than independent endpoint
-findings.
+with 174 failed, but many failures were downstream symptoms of blank credentials
+and blank chained variables rather than independent endpoint findings.
 
 **Root cause.** Apidog treats Local Values as local/session data during project
 import/export. The variable fields survive, but the values are not reliable
@@ -367,14 +378,101 @@ FM-07 is a variable-value wipe even when the names are correct.
 **Resolution.** After every import or re-import, manually verify the `Local`
 environment values before running the suite. For the current seeded database,
 set `userEmail=test@eshop.com`, `userPassword=Test1234!`,
-`adminEmail=admin@eshop.com`, and `adminPassword=Admin123!`. Leave
-`bearerToken`, `adminToken`, `productId`, and `orderId` blank initially, because
-scenario post-processors should populate them during execution.
+`newUserPassword=Test1234!`, `adminEmail=admin@eshop.com`, and
+`adminPassword=Admin123!`. Leave `bearerToken`, `productId`, `orderId`, and
+`resetToken` blank initially, because scenario/test-case post-processors should
+populate them during execution. The current full-regression suite also starts
+each non-empty suite section with a custom script that restores those defaults
+and clears the runtime variables, but the visible `Local` values still matter
+for standalone request sends and for confirming the import did not damage the
+environment shape.
 
 **Lesson.** Treat an imported Apidog environment as a shape, not as proof that
 runtime values are ready. If a full suite suddenly turns mostly red, inspect the
 active environment values and the first login request before interpreting the
 rest of the failures.
+
+---
+
+### FM-08 — Endpoint-level login extractors can overwrite a valid token with `undefined`
+
+**What happened.** After re-entering the seeded `Local` environment credentials,
+the standalone valid login request passed, but the full Apidog suite still left
+`bearerToken` as `undefined`. The report showed scenario login steps returning
+`403` and protected requests cascading into `401`, even though the visible
+environment values for `userEmail` and `userPassword` were correct.
+
+**Where it showed up.** The imported
+`Material/Config/Apidog/Checkpoint/seminar.apidog.checkpoint.2.json` had a
+`Store Variable` extractor attached to the `POST /api/login` endpoint itself.
+Because endpoint-level post-processors are inherited by every login test case,
+negative login cases whose responses contain no `$.token` also ran the extractor
+and wrote `undefined` into the `bearerToken` environment variable.
+
+**Why it's misleading.** This looks very similar to FM-07 at first: the suite is
+mostly red and protected requests cannot authenticate. The difference is that
+the environment values are not blank this time, and a single valid login can
+still pass. The failure is caused by a later negative login case mutating the
+shared environment after the good token was created.
+
+**Root cause.** A response extractor was placed at the endpoint level instead of
+on only the cases and scenario steps that expect `200` and a `token` field.
+Apidog's inherited processors are convenient for common assertions, but unsafe
+for value extraction when some cases intentionally exercise responses that do
+not contain the extracted field.
+
+**Resolution.** Removed the endpoint-level token extractor from
+`POST /api/login`. Added `bearerToken <- $.token` only to successful login
+producer cases and scenario login steps. The Normal-user section starts with a
+regular login; the Admin section starts with an admin login that overwrites
+`bearerToken`. The obsolete `adminToken` variable was removed because Apidog's
+imported Auth binding reads `{{bearerToken}}` only. The full regression suite
+was also split with explicit Reset blocks and producer steps in the relevant
+sections, ensuring `bearerToken`, `productId`, and `orderId` are populated near
+the cases that consume them rather than relying on stale variables from a prior
+section.
+
+**Lesson.** Store-variable processors should be scoped to successful producer
+cases, not inherited from an endpoint that also contains negative cases. For
+login specifically, never attach `$.token` extraction to the endpoint-level Post
+Processors tab; attach it to the positive login case or scenario step that
+actually receives a token.
+
+---
+
+### FM-09 — Reset hooks can pass while non-database state still pollutes later Apidog cases
+
+**What happened.** The Apidog full-regression suite used Reset blocks between
+major sections, and those Reset calls returned success, but a later
+`GET /api/cart` success case still saw cart data left behind by earlier
+negative add-to-cart cases. The failure looked like a cart endpoint/schema
+problem because the reset step itself was green.
+
+**Where it showed up.** During the Apidog TestSuite cleanup runs before
+`Material/Config/Apidog/Report/apidog-reports-2026-08-10-15-59-56.html`.
+`server.js` stores cart contents in the process-local `userCarts` object for
+`GET/POST /api/cart`, while the dev reset route originally only called
+`db.resetDatabase()`.
+
+**Why it's misleading.** A visible reset request returning `{"ok":true}` makes
+the next block feel isolated. When the next cart-read assertion fails, the first
+instinct is to inspect the assertion or the cart endpoint response shape, not to
+suspect that the reset hook only cleaned SQLite and skipped in-memory state.
+
+**Root cause.** The SUT has two state stores in this seminar setup: SQLite for
+most persistent data, and the in-memory `userCarts` object for cart contents.
+The original `POST /_dev/reset-db` helper reset only the database, so cart
+pollution survived across suite blocks.
+
+**Resolution.** Updated `POST /_dev/reset-db` in `Sut/EShop/backend/server.js`
+to clear `userCarts` immediately after `db.resetDatabase()`. The latest
+full-suite report (`apidog-reports-2026-08-10-15-59-56.html`) no longer shows
+the clean cart retrieval success case failing from stale cart contents.
+
+**Lesson.** A test reset hook is only trustworthy if it resets every state store
+the SUT uses, not just the obvious database. When a supposedly isolated block
+fails, inspect both the reset endpoint and any process-local caches or globals
+before treating the endpoint under test as the cause.
 
 ---
 

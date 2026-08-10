@@ -13,10 +13,13 @@ false today (FM-05, the reorganization).
       14/17, eshop-admin 20/21, eshop-mobile 12/13) — confirmed via one single,
       complete `run_tests.sh` execution, exit 0, clean `git status`. Commit
       `a8628f0`.
-- [x] Six documented failure modes (FM-01 through FM-06), FM-05 now documenting
-      two independent occurrences with a precise distinction between the
-      assert-around-it fix and the verified-safe production-code cleanup, and
-      FM-06 documenting the Apidog AI role-field contradiction.
+- [x] Nine documented failure modes (FM-01 through FM-09), FM-05 now
+      documenting two independent occurrences with a precise distinction between
+      the assert-around-it fix and the verified-safe production-code cleanup,
+      FM-06 documenting the Apidog AI role-field contradiction, and FM-07/FM-08
+      covering the Apidog environment-value wipe and endpoint-level token
+      extractor overwrite. FM-09 records the reset-hook gap where SQLite reset
+      passed but in-memory cart state still polluted later Apidog cases.
 - [x] Seven confirmed EShop defects surfaced through Pact work across all three
       consumers.
 - [x] `Material/Document/` reorganized by type — confirmed via real `git log`,
@@ -34,24 +37,32 @@ false today (FM-05, the reorganization).
       status). Re-verified 14/17, 20/21, 12/13 baseline unaffected via
       `run_tests.sh` on an `ubuntu-latest`-matching environment. Commits
       `3f4f898`, `8afcf9b`.
-- [x] M4 Apidog AI scope frozen: `PUT /api/users/me` generated and executed
-      with SEC-06 confirmed live; `GET /api/products/:id` also generated and
+- [x] M4 Apidog AI scope frozen: `PUT /api/users/me` generated and executed with
+      SEC-06 confirmed live; `GET /api/products/:id` also generated and
       executed. Final AI scope is two endpoint sets, 46 generated cases total,
-      with separate HTML reports for both endpoints.
+      with separate HTML reports for both endpoints. The live suite's AI section
+      has 48 endpoint references because it includes one login producer and one
+      product-list `productId` producer in addition to the 46 generated cases.
 
 ## Blocking submission — do these first
 
-- [x] **`run_tests.sh` fixed and verified** — three-state pass/
-      mismatch/fail logic, real syntax check via a working bash binary, real
-      full execution matching the documented 14/17 + 20/21 + 12/13 baseline,
-      clean `git status`. Commit `f525acd`.
+- [x] **`run_tests.sh` fixed and verified** — three-state pass/ mismatch/fail
+      logic, real syntax check via a working bash binary, real full execution
+      matching the documented 14/17 + 20/21 + 12/13 baseline, clean
+      `git status`. Commit `f525acd`.
 - [ ] **M5 — metrics table.** Scaffold exists in `User_Guide.md` §4.3. Needs
       exact measured values or explicit "not measured" entries for Apidog
       manual, Apidog AI, and Pact.
-- [ ] **Apidog TestSuite execution** — next active work item. Build/run the
-      `EShop — Full Regression` suite from
-      `Material/Document/Apidog/EShop_Apidog_TestSuite_Plan.md`; the current
-      combined checkpoint contains 209 suite references (163 manual + 46 AI).
+- [ ] **Apidog TestSuite execution/classification** — active work item. The
+      `EShop — Full Regression` suite exists and has been run; the latest
+      non-final cleanup report is
+      `Material/Config/Apidog/Report/apidog-reports-2026-08-10-15-59-56.html`
+      (263 HTTP requests, 109 failed requests, 282 assertions, 115 failed
+      assertions, 58.56% passed). The current combined checkpoint contains 214
+      endpoint-case references plus 5 workflow scenario references: 166
+      reset/manual endpoint refs, 48 AI-section endpoint refs, and 5 workflow
+      scenarios. Remaining work is classifying the
+      failures, not building the suite from scratch.
 
 ## Not blocking today's submission — genuinely optional
 

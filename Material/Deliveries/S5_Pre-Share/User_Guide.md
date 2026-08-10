@@ -69,9 +69,12 @@ for Pact provider verification (see §2.4) and would wipe state between runs.
    URL row to `http://localhost:3000` (not a variable — the Base URL panel at
    the top of the environment).
 4. Add environment variables in the **Local Value** column: `userEmail`,
-   `userPassword`, `adminEmail`, `adminPassword` using the seeded credentials
-   `test@eshop.com` / `Test1234!` and `admin@eshop.com` / `Admin123!`;
-   `bearerToken`, `adminToken`, `productId`, `orderId` left blank.
+   `userPassword`, `newUserPassword`, `adminEmail`, `adminPassword` using the
+   seeded credentials `test@eshop.com` / `Test1234!` and `admin@eshop.com` /
+   `Admin123!`; `bearerToken`, `productId`, `orderId`, and `resetToken` left
+   blank. Keep `newUserPassword=Test1234!` for a stable full-suite run unless
+   you deliberately want the reset-password success case to change the later
+   login password.
 
 The variable name `bearerToken` matters. Apidog's OpenAPI importer auto-binds
 protected endpoints to a variable **of that exact name**. Renaming it to
@@ -82,7 +85,9 @@ After importing or re-importing a checkpoint, re-check the Local Value cells.
 The suite report `apidog-reports-2026-08-10-00-36-09.html` showed that Apidog
 can preserve the fields while clearing the values, causing valid login to fail
 with `401` and most downstream protected requests to fail for the wrong reason.
-See §6, FM-07.
+See §6, FM-07. The current full-regression suite mitigates this during suite
+runs with explicit Reset blocks between major phases, but standalone request
+sends still depend on the visible `Local` values.
 
 ### 2.4 Pact prerequisites — one-time backend refactors
 
@@ -124,13 +129,13 @@ Two "hello world" walkthroughs — one in Apidog, one in Pact.
 Adds JWT auth so protected endpoints "just work" for the rest of the
 walkthrough.
 
-1. Open `POST /api/login`. Body:
+1. Open the positive/valid `POST /api/login` test case. Body:
 
     ```json
     { "email": "{{userEmail}}", "password": "{{userPassword}}" }
     ```
 
-2. Open the **Post Processors** tab → **Store Variable**:
+2. Open that test case's **Post Processors** tab → **Store Variable**:
 
     | Field          | Value                 |
     | -------------- | --------------------- |
@@ -145,6 +150,10 @@ walkthrough.
 4. Open `GET /api/users/me` and Send. Expected: `200 OK` with a user record —
    the scheme-direct binding resolved `{{bearerToken}}` on its own, no manual
    header configured.
+
+Do not place the Store Variable extractor on the endpoint-level login Post
+Processors tab. Negative login cases inherit endpoint-level processors and can
+overwrite a good token with `undefined`; this is tracked as FM-08.
 
 Full step-by-step is in `Material/Document/Apidog/EShop_Apidog_Steps.md` (Steps
 1–6).
@@ -209,8 +218,7 @@ Filled from Track A on execution.]_
 
 Evidence files:
 `Material/Config/Apidog/Checkpoint/AI/seminar.apidog.ai.checkpoint.2.json`,
-`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`,
-and
+`Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-18-35-24.html`, and
 `Material/Config/Apidog/Report/AI/apidog-reports-2026-08-09-23-48-02.html`.
 Apidog AI was run with all generation categories selected, `{{bearerToken}}` as
 the credential variable, Number of Cases = Auto, and Gemini 3.5 Flash as the
@@ -219,10 +227,10 @@ hosted model. The executed `PUT /api/users/me` report ran 25 requests: 9 passed,
 executed `GET /api/products/{id}` report ran 22 requests: 3 passed, 19 failed,
 18 assertions total, 18 failed assertions, 13.64% pass rate.
 
-| Endpoint | What the AI covered well | What it missed or blurred | Human review result |
-| --- | --- | --- | --- |
-| `PUT /api/users/me` | Generated broad positive, negative, boundary, and security coverage, including auth failures, phone/name type cases, SQL-injection text, and a specific SEC-06 privilege-escalation case expecting `403`. | It also generated a contradictory enum-coverage case that treated `role=user` and `role=admin` as ordinary positive inputs. Several `400` validation expectations reflect ideal validation, not the permissive SUT. One "GET method" case was malformed and still sent `PUT`. | Keep the SEC-06 failure as live defect evidence: Apidog expected `403`, SUT returned `200`. Quarantine the role-enum positive case and malformed/noisy assertions before using the set as a regression suite. |
-| `GET /api/products/{id}` | Generated a full 22-case endpoint set across positive, negative, and boundary classes, including malformed IDs, empty path values, zero/overflow/underflow boundaries, and simple valid IDs. | It repeatedly expected `400`/`404` for inputs where the SUT actually returns `200`, and the valid `id=2` boundary case passed without asserting the even-id `price` string quirk. Several green cases had little oracle value because they asserted no meaningful body fields. | Keep this as AI-oracle review evidence: the endpoint is now generated and executed, but the raw red/green split needs human classification before being promoted into regression coverage. |
+| Endpoint                 | What the AI covered well                                                                                                                                                                                  | What it missed or blurred                                                                                                                                                                                                                                                                                                                                                                         | Human review result                                                                                                                                                                                           |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PUT /api/users/me`      | Generated broad positive, negative, boundary, and security coverage, including auth failures, phone/name type cases, SQL-injection text, and a specific SEC-06 privilege-escalation case expecting `403`. | It also generated a contradictory enum-coverage case that treated `role=user` and `role=admin` as ordinary positive inputs. Several `400` validation expectations reflect ideal validation, not the permissive SUT. One "GET method" case was malformed and still sent `PUT`.                                                                                                                     | Keep the SEC-06 failure as live defect evidence: Apidog expected `403`, SUT returned `200`. Quarantine the role-enum positive case and malformed/noisy assertions before using the set as a regression suite. |
+| `GET /api/products/{id}` | Generated a full 22-case endpoint set across positive, negative, and boundary classes, including malformed IDs, empty path values, zero/overflow/underflow boundaries, and simple valid IDs.              | It repeatedly expected `400`/`404` for inputs where the SUT actually returns `200`, and the valid `id=2` boundary case passed without asserting the even-id `price` string quirk. Later full-suite review also found generated titles/oracles that did not match the concrete paths Apidog executed. Several green cases had little oracle value because they asserted no meaningful body fields. | Keep this as AI-oracle review evidence: the endpoint is now generated and executed, but the raw red/green split needs human classification before being promoted into regression coverage.                    |
 
 Takeaway: Apidog AI accelerated exploration and independently confirmed SEC-06,
 but the generated tests are draft hypotheses. The pass/fail result only becomes
@@ -237,11 +245,11 @@ stability. M4 is frozen as two executed Apidog AI endpoint sets, so the Apidog
 AI numbers below must be read at that narrow scope rather than as a full-project
 AI run.
 
-| Metric | Apidog manual | Apidog AI | Pact |
-| --- | --- | --- | --- |
-| Setup time | **TODO:** measure from OpenAPI import / environment setup to first green manual request. | **TODO:** measure provider setup + first successful generation. Recorded provider: free-plan Google/Gemini, Gemini 3.5 Flash. | **TODO:** use the actual Pact setup/run notes if timed; otherwise mark as "not timed retrospectively" rather than estimating. |
-| Run time | **TODO:** run the Apidog Test Suite once built and record suite duration from the report. | `2.20s` for `PUT /api/users/me`: 25 requests, 9 passed, 16 failed, 35 assertions, 23 failed. `1.66s` for `GET /api/products/{id}`: 22 requests, 3 passed, 19 failed, 18 assertions, 18 failed. | **TODO:** record one full `run_tests.sh` duration for the three-consumer baseline: 51 interactions, 46/51 provider verification. |
-| Flake rate | **TODO:** run the final Apidog Test Suite N=3 if time allows; record mismatches honestly. | Not measured. Both AI endpoint reports were one-run evidence, useful for oracle review but not a repeated-run stability claim. | **TODO:** if using existing evidence, note the triple-run Pact discipline already established stable named failures; otherwise run `run_tests.sh` N=3 and record `0/3`, `1/3`, etc. |
+| Metric     | Apidog manual                                                                                                                                                                                                                                                                              | Apidog AI                                                                                                                                                                                      | Pact                                                                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Setup time | **TODO:** measure from OpenAPI import / environment setup to first green manual request.                                                                                                                                                                                                   | **TODO:** measure provider setup + first successful generation. Recorded provider: free-plan Google/Gemini, Gemini 3.5 Flash.                                                                  | **TODO:** use the actual Pact setup/run notes if timed; otherwise mark as "not timed retrospectively" rather than estimating.                                                       |
+| Run time   | **TODO:** record the final stabilized `EShop — Full Regression` report. Latest non-final cleanup run: `apidog-reports-2026-08-10-15-59-56.html`, 263 HTTP requests, 109 failed requests, 282 assertions, 115 failed assertions, 58.56% passed. Do not treat this as final M5 until remaining failures are classified. | `2.20s` for `PUT /api/users/me`: 25 requests, 9 passed, 16 failed, 35 assertions, 23 failed. `1.66s` for `GET /api/products/{id}`: 22 requests, 3 passed, 19 failed, 18 assertions, 18 failed. | **TODO:** record one full `run_tests.sh` duration for the three-consumer baseline: 51 interactions, 46/51 provider verification.                                                    |
+| Flake rate | **TODO:** run the final Apidog Test Suite N=3 if time allows; record mismatches honestly.                                                                                                                                                                                                  | Not measured. Both AI endpoint reports were one-run evidence, useful for oracle review but not a repeated-run stability claim.                                                                 | **TODO:** if using existing evidence, note the triple-run Pact discipline already established stable named failures; otherwise run `run_tests.sh` N=3 and record `0/3`, `1/3`, etc. |
 
 Questions to fill before this table is final:
 
@@ -386,23 +394,56 @@ valuable SEC-06 security case expecting `403` for `role: "admin"` and receiving
 `200`, confirming a real defect. The same generated set also treated role enum
 coverage as a positive case, allowing `role=admin` as if it were valid input.
 
-**Resolution.** Treat generated cases as hypotheses, not final oracles. Keep
-the SEC-06 failure as evidence, but classify or rewrite contradictory/noisy AI
-cases before promoting them into regression coverage.
+**Resolution.** Treat generated cases as hypotheses, not final oracles. Keep the
+SEC-06 failure as evidence, but classify or rewrite contradictory/noisy AI cases
+before promoting them into regression coverage.
+
+Later full-suite review left the AI cases unchanged and documented two more
+design defects: the generated "GET method" profile-update case still sent
+`PUT /api/users/me`, and several generated product-detail cases had titles or
+expected classes that did not match the actual request path. These are useful
+AI-review examples, but not regression-ready manual cases.
 
 ### FM-07 — Apidog checkpoint re-import can preserve environment fields but wipe Local Values
 
 **What happened.** Re-importing the Apidog checkpoint preserved the `Local`
 environment and variable names, but cleared the Local Value cells. The full
-suite still ran, but valid login used blank credentials and returned `401`.
-Most protected requests then cascaded into `401`, while requests using blank
+suite still ran, but valid login used blank credentials and returned `401`. Most
+protected requests then cascaded into `401`, while requests using blank
 `orderId`/`productId` variables produced malformed URLs such as
 `/api/orders//cancel`.
 
 **Resolution.** After every import or re-import, manually re-enter the seeded
-credentials: `test@eshop.com` / `Test1234!` and `admin@eshop.com` /
-`Admin123!`. Leave `bearerToken`, `adminToken`, `productId`, and `orderId`
-blank so the scenario post-processors can populate them during the run.
+credentials: `test@eshop.com` / `Test1234!` and `admin@eshop.com` / `Admin123!`;
+set `newUserPassword=Test1234!`. Leave `bearerToken`, `productId`, `orderId`,
+and `resetToken` blank so the scenario/test-case post-processors can populate
+them during the run.
+
+### FM-08 — Endpoint-level login extractors can overwrite a valid token
+
+**What happened.** After credentials were re-entered correctly, valid login
+passed but the full suite still left `bearerToken` as `undefined`. The cause was
+not blank credentials; it was a `$.token` extractor attached to the
+endpoint-level `POST /api/login` processors, inherited by negative login cases
+whose responses contain no token.
+
+**Resolution.** Keep `bearerToken <- $.token` only on successful login producer
+cases and scenario login steps. The Normal-user section starts with a regular
+login; the Admin section starts with an admin login that overwrites
+`bearerToken`. Do not attach token extractors to the login endpoint itself, and
+do not use the obsolete `adminToken` variable — Apidog's imported Auth binding
+reads `{{bearerToken}}` only.
+
+### FM-09 — Reset hooks can miss non-database state
+
+**What happened.** The full-regression suite's Reset blocks returned success,
+but cart data from earlier negative cart-add cases still polluted a later
+`GET /api/cart` success assertion. The reset looked green, so the cart failure
+initially looked like an endpoint/schema problem.
+
+**Resolution.** `POST /_dev/reset-db` now clears both SQLite and the backend's
+in-memory `userCarts` object. The latest cleanup report no longer shows the
+clean cart retrieval success case failing from stale cart contents.
 
 ## 7. References
 
