@@ -208,20 +208,34 @@ specifically wants a recurring-schedule demo.
       all 31 endpoints (per `EShop_Apidog_TestCases.md`).
     - Run Mode: **Serial** (already set in the screenshot).
     - Environment: `Local`.
-2. **Test Scenarios** (rename/build out the existing empty `aa`, plus 3 more) —
-   reuse the four-scenario matrix already documented in `EShop_Apidog_Setup.md`:
+2. **Test Scenarios** — the current checkpoint includes five Workflow
+   scenarios:
     - `Checkout flow` (cart → checkout → cancel-order)
     - `Admin order-status flow` (login as admin → PUT order status transitions,
       covering the STT matrix in `EShop_State_Transition_Testing.md`)
     - `Coupon apply flow` (surfaces the percent-formula defect)
     - `Auth + profile flow` (register → login → PUT /users/me role injection)
-    - Add each of these four to the Test Suite via **Add Test Scenario**, so the
+    - `Admin order-status negative cases` (migrated static status probes with
+      explicit reset/order setup)
+    - Add each of these five to the Test Suite via **Add Test Scenario**, so the
       one Suite run covers both raw endpoint cases and multi-step flows.
-3. **CI/CD tab on the Test Suite** — configure once the Suite is built and
-   passes locally; generate the access token and command; this is the artifact
-   to paste into a new GitHub Actions workflow
-   (`.github/workflows/apidog-suite.yml`) if the student wants Apidog itself
-   gated in CI (separate from the existing Pact workflows).
+3. **GitHub Actions integration** — `.github/workflows/apidog-suite.yml` now
+   installs `apidog-cli`, starts the local backend, runs Test Suite `5021`
+   (`EShop — Full Regression`) in project `1355389` against environment
+   `6596143` (`Local`), seeds the required environment variables with
+   `--env-var`, parses the generated HTML report, and uploads the generated
+   Apidog HTML reports as workflow artifacts. Add `APIDOG_ACCESS_TOKEN` as a
+   GitHub Actions repository secret before expecting this workflow to run, and
+   optionally add `APIDOG_PROJECT_ID`, `APIDOG_TEST_SUITE_ID`, and
+   `APIDOG_ENVIRONMENT_ID` as GitHub Actions repository variables if a future
+   re-import changes those IDs.
+
+   The CI checker is intentionally not pinned to the current failing demo
+   numbers. It reads the generated report at runtime and requires: non-zero
+   executed requests/assertions, `Untested` = `0.00%`, `Http Requests` failed =
+   `0`, and `Assertions` failed = `0`. The current known failures are preserved
+   for the live demo/report evidence, but CI treats them as failures rather than
+   as an acceptable baseline.
 4. **Done, already available (§2/Q2 above)** — run
    `Sut/EShop/backend/reset-db.sh` (or `npm run db:reset` from `backend/`)
    before each manual Apidog pass to reset the database without restarting the
@@ -229,13 +243,16 @@ specifically wants a recurring-schedule demo.
 
 ## 4. What's still open
 
-- The CI/CD tab's exact command format has not been seen (no screenshot of it
-  yet) — the access-token generation step requires an interactive Apidog login
-  and cannot be captured by an AI agent without it. Ask the student to
-  screenshot the Test Suite's CI/CD tab once it exists, if a GitHub Actions
-  integration is wanted.
+- The exact access token value still cannot be captured by an AI agent. Generate
+  it in Apidog's Test Suite CI/CD tab, then store it as the GitHub Actions
+  repository secret `APIDOG_ACCESS_TOKEN`.
+- If the Apidog project is re-imported and receives new IDs, update the GitHub
+  Actions repository variables `APIDOG_PROJECT_ID`, `APIDOG_TEST_SUITE_ID`, and
+  `APIDOG_ENVIRONMENT_ID`. The workflow has fallback values from the current
+  checkpoint, but repository variables are the intended future-edit point.
 - Whether "Run exported data" (offline CLI mode, no live Apidog account needed
   at CI time) or "Run Online Data" is preferable depends on whether the student
   wants the CI job to always reflect the latest edits made in the Apidog app
-  (Online) or a frozen, versioned snapshot (Exported) — this is a judgment call
-  for the student, not something to decide unilaterally here.
+  (Online) or a frozen, versioned snapshot (Exported). The committed workflow
+  currently uses **Online Data**, matching Apidog's documented CI/CD flow and
+  the suite/environment IDs exported in the current checkpoint.

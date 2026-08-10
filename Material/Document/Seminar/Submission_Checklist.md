@@ -43,6 +43,16 @@ false today (FM-05, the reorganization).
       with separate HTML reports for both endpoints. The live suite's AI section
       has 48 endpoint references because it includes one login producer and one
       product-list `productId` producer in addition to the 46 generated cases.
+- [x] Apidog CI workflow scaffolded:
+      `.github/workflows/apidog-suite.yml` starts the backend, installs
+      `apidog-cli`, runs the `EShop — Full Regression` suite by exported
+      project/suite/environment IDs, seeds environment variables via
+      `--env-var`, checks the generated report dynamically for all-tests-run
+      and zero failures, and uploads Apidog/backend logs as artifacts. It still
+      needs the GitHub Actions secret `APIDOG_ACCESS_TOKEN` to run, and the
+      GitHub Actions variables `APIDOG_PROJECT_ID`, `APIDOG_TEST_SUITE_ID`, and
+      `APIDOG_ENVIRONMENT_ID` should be updated if a future Apidog re-import
+      changes those IDs.
 
 ## Blocking submission — do these first
 
@@ -86,8 +96,12 @@ false today (FM-05, the reorganization).
 
 ## Recommended order for the rest of today
 
-1. Apidog TestSuite build/execution.
-2. M5 metrics values, using the TestSuite report once it exists.
-3. `run_tests.sh` sanity check — five minutes, do it whenever convenient.
-4. Screencast recording, slide deck build, disclosure signature — explicitly on
+1. Add the `APIDOG_ACCESS_TOKEN` GitHub Actions secret; optionally add/update
+   the `APIDOG_PROJECT_ID`, `APIDOG_TEST_SUITE_ID`, and
+   `APIDOG_ENVIRONMENT_ID` GitHub Actions variables; then run the new Apidog
+   workflow once from `workflow_dispatch`.
+2. Finish classifying the latest Apidog TestSuite failures.
+3. M5 metrics values, using the TestSuite report once it exists.
+4. `run_tests.sh` sanity check — five minutes, do it whenever convenient.
+5. Screencast recording, slide deck build, disclosure signature — explicitly on
    hold for now.

@@ -1,0 +1,116 @@
+name: Apidog Test Suite
+
+on:
+    workflow_dispatch:
+    push:
+        paths:
+            - 'Sut/EShop/backend/**'
+            - 'Material/Config/Apidog/**'
+            - 'Material/Document/Apidog/**'
+            - 'Material/Document/SUT-Reference/EShop_Failure_Modes.md'
+            - '.github/workflows/apidog-suite.yml'
+    pull_request:
+        paths:
+            - 'Sut/EShop/backend/**'
+            - 'Material/Config/Apidog/**'
+            - 'Material/Document/Apidog/**'
+            - 'Material/Document/SUT-Reference/EShop_Failure_Modes.md'
+            - '.github/workflows/apidog-suite.yml'
+
+jobs:
+    apidog-suite:
+        runs-on: ubuntu-latest
+        env:
+            APIDOG_PROJECT_ID: ${{ vars.APIDOG_PROJECT_ID || '1355389' }}
+            APIDOG_TEST_SUITE_ID: ${{ vars.APIDOG_TEST_SUITE_ID || '5021' }}
+            APIDOG_ENVIRONMENT_ID: ${{ vars.APIDOG_ENVIRONMENT_ID || '6596143' }}
+            APIDOG_ACCESS_TOKEN: ${{ secrets.APIDOG_ACCESS_TOKEN }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: npm
+                  cache-dependency-path: Sut/EShop/backend/package-lock.json
+
+            - name: Install backend dependencies
+              working-directory: Sut/EShop/backend
+              run: npm ci
+
+            - name: Start backend
+              working-directory: Sut/EShop/backend
+              run: |
+                  npm start > backend.log 2>&1 &
+                  echo $! > backend.pid
+
+                  for i in {1..30}; do
+                    if curl -fsS http://localhost:3000/api/products > /dev/null; then
+                      echo "Backend is ready"
+                      exit 0
+                    fi
+                    sleep 1
+                  done
+
+                  echo "::error::Backend did not become ready on http://localhost:3000"
+                  cat backend.log
+                  exit 1
+
+            - name: Install Apidog CLI
+              run: npm install -g apidog-cli
+
+            - name: Verify Apidog access token is configured
+              run: |
+                  if [ -z "$APIDOG_ACCESS_TOKEN" ]; then
+                    echo "::error::Missing APIDOG_ACCESS_TOKEN repository secret. Generate it from the Apidog suite CI/CD tab and add it under GitHub Actions secrets."
+                    exit 1
+                  fi
+
+            - name: Run Apidog full regression suite
+              run: |
+                  set +e
+                  apidog run \
+                    --access-token "$APIDOG_ACCESS_TOKEN" \
+                    --project "$APIDOG_PROJECT_ID" \
+                    --test-suite "$APIDOG_TEST_SUITE_ID" \
+                    --environment "$APIDOG_ENVIRONMENT_ID" \
+                    --branch main \
+                    --reporters cli,html \
+                    --out-dir apidog-reports \
+                    --out-file "apidog-full-regression-${{ github.run_number }}" \
+                    --on-error continue \
+                    --env-var userEmail=test@eshop.com \
+                    --env-var 'userPassword=Test1234!' \
+                    --env-var 'newUserPassword=Test1234!' \
+                    --env-var adminEmail=admin@eshop.com \
+                    --env-var 'adminPassword=Admin123!' \
+                    --env-var bearerToken= \
+                    --env-var productId= \
+                    --env-var orderId= \
+                    --env-var resetToken= 2>&1 | tee apidog-cli.log
+
+                  status=${PIPESTATUS[0]}
+                  echo "$status" > apidog-exit-code.txt
+                  exit 0
+
+            - name: Check Apidog result
+              run: node Material/Config/Apidog/CI/check-apidog-result.mjs apidog-reports apidog-exit-code.txt
+
+            - name: Upload Apidog reports
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: apidog-reports
+                  path: |
+                      apidog-reports/
+                      apidog-cli.log
+                      apidog-exit-code.txt
+                  if-no-files-found: warn
+
+            - name: Upload backend log
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: apidog-backend-log
+                  path: Sut/EShop/backend/backend.log
+                  if-no-files-found: warn
